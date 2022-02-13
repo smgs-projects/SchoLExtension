@@ -1,6 +1,6 @@
 {
-    "name": "Schol Debug Seb App",
-    "description": "Random schol changes",
+    "name": "SchoL Debug Seb App",
+    "description": "Random schol changes that make it better maybe?",
     "version": "1.0",
     "manifest_version": 3,
     "host_permissions": [
