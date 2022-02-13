@@ -11,6 +11,7 @@ if (document.getElementById("side-menu-mysubjects")) {
         }
     }
 }
+await WriteCache()
 if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
     DisplayColour()
 }
