@@ -1,7 +1,7 @@
 window.onload = function () {
     var parser = new DOMParser();
     var regExp = /\(([^)]+)\)/;
-    if (window.location.href.split("/")[4] && window.location.href.split("/")[4] == "due") {
+    if (window.location.href.split("/")[4] == "due") {
         function AfterLoad() {
             for (const duework of document.getElementsByClassName("event-container")) {
                 const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
