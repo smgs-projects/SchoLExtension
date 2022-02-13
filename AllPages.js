@@ -1,5 +1,9 @@
 var regExp = /\(([^)]+)\)/;
 window.onload = async function () {
+    await WriteCache()
+    if (document.getElementsByClassName("fc-list-table")) {
+        const ediary = document.getElementsByClassName("fc-list-table")
+    }
     if (document.getElementById("side-menu-mysubjects")) {
         for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
             const atag = classtag.children[0]
@@ -16,7 +20,7 @@ window.onload = async function () {
         DisplayColour()
     }
     else setTimeout(DisplayColour, 1000)
-    if (document.getElementsByClassName("timetable")) {
+    if (document.getElementsByClassName("timetable") && window.location.href.split("/") == "https://learning.stmichaels.vic.edu.au/") {
         for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
             if (timetableitem.children[0].children.length > 0) {
 
@@ -57,12 +61,16 @@ function DisplayColour() {
 }
 async function WriteCache() {
     const result = localStorage.getItem('cache')
-    if (!result) {
+    if (result) {
         fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
                 if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
                     const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
+                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                }
+                else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+                    const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
                     localStorage.setItem(classname, classtime.style.backgroundColor)
                 }
             }
