@@ -1,11 +1,8 @@
 var parser = new DOMParser();
 var regExp = /\(([^)]+)\)/;
 async function OnLoad() {
-    console.log(window.location.href.split("/")[4])
     if (window.location.href.split("/")[4] == "due") {
-        console.log(2)
         await WriteCache()
-        console.log(1)
         setInterval(AfterLoad, 1000)
     }
 }
@@ -27,9 +24,7 @@ async function WriteCache() {
     return "done"
 }
 function AfterLoad() {
-    console.log(1)
     for (const duework of document.getElementsByClassName("event-container")) {
-        console.log(duework)
         const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
         for (const classcode of classcodes) {
             const color = localStorage.getItem(classcode)

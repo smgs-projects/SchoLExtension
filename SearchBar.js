@@ -7,7 +7,6 @@ function SearchItem() {
     const searchbar = document.getElementById("searchbar-Better")
     if(document.activeElement === searchbar) {
         const text = searchbar.value.toLowerCase();
-        console.log(text)
         const notifications = document.getElementById("msg-content").querySelectorAll("li")
         for (const notif of notifications) {
             if (notif.textContent.toLocaleLowerCase().trim().indexOf(text) == -1) {
