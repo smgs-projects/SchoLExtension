@@ -46,7 +46,10 @@ window.onload = function () {
             }
         }
     }
-
+    setTimeout(NotificationSearch, 1500)
+    function NotificationSearch() {
+        console.log(document.getElementById("msg-content").querySelectorAll("li"))
+    }
     if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         DisplayColour()
     }
