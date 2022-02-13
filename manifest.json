@@ -1,0 +1,17 @@
+{
+    "name": "Schol Debug Seb App",
+    "description": "Random schol changes",
+    "version": "1.0",
+    "manifest_version": 3,
+    "host_permissions": [
+        "https://learning.stmichaels.vic.edu.au/*"
+    ],
+    "permissions": ["storage"],
+    "content_scripts": [
+        {
+            "matches": ["https://learning.stmichaels.vic.edu.au/*"],
+            "js": ["DueWork.js"],
+            "run_at": "document_idle"
+        }
+      ]
+  }
