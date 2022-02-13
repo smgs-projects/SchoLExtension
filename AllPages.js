@@ -1,3 +1,4 @@
+var regExp = /\(([^)]+)\)/;
 if (document.getElementById("side-menu-mysubjects")) {
     for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
         const atag = classtag.children[0]
