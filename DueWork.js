@@ -52,12 +52,13 @@ window.onload = function () {
     document.addEventListener('keydown', SearchItem);
     document.getElementById("message-list").children[1].appendChild(searchbar)
     function SearchItem() {
+        console.log(1)
         const searchbar = document.getElementById("searchbar-Better")
         if(document.activeElement === searchbar) {
-            const text = searchbar.value;
+            const text = searchbar.value.toLowerCase();
             const notifications = document.getElementById("msg-content").querySelectorAll("li")
             for (const notif of notifications) {
-                if (notif.textContent.trim().indexOf(text) == -1) {
+                if (notif.textContent.toLocaleLowerCase().trim().indexOf(text) == -1) {
                     notif.style.display = "none";
                 }
                 else {
