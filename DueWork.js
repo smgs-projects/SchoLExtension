@@ -1,7 +1,6 @@
 window.onload = function () {
     var parser = new DOMParser();
     var regExp = /\(([^)]+)\)/;
-    if (document.getElementById("msg-mar")) document.getElementById("msg-mar").remove()
     if (window.location.href.split("/")[4] == "due") {
         function AfterLoad() {
             for (const duework of document.getElementsByClassName("event-container")) {
@@ -34,6 +33,7 @@ window.onload = function () {
         setInterval(AfterLoad, 1000)
         WriteCache()
     }
+    
     if (document.getElementById("side-menu-mysubjects")) {
         for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
             const atag = classtag.children[0]
@@ -46,7 +46,6 @@ window.onload = function () {
             }
         }
     }
-
 
     if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         DisplayColour()
