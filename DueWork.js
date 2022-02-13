@@ -47,7 +47,6 @@ window.onload = function () {
         }
     }
     const searchbar = document.createElement('input')
-    searchbar.type="search"
     searchbar.id="searchbar-Better"
     searchbar.placeholder="Type to search"
     searchbar.addEventListener('keyup', SearchItem);
