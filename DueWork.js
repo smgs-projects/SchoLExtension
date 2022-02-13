@@ -46,9 +46,29 @@ window.onload = function () {
             }
         }
     }
+    const searchbar = document.createElement('input')
+    searchbar.type="search"
+    searchbar.id="searchbar-Better"
+    searchbar.addEventListener("search", SearchItem, searchbar);
+    document.getElementById("message-list").children[1].appendChild(searchbar)
     setTimeout(NotificationSearch, 1500)
     function NotificationSearch() {
-        console.log(document.getElementById("msg-content").querySelectorAll("li"))
+        
+        // console.log(document.getElementById("msg-content").querySelectorAll("li"))
+    }
+    function SearchItem() {
+        const searchbar = document.getElementById("searchbar-Better")
+        const text = searchbar.value;
+        const notifications = document.getElementById("msg-content").querySelectorAll("li")
+        for (const notif of notifications) {
+            if (notif.textContent.trim().indexOf(text) == -1) {
+                console.log(1)
+                notif.style.display = "none";
+            }
+            else {
+                notif.style.display = "block";
+            }
+        }
     }
     if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         DisplayColour()
