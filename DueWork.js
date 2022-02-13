@@ -16,7 +16,7 @@ window.onload = function () {
         }
         function WriteCache() {
             const result = localStorage.getItem('cache')
-            if (result && !result["cache"]) {
+            if (!result) {
                 fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
                     const timetable = parser.parseFromString(result, 'text/html')
                     for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
