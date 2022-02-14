@@ -5,6 +5,7 @@ window.onload = function () {
     }
 }
 
+
 function DueWork() {
     var regExp = /\(([^)]+)\)/;
     for (const duework of document.getElementsByClassName("event-container")) {

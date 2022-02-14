@@ -1,8 +1,8 @@
-window.onload = function () {
+window.addEventListener('load', (event) => {
     if (window.location.pathname.startsWith("/timetable")) {
         Timetable()
     }
-}
+});
 
 function Timetable() {
     const rows = document.querySelectorAll(".timetable tbody tr")

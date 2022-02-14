@@ -1,9 +1,9 @@
-window.onload = function () {
+window.addEventListener('load', (event) => {
     if (localStorage.getItem("cache") && localStorage.getItem("cache") > 8.64e+7) {
         localStorage.removeItem("cache")
     }
     AllPages()
-}
+});
 // ~ Called on call pages
 async function AllPages() {
     //This is called every page in case the cache expires (happens every 1 day)
