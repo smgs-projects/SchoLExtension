@@ -6,6 +6,7 @@ window.onload = function () {
 }
 
 async function AllPages() {
+    console.log(1)
     await WriteCache()
     if (document.getElementsByClassName("fc-list-table")) {
         const ediary = document.getElementsByClassName("fc-list-table")
@@ -50,20 +51,19 @@ function DisplayColour() {
 }
 
 async function WriteCache() {
+    console.log(1)
     var parser = new DOMParser();
     const result = localStorage.getItem('cache')
-    if (!result) {
+    if (result) {
         fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
-            let classnames = []
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
+                //Only items with 
                 if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
                     const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
                     localStorage.setItem(classname, classtime.style.backgroundColor)
-                    classnames.push(classname)
                 }
             }
-            localStorage.setItem("cacheClasses", [...new Set(classnames)])
             localStorage.setItem("cache", Date.now())
         })
     }
