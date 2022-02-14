@@ -1,9 +1,8 @@
 var regExp = /\(([^)]+)\)/;
-window.onload = async function () {
+async function AllPages() {
     await WriteCache()
     if (document.getElementsByClassName("fc-list-table")) {
         const ediary = document.getElementsByClassName("fc-list-table")
-        console.log(ediary[0])
     }
     if (document.getElementById("side-menu-mysubjects")) {
         for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
@@ -21,10 +20,9 @@ window.onload = async function () {
         DisplayColour()
     }
     else setTimeout(DisplayColour, 1000)
-    if (document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/") {
-        console.log(1)
+    if (document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/" || document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/#") {
         for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
-            if (timetableitem.children[0].children.length > 0) {
+            if (timetableitem.getElementsByClassName("timetable-subject").length > 0) {
                 if (!regExp.exec(timetableitem.children[0].children[0].children[1].textContent)) continue;
                 const classcodes = regExp.exec(timetableitem.children[0].children[0].children[1].textContent)[1].split(",")
                 for (const classcode of classcodes) {
@@ -65,22 +63,22 @@ function DisplayColour() {
         }
     }
 }
+AllPages()
 async function WriteCache() {
     const result = localStorage.getItem('cache')
-    if (result) {
+    if (!result) {
         fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
+            let classnames = []
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
                 if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
                     const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
                     localStorage.setItem(classname, classtime.style.backgroundColor)
-                }
-                else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
-                    const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                    classnames.push(classname)
                 }
             }
-            localStorage.setItem("cache", true)
+            localStorage.setItem("cacheClasses", [...new Set(classnames)])
+            localStorage.setItem("cache", Date.now())
         })
     }
     return "done"
