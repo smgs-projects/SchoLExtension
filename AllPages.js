@@ -4,7 +4,7 @@ window.onload = function () {
     }
     AllPages()
 }
-
+// ~ Called on call pages
 async function AllPages() {
     //This is called every page in case the cache expires (happens every 1 day)
     await WriteCache()
@@ -28,10 +28,12 @@ async function AllPages() {
             }
         }
     }
-    // ~ Main page 
+    // ~ Main page due work items
     if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
+        //This can be done instantly since it is pregenned
         DisplayColour()
     }
+    //This is not so needs to wait a 1s
     else setTimeout(DisplayColour, 1000)
 }
 
@@ -39,9 +41,12 @@ function DisplayColour() {
     var regExp = /\(([^)]+)\)/;
     if (document.getElementById("report_content") || document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         let dueworkitems;
+        //Due work items can either be these two 
+        // ~ Hub page
         if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
             dueworkitems = document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0].querySelectorAll("li")
         }
+        // ~ Actual due work page
         else dueworkitems = document.getElementById("report_content").querySelectorAll("li")
         for (const duework of dueworkitems) {
             if (!regExp.exec(duework.querySelector("a:not(.title)").innerText)) continue;
@@ -50,12 +55,13 @@ function DisplayColour() {
                 const color = localStorage.getItem(classcode)
                 if (!color) { continue; }
                 duework.style.borderLeft = "10px solid " + color
+                //RGBA for transperency to be added (too noisy otherwise)
                 duework.style.backgroundColor = color.replace("rgb", "rgba").replace(")", ", 10%)")
             }
         }
     }
 }
-
+// ~ Get the timetable colours
 async function WriteCache() {
     //Needed since the fetch returns string
     var parser = new DOMParser();
@@ -69,9 +75,16 @@ async function WriteCache() {
                     const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
                     localStorage.setItem(classname, classtime.style.backgroundColor)
                 }
+                //Timetables without links are here (EG sport, private periods)
+                else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+                    const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
+                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                }
             }
+            //Cache is in unix for recaching
             localStorage.setItem("cache", Date.now())
         })
     }
+    //Async so other things do not try to access colours before this is done
     return "done"
 }
