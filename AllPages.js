@@ -6,15 +6,20 @@ window.onload = function () {
 }
 
 async function AllPages() {
-    console.log(1)
+    //This is called every page in case the cache expires (happens every 1 day)
     await WriteCache()
+    // ~ Change ediary colours
     if (document.getElementsByClassName("fc-list-table")) {
+        //Soontm, change ediary colours to the proper colours
         const ediary = document.getElementsByClassName("fc-list-table")
     }
+    // ~ change side bar to have colours!
     if (document.getElementById("side-menu-mysubjects")) {
         for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
             const atag = classtag.children[0]
+            //The parent tag is a part of the children, but it is a div instead of A so this is a way to discrimintae
             if (atag.nodeName === "A") {
+                //Uses the link that it leads to, since that is the only way to get it out of the text
                 let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length-1])
                 if (color) {
                     atag.style.borderLeft = "7px solid " + color
@@ -23,6 +28,7 @@ async function AllPages() {
             }
         }
     }
+    // ~ Main page 
     if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         DisplayColour()
     }
@@ -51,14 +57,14 @@ function DisplayColour() {
 }
 
 async function WriteCache() {
-    console.log(1)
+    //Needed since the fetch returns string
     var parser = new DOMParser();
     const result = localStorage.getItem('cache')
     if (result) {
         fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
-                //Only items with 
+                //Only items with links are loaded here
                 if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
                     const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
                     localStorage.setItem(classname, classtime.style.backgroundColor)
