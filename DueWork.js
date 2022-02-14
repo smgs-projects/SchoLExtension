@@ -1,6 +1,6 @@
 window.onload = function () {
     if (window.location.pathname.startsWith("/learning/due")) {
-        setInterval(AfterLoad, 1000)
+        setInterval(DueWork, 1000)
     }
 }
 
