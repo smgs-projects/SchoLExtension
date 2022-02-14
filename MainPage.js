@@ -1,5 +1,5 @@
 var regExp = /\(([^)]+)\)/;
-console.log("A")
+
 window.addEventListener('load', (event) => {
     if (window.location.pathname == "/") {
         MainPage()
