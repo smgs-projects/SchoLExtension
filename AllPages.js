@@ -3,6 +3,7 @@ window.onload = async function () {
     await WriteCache()
     if (document.getElementsByClassName("fc-list-table")) {
         const ediary = document.getElementsByClassName("fc-list-table")
+        console.log(ediary[0])
     }
     if (document.getElementById("side-menu-mysubjects")) {
         for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
@@ -20,22 +21,27 @@ window.onload = async function () {
         DisplayColour()
     }
     else setTimeout(DisplayColour, 1000)
-    if (document.getElementsByClassName("timetable") && window.location.href.split("/") == "https://learning.stmichaels.vic.edu.au/") {
+    if (document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/") {
+        console.log(1)
         for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
             if (timetableitem.children[0].children.length > 0) {
-
                 if (!regExp.exec(timetableitem.children[0].children[0].children[1].textContent)) continue;
                 const classcodes = regExp.exec(timetableitem.children[0].children[0].children[1].textContent)[1].split(",")
                 for (const classcode of classcodes) {
                     const color = localStorage.getItem(classcode)
                     if (!color) { continue; }
-                    console.log(timetableitem)
                     timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = color
                 }
             }
         }
         for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
-
+            // if (!regExp.exec(timetableitem.children[0].children[0].children[1].textContent)) continue;
+            // const classcodes = regExp.exec(timetableitem.children[0].children[0].children[1].textContent)[1].split(",")
+            // for (const classcode of classcodes) {
+            //     const color = localStorage.getItem(classcode)
+            //     if (!color) { continue; }
+            //     timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = "black"
+            // }
         }
     }
 }
