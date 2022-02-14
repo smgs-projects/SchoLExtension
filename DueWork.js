@@ -1,7 +1,7 @@
 var parser = new DOMParser();
 var regExp = /\(([^)]+)\)/;
 async function OnLoad() {
-    if (window.location.href.split("/")[4] == "due") {
+    if (window.location.pathname.startsWith("/learning/due/")) {
         await WriteCache()
         setInterval(AfterLoad, 1000)
     }

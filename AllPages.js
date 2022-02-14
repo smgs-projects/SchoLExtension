@@ -20,7 +20,7 @@ async function AllPages() {
         DisplayColour()
     }
     else setTimeout(DisplayColour, 1000)
-    if (document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/" || document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/#") {
+    if (document.getElementsByClassName("timetable") && window.location.pathname == "/") {
         for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
             if (timetableitem.children[0].children.length > 0) {
                 const classname = timetableitem.getElementsByClassName("timetable-subject")[0].querySelector("div").textContent
