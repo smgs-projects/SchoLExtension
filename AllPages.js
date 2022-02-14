@@ -22,9 +22,10 @@ async function AllPages() {
     else setTimeout(DisplayColour, 1000)
     if (document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/" || document.getElementsByClassName("timetable") && window.location.href == "https://learning.stmichaels.vic.edu.au/#") {
         for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
-            if (timetableitem.getElementsByClassName("timetable-subject").length > 0) {
-                if (!regExp.exec(timetableitem.children[0].children[0].children[1].textContent)) continue;
-                const classcodes = regExp.exec(timetableitem.children[0].children[0].children[1].textContent)[1].split(",")
+            if (timetableitem.children[0].children.length > 0) {
+                const classname = timetableitem.getElementsByClassName("timetable-subject")[0].querySelector("div").textContent
+                if (!regExp.exec(classname)) continue;
+                const classcodes = regExp.exec(classname)[1].split(",")
                 for (const classcode of classcodes) {
                     const color = localStorage.getItem(classcode)
                     if (!color) { continue; }
@@ -33,13 +34,18 @@ async function AllPages() {
             }
         }
         for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
-            // if (!regExp.exec(timetableitem.children[0].children[0].children[1].textContent)) continue;
-            // const classcodes = regExp.exec(timetableitem.children[0].children[0].children[1].textContent)[1].split(",")
-            // for (const classcode of classcodes) {
-            //     const color = localStorage.getItem(classcode)
-            //     if (!color) { continue; }
-            //     timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = "black"
-            // }
+            if (timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
+                const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
+                const classname = classthing.querySelector("div").textContent
+                console.log(classname)
+                if (!regExp.exec(classname)) continue;
+                const classcodes = regExp.exec(classname)[1].split(",")
+                for (const classcode of classcodes) {
+                    const color = localStorage.getItem(classcode)
+                    if (!color) { continue; }
+                    classthing.style.backgroundColor = color
+                }
+            }
         }
     }
 }
