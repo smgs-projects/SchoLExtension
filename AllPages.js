@@ -45,6 +45,19 @@ async function AllPages() {
                     classthing.style.backgroundColor = color
                 }
             }
+            else {
+                timetableitem.remove()
+            }
+        }
+        const heading = document.getElementsByClassName("timetable")[0].querySelectorAll("th")
+        const body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
+        for (let index = 0; index < heading.length; index++) {
+            if (!heading[index].textContent.trim().includes("Period") && body[index].children[0].children.length === 0 || heading[index].textContent.trim().includes("Sport") && body[index].children[0].children.length === 0) {
+                console.log(1)
+                heading[index].remove()
+                body[index].remove()
+            }
+            
         }
     }
 }
