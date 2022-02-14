@@ -1,4 +1,10 @@
-var regExp = /\(([^)]+)\)/;
+window.onload = function () {
+    if (localStorage.getItem("cache") && localStorage.getItem("cache") > 8.64e+7) {
+        localStorage.removeItem("cache")
+    }
+    AllPages()
+}
+
 async function AllPages() {
     await WriteCache()
     if (document.getElementsByClassName("fc-list-table")) {
@@ -20,49 +26,10 @@ async function AllPages() {
         DisplayColour()
     }
     else setTimeout(DisplayColour, 1000)
-    if (document.getElementsByClassName("timetable") && window.location.pathname == "/") {
-        for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
-            if (timetableitem.children[0].children.length > 0) {
-                const classname = timetableitem.getElementsByClassName("timetable-subject")[0].querySelector("div").textContent
-                if (!regExp.exec(classname)) continue;
-                const classcodes = regExp.exec(classname)[1].split(",")
-                for (const classcode of classcodes) {
-                    const color = localStorage.getItem(classcode)
-                    if (!color) { continue; }
-                    timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = color
-                }
-            }
-        }
-        for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
-            if (timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
-                const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
-                const classname = classthing.querySelector("div").textContent
-                if (!regExp.exec(classname)) continue;
-                const classcodes = regExp.exec(classname)[1].split(",")
-                for (const classcode of classcodes) {
-                    const color = localStorage.getItem(classcode)
-                    if (!color) { continue; }
-                    classthing.style.backgroundColor = color
-                }
-            }
-            else {
-                timetableitem.remove()
-            }
-        }
-        const heading = document.getElementsByClassName("timetable")[0].querySelectorAll("th")
-        const body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
-        for (let index = 0; index < heading.length; index++) {
-            if (!heading[index].textContent.trim().includes("Period") && body[index].children[0].children.length === 0 || heading[index].textContent.trim().includes("Sport") && body[index].children[0].children.length === 0) {
-                console.log(1)
-                heading[index].remove()
-                body[index].remove()
-            }
-            
-        }
-    }
 }
 
 function DisplayColour() {
+    var regExp = /\(([^)]+)\)/;
     if (document.getElementById("report_content") || document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         let dueworkitems;
         if (document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
@@ -81,8 +48,9 @@ function DisplayColour() {
         }
     }
 }
-AllPages()
+
 async function WriteCache() {
+    var parser = new DOMParser();
     const result = localStorage.getItem('cache')
     if (!result) {
         fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {

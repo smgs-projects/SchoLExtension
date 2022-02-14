@@ -10,7 +10,7 @@
     "content_scripts": [
         {
             "matches": ["https://learning.stmichaels.vic.edu.au/*"],
-            "js": ["DueWork.js", "SearchBar.js", "AllPages.js", "Recache.js"],
+            "js": ["MainPage.js", "DueWork.js", "SearchBar.js", "AllPages.js", "Timetable.js"],
             "run_at": "document_idle"
         }
       ]

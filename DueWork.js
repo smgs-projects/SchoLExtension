@@ -1,11 +1,11 @@
-var parser = new DOMParser();
-var regExp = /\(([^)]+)\)/;
-
-if (window.location.pathname.startsWith("/learning/due/")) {
-    setInterval(AfterLoad, 1000)
+window.onload = function () {
+    if (window.location.pathname.startsWith("/learning/due")) {
+        setInterval(AfterLoad, 1000)
+    }
 }
 
-function AfterLoad() {
+function DueWork() {
+    var regExp = /\(([^)]+)\)/;
     for (const duework of document.getElementsByClassName("event-container")) {
         const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
         for (const classcode of classcodes) {
