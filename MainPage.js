@@ -1,10 +1,12 @@
+var regExp = /\(([^)]+)\)/;
+console.log("A")
 window.addEventListener('load', (event) => {
     if (window.location.pathname == "/") {
         MainPage()
     }
 });
+
 function MainPage() {
-    var regExp = /\(([^)]+)\)/;
     // Timetable - correct colors to match with actual timetable
     // ~ Desktop timetable colouring
     for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {

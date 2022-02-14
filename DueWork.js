@@ -1,13 +1,13 @@
-window.onload = function () {
+var regExp = /\(([^)]+)\)/;
+
+window.addEventListener('load', (event) => {
     if (window.location.pathname.startsWith("/learning/due")) {
         //The delay is due that duework has this weird thing (that no other pages do) where it gets the duework items after serving html
         setInterval(DueWork, 1000)
     }
-}
-
+});
 
 function DueWork() {
-    var regExp = /\(([^)]+)\)/;
     for (const duework of document.getElementsByClassName("event-container")) {
         //Same reason as #MainPage.js, support for multiple merged classes
         const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")

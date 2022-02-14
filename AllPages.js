@@ -1,9 +1,12 @@
+var regExp = /\(([^)]+)\)/;
+
 window.addEventListener('load', (event) => {
     if (localStorage.getItem("cache") && localStorage.getItem("cache") > 8.64e+7) {
         localStorage.removeItem("cache")
     }
     AllPages()
 });
+
 // ~ Called on call pages
 async function AllPages() {
     //This is called every page in case the cache expires (happens every 1 day)
@@ -33,12 +36,11 @@ async function AllPages() {
         //This can be done instantly since it is pregenned
         DisplayColour()
     }
-    //This is not so needs to wait a 1s
+    //This can not so needs to wait a 1s
     else setTimeout(DisplayColour, 1000)
 }
 
 function DisplayColour() {
-    var regExp = /\(([^)]+)\)/;
     if (document.getElementById("report_content") || document.getElementsByClassName("Schoolbox_Learning_Component_Dashboard_UpcomingWorkController")[0]) {
         let dueworkitems;
         //Due work items can either be these two 
