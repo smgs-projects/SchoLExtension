@@ -19,9 +19,10 @@ function Timetable() {
             }
         }
     }
-    // ~ Movile
-    heading = document.querySelectorAll(".show-for-small-only th")
-    body = document.querySelectorAll(".show-for-small-only td")
+    // ~ Mobile
+    const heading = document.querySelectorAll(".show-for-small-only th")
+    const body = document.querySelectorAll(".show-for-small-only td")
+
     for (let index = 0; index < heading.length; index++) {
         if ((!heading[index].textContent.trim().includes("Period") || heading[index].textContent.trim().includes("Sport")) && body[index].innerText == "\n") {
             //Two elements are interconnected on mobile
