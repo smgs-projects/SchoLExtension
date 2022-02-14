@@ -37,7 +37,6 @@ async function AllPages() {
             if (timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
                 const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
                 const classname = classthing.querySelector("div").textContent
-                console.log(classname)
                 if (!regExp.exec(classname)) continue;
                 const classcodes = regExp.exec(classname)[1].split(",")
                 for (const classcode of classcodes) {
