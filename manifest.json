@@ -9,8 +9,8 @@
     "permissions": ["storage"],
     "content_scripts": [
         {
-            "matches": ["https://learning.stmichaels.vic.edu.au/*"],
-            "js": ["MainPage.js", "DueWork.js", "SearchBar.js", "AllPages.js", "Timetable.js"],
+            "matches": ["https://learning-dev.stmichaels.vic.edu.au/"],
+            "js": ["compiled.js"],
             "run_at": "document_idle"
         }
       ]
