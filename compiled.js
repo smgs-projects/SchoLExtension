@@ -163,7 +163,6 @@ function MainPage() {
   }
   // ~ Mobile timetable colouring
   for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
-    console.log(timetableitem)  
     if (timetableitem.querySelector("td") && timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
           const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
           const classname = classthing.querySelector("div").textContent

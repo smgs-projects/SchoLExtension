@@ -4,12 +4,18 @@
     "version": "1.0",
     "manifest_version": 3,
     "host_permissions": [
-        "https://learning.stmichaels.vic.edu.au/*"
+        "https://learning.stmichaels.vic.edu.au/*",
+        "https://learning-dev.stmichaels.vic.edu.au/*"
     ],
     "permissions": ["storage"],
     "content_scripts": [
         {
-            "matches": ["https://learning-dev.stmichaels.vic.edu.au/"],
+            "matches": ["https://learning-dev.stmichaels.vic.edu.au/*"],
+            "js": ["compiled.js"],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": ["https://learning.stmichaels.vic.edu.au/*"],
             "js": ["compiled.js"],
             "run_at": "document_idle"
         }
