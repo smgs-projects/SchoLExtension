@@ -92,8 +92,8 @@ async function WriteCache() {
     //Needed since the fetch returns string
     var parser = new DOMParser();
     const result = localStorage.getItem('cache')
-    if (result) {
-        fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
+    if (!result) {
+        fetch('/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
                 //Only items with links are loaded here
@@ -163,7 +163,7 @@ function MainPage() {
   }
   // ~ Mobile timetable colouring
   for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
-      if (timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
+    if (timetableitem.querySelector("td") && timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
           const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
           const classname = classthing.querySelector("div").textContent
           if (!regExp.exec(classname)) continue;
