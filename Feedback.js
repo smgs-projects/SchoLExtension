@@ -10,7 +10,7 @@ function Feedback() {
         if (!subject.querySelector(".no-margin")) { continue; }
         if (!subject.querySelector(".flex-grade")) { continue; }
     
-        if (["00 ", "01 ", "02 ", "03 ", "04 ", "05 ", "06 ", "12 "].some(w => subject.querySelector(".no-margin").innerText.includes(w))) {
+        if (["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"].some(w => subject.querySelector(".no-margin").innerText.startsWith(w))) {
             subject.querySelector(".flex-grade").innerHTML += `<div class="grade gradient-9-bg no-margin"><span>Click to view marks</span></div>`;
         }
   }
