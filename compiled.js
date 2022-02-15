@@ -145,7 +145,7 @@ function Feedback() {
         if (!subject.querySelector(".no-margin")) { continue; }
         if (!subject.querySelector(".flex-grade")) { continue; }
     
-        if (["00 ", "01 ", "02 ", "03 ", "04 ", "05 ", "06 ", "12 "].some(w => subject.querySelector(".no-margin").innerText.includes(w))) {
+        if (ShowFeedbacks.some(w => subject.querySelector(".no-margin").innerText.includes(w))) {
             subject.querySelector(".flex-grade").innerHTML += `<div class="grade gradient-9-bg no-margin"><span>Click to view marks</span></div>`;
         }
     }
@@ -191,7 +191,7 @@ function MainPage() {
   var body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
   for (let index = 0; index < heading.length; index++) {
       //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
-      if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+      if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
           //The heading and body are seperate elements if you just remove the body it would shuffle everything down
           heading[index].remove()
           body[index].remove()
@@ -202,7 +202,7 @@ function MainPage() {
   heading = document.querySelectorAll(".show-for-small-only th")
   body = document.querySelectorAll(".show-for-small-only td")
   for (let index = 0; index < heading.length; index++) {
-    if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+    if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
         //The heading and body are seperate elements if you just remove the body it would shuffle everything down
         heading[index].remove()
         body[index].remove()
@@ -219,13 +219,7 @@ function Timetable() {
     // ~ Removing timetable blank periods
     // ~ Desktop
     for (const row of rows) {
-        // if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-        //     //The heading and body are seperate elements if you just remove the body it would shuffle everything down
-        //     heading[index].remove()
-        //     body[index].remove()
-        // }
-        //Userful methods ^^^
-        if ((!row.querySelector("th").textContent.trim().includes("Period") || row.querySelector("th").textContent.trim().includes("Sport"))) {
+        if (RemoveTimetable.some(w => row.querySelector("th").textContent.trim().includes(w))) {
             has_class = false
             for (const cell of row.querySelectorAll("td")) {
                 if (cell.innerText !== "\n") { has_class = true; break; }
@@ -239,13 +233,14 @@ function Timetable() {
     const heading = document.querySelectorAll(".show-for-small-only th")
     const body = document.querySelectorAll(".show-for-small-only td")
     for (let index = 0; index < heading.length; index++) {
-        if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+        if (RemoveTimetable.some(w => heading[index].textContent.trim().includes(w)) && body[index].querySelectorAll("div").length === 1) {
             //The heading and body are seperate elements if you just remove the body it would shuffle everything down
             heading[index].remove()
             body[index].remove()
         }
     }
 }
+
 function SearchItem() {
     const searchbar = document.getElementById("searchbar-Better")
     //Make sure that the event does not always run/filtering so that only if they are typing in the search bar
