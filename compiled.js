@@ -92,7 +92,7 @@ async function WriteCache() {
     //Needed since the fetch returns string
     var parser = new DOMParser();
     const result = localStorage.getItem('cache')
-    if (result) {
+    if (!result) {
         fetch('https://learning.stmichaels.vic.edu.au/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
