@@ -8,6 +8,15 @@
 var regExp = /\(([^)]+)\)/;
 const RemoveClasses = ["Before School Sport", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
 window.addEventListener('load', (event) => {
+    //Check for when the searchbar is there
+    if (document.getElementById("message-list").children[1]) {
+        const searchbar = document.createElement('input')
+        searchbar.id = "searchbar-Better"
+        searchbar.placeholder = "Type to search"
+        //Event is key up since keydown does not leave time to register keystrokes yet
+        searchbar.addEventListener('keyup', SearchItem);
+        document.getElementById("message-list").children[1].appendChild(searchbar)
+    }
     if (localStorage.getItem("cache") && localStorage.getItem("cache") > 8.64e+7) {
         localStorage.removeItem("cache")
     }
@@ -237,13 +246,6 @@ function Timetable() {
         }
     }
 }
-
-const searchbar = document.createElement('input')
-searchbar.id = "searchbar-Better"
-searchbar.placeholder = "Type to search"
-//Event is key up since keydown does not leave time to register keystrokes yet
-searchbar.addEventListener('keyup', SearchItem);
-document.getElementById("message-list").children[1].appendChild(searchbar)
 function SearchItem() {
     const searchbar = document.getElementById("searchbar-Better")
     //Make sure that the event does not always run/filtering so that only if they are typing in the search bar
