@@ -6,7 +6,7 @@
 //
 
 var regExp = /\(([^)]+)\)/;
-
+const RemoveClasses = ["Before School Sport", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
 window.addEventListener('load', (event) => {
     if (localStorage.getItem("cache") && localStorage.getItem("cache") > 8.64e+7) {
         localStorage.removeItem("cache")
@@ -182,7 +182,7 @@ function MainPage() {
   var body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
   for (let index = 0; index < heading.length; index++) {
       //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
-      if ((!heading[index].textContent.trim().includes("Period") || heading[index].textContent.trim().includes("Sport"))) {
+      if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
           //The heading and body are seperate elements if you just remove the body it would shuffle everything down
           heading[index].remove()
           body[index].remove()
@@ -193,10 +193,11 @@ function MainPage() {
   heading = document.querySelectorAll(".show-for-small-only th")
   body = document.querySelectorAll(".show-for-small-only td")
   for (let index = 0; index < heading.length; index++) {
-      if ((!heading[index].textContent.trim().includes("Period") || heading[index].textContent.trim().includes("Sport"))) {
-          heading[index].remove()
-          body[index].remove()
-      }
+    if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+        //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        heading[index].remove()
+        body[index].remove()
+    }
       
   }
   
@@ -209,6 +210,12 @@ function Timetable() {
     // ~ Removing timetable blank periods
     // ~ Desktop
     for (const row of rows) {
+        // if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+        //     //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        //     heading[index].remove()
+        //     body[index].remove()
+        // }
+        //Userful methods ^^^
         if ((!row.querySelector("th").textContent.trim().includes("Period") || row.querySelector("th").textContent.trim().includes("Sport"))) {
             has_class = false
             for (const cell of row.querySelectorAll("td")) {
@@ -223,12 +230,11 @@ function Timetable() {
     const heading = document.querySelectorAll(".show-for-small-only th")
     const body = document.querySelectorAll(".show-for-small-only td")
     for (let index = 0; index < heading.length; index++) {
-        if ((!heading[index].textContent.trim().includes("Period") || heading[index].textContent.trim().includes("Sport")) && body[index].innerText == "\n") {
-            //Two elements are interconnected on mobile
+        if (RemoveClasses.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
             heading[index].remove()
             body[index].remove()
         }
-        
     }
 }
 
