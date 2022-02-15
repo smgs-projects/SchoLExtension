@@ -6,7 +6,7 @@
 //
 
 var regExp = /\(([^)]+)\)/;
-const RemoveClasses = ["Before School Sport", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+const RemoveClasses = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
 window.addEventListener('load', (event) => {
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
