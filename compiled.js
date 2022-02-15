@@ -6,7 +6,8 @@
 //
 
 var regExp = /\(([^)]+)\)/;
-const RemoveClasses = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+const RemoveTimetable = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+const twoweeks = 1.21e+9
 window.addEventListener('load', (event) => {
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
@@ -119,6 +120,28 @@ async function WriteCache() {
             //Cache is in unix for recaching
             localStorage.setItem("cache", Date.now())
         })
+        //REPLACE THIS!!! WAY TOO HACKY ACCESS USERDETAILS SOMEHOW
+        const usersrc = document.getElementById("profile-drop").querySelector("img").src
+        const userid = usersrc.split("?")[1].split("&")[0].split("=")[1]
+        console.log(`/learning/due/${userid}?start=${Date.now()-twoweeks}&end=${Date.now()+twoweeks}`)
+        fetch(`/learning/due/${userid}?start=${Date.now()-twoweeks}&end=${Date.now()+twoweeks}`).then(r => r.text()).then(result => {
+            console.log(result)
+            // const timetable = parser.parseFromString(result, 'text/html')
+            // for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
+            //     //Only items with links are loaded here
+            //     if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
+            //         const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
+            //         localStorage.setItem(classname, classtime.style.backgroundColor)
+            //     }
+            //     //Timetables without links are here (EG sport, private periods)
+            //     else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+            //         const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
+            //         localStorage.setItem(classname, classtime.style.backgroundColor)
+            //     }
+            // }
+            // //Cache is in unix for recaching
+            // localStorage.setItem("cache", Date.now())
+        })
     }
     //Async so other things do not try to access colours before this is done
     return "done"
@@ -138,7 +161,6 @@ function DueWork() {
       }
   }
 }
-
 function Feedback() {
     // Add "Click to view marks" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
