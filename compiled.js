@@ -9,7 +9,7 @@ var regExp = /\(([^)]+)\)/;
 
 // Timetable rows to remove if all blank
 const RemoveTimetable = ["Before School Programs", "Before School Sport", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
-// Conditions where "Click to view marks" will appear on feedback (uses str.includes())
+// Conditions where "Click to view feedback" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 
 window.addEventListener('load', (event) => {
@@ -145,13 +145,13 @@ function DueWork() {
 }
 
 function Feedback() {
-    // Add "Click to view marks" button for junior school & Y12 feedback as overall grades do not show
+    // Add "Click to view feedback" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
         if (!subject.querySelector(".no-margin")) { continue; }
         if (!subject.querySelector(".flex-grade")) { continue; }
     
         if (ShowFeedbacks.some(w => subject.querySelector(".no-margin").innerText.includes(w))) {
-            subject.querySelector(".flex-grade").innerHTML += `<div class="grade gradient-9-bg no-margin"><span>Click to view marks</span></div>`;
+            subject.querySelector(".flex-grade").innerHTML += `<div class="grade gradient-9-bg no-margin"><span>Click to view feedback</span></div>`;
         }
     }
 }
