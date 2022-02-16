@@ -8,7 +8,7 @@
 var regExp = /\(([^)]+)\)/;
 
 // Timetable rows to remove if all blank
-const RemoveTimetable = ["Before School Sport", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+const RemoveTimetable = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 
@@ -180,8 +180,8 @@ function Feedback() {
                 const colour = localStorage.getItem(regExp.exec(subject.querySelector("span").textContent.trim())[1])
                 if (colour) {
                     subject.style.borderLeft = "7px solid " + colour
-                    subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 20%)")
-                    subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 20%)")
+                    subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                    subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
                 }
             }
         }
