@@ -35,12 +35,12 @@ window.addEventListener('load', (event) => {
     if (window.location.pathname == "/") {
         MainPage()
     }
-    
+
     if (window.location.pathname.startsWith("/timetable")) {
         Timetable()
     }
 });
-  
+
 // ~ Called on call pages
 async function AllPages() {
     //This is called every page in case the cache expires (happens every 1 day)
@@ -57,7 +57,7 @@ async function AllPages() {
             //The parent tag is a part of the children, but it is a div instead of A so this is a way to discrimintae
             if (atag.nodeName === "A") {
                 //Uses the link that it leads to, since that is the only way to get it out of the text
-                let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length-1])
+                let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length - 1])
                 if (color) {
                     atag.style.borderLeft = "7px solid " + color
                     atag.style.backgroundColor = color.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -108,7 +108,7 @@ async function WriteCache() {
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
                 //Only items with links are loaded here
                 if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
-                    const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
+                    const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
                     localStorage.setItem(classname, classtime.style.backgroundColor)
                 }
                 //Timetables without links are here (EG sport, private periods)
@@ -120,47 +120,48 @@ async function WriteCache() {
             //Cache is in unix for recaching
             localStorage.setItem("cache", Date.now())
         })
-       
+
     }
     //Async so other things do not try to access colours before this is done
     return "done"
 }
 
 function DueWork() {
-  for (const duework of document.getElementsByClassName("event-container")) {
-      //Same reason as #MainPage.js, support for multiple merged classes
-      const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
-      for (const classcode of classcodes) {
-          const color = localStorage.getItem(classcode)
-          duework.style.backgroundColor = color
-          for (const title of duework.children) {
-              //White on the light colours are really hard to read, so black text it is
-              title.style.color = "black"
-          }
-      }
-  }
+    for (const duework of document.getElementsByClassName("event-container")) {
+        //Same reason as #MainPage.js, support for multiple merged classes
+        const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
+        for (const classcode of classcodes) {
+            const color = localStorage.getItem(classcode)
+            duework.style.backgroundColor = color
+            for (const title of duework.children) {
+                //White on the light colours are really hard to read, so black text it is
+                title.style.color = "black"
+            }
+        }
+    }
 }
+
 function Feedback() {
     // Add "Click to view feedback" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
         if (!subject.querySelector(".no-margin")) { continue; }
         if (!subject.querySelector(".flex-grade")) { continue; }
-    
+
         if (ShowFeedbacks.some(w => subject.querySelector(".no-margin").innerText.includes(w))) {
             subject.querySelector(".flex-grade").innerHTML += `<div class="grade gradient-9-bg no-margin"><span>Click to view feedback</span></div>`;
         }
     }
     // Remove grade summary pages for years where there are none to show (Junior school and Yr12)
-    const studentYear = parseInt(document.querySelector(".card p.meta").innerText.replace(/\D/g,''));
+    const studentYear = parseInt(document.querySelector(".card p.meta").innerText.replace(/\D/g, ''));
     if (!isNaN(studentYear)) {
         const currentYear = new Date().getFullYear()
-    
+
         let maxValidYear = currentYear
-        let minValidYear = currentYear - studentYear-12+5
+        let minValidYear = currentYear - studentYear - 12 + 5
 
         if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
         if (studentYear == 12) { maxValidYear -= 1 }
-    
+
         for (summary of document.querySelectorAll("select#context-selector-semester option[value]")) {
             if (summary.innerText.includes("Summary") && !(parseInt(summary.value) >= minValidYear && parseInt(summary.value) <= maxValidYear)) {
                 summary.style.display = "none"
@@ -170,70 +171,66 @@ function Feedback() {
 }
 
 function MainPage() {
-  // Timetable - correct colors to match with actual timetable
-  // ~ Desktop timetable colouring
-  for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
-      //Blank elements do not have any children so check is here to optomise
-      if (timetableitem.children[0].children.length > 0) {
-          const classname = timetableitem.getElementsByClassName("timetable-subject")[0].querySelector("div").textContent
-          //Regex is here since the string is (classname) so needs to match
-          if (!regExp.exec(classname)) continue;
-          //Merged classesid is (classname1,classname2) so the split and for loop is here to account for god above 3 merged classes
-          const classcodes = regExp.exec(classname)[1].split(",")
-          for (const classcode of classcodes) {
-              const color = localStorage.getItem(classcode)
-              //Timetable for merged classes just show what year you are like year 12 sys and year 11 are merged but it would only show year 12 for a year 12 so the colour can be undefined
-              if (!color) { continue; }
-              timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = color
-          }
-      }
-  }
-  // ~ Mobile timetable colouring
-  for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
-    if (timetableitem.querySelector("td") && timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
-          const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
-          const classname = classthing.querySelector("div").textContent
-          if (!regExp.exec(classname)) continue;
-          const classcodes = regExp.exec(classname)[1].split(",")
-          for (const classcode of classcodes) {
-              const color = localStorage.getItem(classcode)
-              if (!color) { continue; }
-              classthing.style.backgroundColor = color
-          }
-      }
-  }
-  
-  // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
-  // ~ Desktop remove blank elements
-  var heading = document.getElementsByClassName("timetable")[0].querySelectorAll("th")
-  var body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
-  for (let index = 0; index < heading.length; index++) {
-    //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
-    console.log(1)
-    if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-        //The heading and body are seperate elements if you just remove the body it would shuffle everything down
-        heading[index].remove()
-        body[index].remove()
+    // Timetable - correct colors to match with actual timetable
+    // ~ Desktop timetable colouring
+    for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
+        //Blank elements do not have any children so check is here to optomise
+        if (timetableitem.children[0].children.length > 0) {
+            const classname = timetableitem.getElementsByClassName("timetable-subject")[0].querySelector("div").textContent
+            //Regex is here since the string is (classname) so needs to match
+            if (!regExp.exec(classname)) continue;
+            //Merged classesid is (classname1,classname2) so the split and for loop is here to account for god above 3 merged classes
+            const classcodes = regExp.exec(classname)[1].split(",")
+            for (const classcode of classcodes) {
+                const color = localStorage.getItem(classcode)
+                //Timetable for merged classes just show what year you are like year 12 sys and year 11 are merged but it would only show year 12 for a year 12 so the colour can be undefined
+                if (!color) { continue; }
+                timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = color
+            }
+        }
     }
-    else if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0])) {
-        console.log(heading[index])
+    // ~ Mobile timetable colouring
+    for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
+        if (timetableitem.querySelector("td") && timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
+            const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
+            const classname = classthing.querySelector("div").textContent
+            if (!regExp.exec(classname)) continue;
+            const classcodes = regExp.exec(classname)[1].split(",")
+            for (const classcode of classcodes) {
+                const color = localStorage.getItem(classcode)
+                if (!color) { continue; }
+                classthing.style.backgroundColor = color
+            }
+        }
     }
-      
-  }
-  // ~ Mobile remove elements
-  heading = document.querySelectorAll(".show-for-small-only th")
-  body = document.querySelectorAll(".show-for-small-only td")
-  for (let index = 0; index < heading.length; index++) {
-    if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-        //The heading and body are seperate elements if you just remove the body it would shuffle everything down
-        heading[index].remove()
-        body[index].remove()
+
+    // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
+    // ~ Desktop remove blank elements
+    var heading = document.getElementsByClassName("timetable")[0].querySelectorAll("th")
+    var body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
+    for (let index = 0; index < heading.length; index++) {
+        //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
+        if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+            heading[index].remove()
+            body[index].remove()
+        } else if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0])) {
+            console.log(heading[index])
+        }
     }
-      
-  }
-  
-  // Timetable (mobile) - Make background white
-  document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
+    // ~ Mobile remove elements
+    heading = document.querySelectorAll(".show-for-small-only th")
+    body = document.querySelectorAll(".show-for-small-only td")
+    for (let index = 0; index < heading.length; index++) {
+        if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+            heading[index].remove()
+            body[index].remove()
+        }
+    }
+    
+    // Timetable (mobile) - Make background white
+    document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
 }
 
 function Timetable() {
@@ -243,15 +240,15 @@ function Timetable() {
     let i = 0
     let itemremoves = []
     for (const row of rows) {
-        if (rows[i-1]) {
+        if (rows[i - 1]) {
             let timetablesubjectsnew = row.getElementsByClassName("timetable-subject")
-            let timetablesubjectsold = rows[i-1].getElementsByClassName("timetable-subject")
+            let timetablesubjectsold = rows[i - 1].getElementsByClassName("timetable-subject")
             for (let index = 0; index < timetablesubjectsnew.length; index++) {
                 if (timetablesubjectsnew[index].textContent.trim().split("\n")[0] === timetablesubjectsold[index].textContent.trim().split("\n")[0]) {
                     itemremoves.push(timetablesubjectsnew[index])
                 }
             }
-            
+
         }
         i++
     }
@@ -291,8 +288,7 @@ function SearchItem() {
             //Check if text contains other text, it is index since contains/includes did not work at that moment
             if (notif.textContent.toLocaleLowerCase().trim().indexOf(text) == -1) {
                 notif.style.display = "none";
-            }
-            else {
+            } else {
                 //To allow filter clearing
                 notif.style.display = "block";
             }
