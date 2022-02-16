@@ -6,7 +6,12 @@
 //
 
 var regExp = /\(([^)]+)\)/;
-const RemoveClasses = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+
+// Timetable rows to remove if all blank
+const RemoveTimetable = ["Before School Programs", "Before School Sport", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+// Conditions where "Click to view marks" will appear on feedback (uses str.includes())
+const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
+
 window.addEventListener('load', (event) => {
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
