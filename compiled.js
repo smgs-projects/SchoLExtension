@@ -120,28 +120,29 @@ async function WriteCache() {
             //Cache is in unix for recaching
             localStorage.setItem("cache", Date.now())
         })
-        //REPLACE THIS!!! WAY TOO HACKY ACCESS USERDETAILS SOMEHOW
-        const usersrc = document.getElementById("profile-drop").querySelector("img").src
-        const userid = usersrc.split("?")[1].split("&")[0].split("=")[1]
-        console.log(`/learning/due/${userid}?start=${Date.now()-twoweeks}&end=${Date.now()+twoweeks}`)
-        fetch(`/learning/due/${userid}?start=${Date.now()-twoweeks}&end=${Date.now()+twoweeks}`).then(r => r.text()).then(result => {
-            console.log(result)
-            // const timetable = parser.parseFromString(result, 'text/html')
-            // for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
-            //     //Only items with links are loaded here
-            //     if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
-            //         const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
-            //         localStorage.setItem(classname, classtime.style.backgroundColor)
-            //     }
-            //     //Timetables without links are here (EG sport, private periods)
-            //     else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
-            //         const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
-            //         localStorage.setItem(classname, classtime.style.backgroundColor)
-            //     }
-            // }
-            // //Cache is in unix for recaching
-            // localStorage.setItem("cache", Date.now())
-        })
+        //TODO: Maybe get back to this one day when you have worked out how due work started
+        // //REPLACE THIS!!! WAY TOO HACKY ACCESS USERDETAILS SOMEHOW
+        // const usersrc = document.getElementById("profile-drop").querySelector("img").src
+        // const userid = usersrc.split("?")[1].split("&")[0].split("=")[1]
+        // console.log(`/learning/due/${userid}?start=${Date.now()-twoweeks}&end=${Date.now()+twoweeks}`)
+        // fetch(`/learning/due/${userid}?start=${Date.now()-twoweeks}&end=${Date.now()+twoweeks}`).then(r => r.text()).then(result => {
+        //     console.log(result)
+        //     // const timetable = parser.parseFromString(result, 'text/html')
+        //     // for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
+        //     //     //Only items with links are loaded here
+        //     //     if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
+        //     //         const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length-1]
+        //     //         localStorage.setItem(classname, classtime.style.backgroundColor)
+        //     //     }
+        //     //     //Timetables without links are here (EG sport, private periods)
+        //     //     else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+        //     //         const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
+        //     //         localStorage.setItem(classname, classtime.style.backgroundColor)
+        //     //     }
+        //     // }
+        //     // //Cache is in unix for recaching
+        //     // localStorage.setItem("cache", Date.now())
+        // })
     }
     //Async so other things do not try to access colours before this is done
     return "done"
@@ -212,12 +213,16 @@ function MainPage() {
   var heading = document.getElementsByClassName("timetable")[0].querySelectorAll("th")
   var body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
   for (let index = 0; index < heading.length; index++) {
-      //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
-      if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-          //The heading and body are seperate elements if you just remove the body it would shuffle everything down
-          heading[index].remove()
-          body[index].remove()
-      }
+    //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
+    console.log(1)
+    if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
+        //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        heading[index].remove()
+        body[index].remove()
+    }
+    else if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0])) {
+        console.log(heading[index])
+    }
       
   }
   // ~ Mobile remove elements
@@ -239,12 +244,30 @@ function MainPage() {
 function Timetable() {
     const rows = document.querySelectorAll(".timetable tbody tr")
     // ~ Removing timetable blank periods
-    // ~ Desktop
+    // ~ 
+    let i = 0
+    let itemremoves = []
+    for (const row of rows) {
+        if (rows[i-1]) {
+            let timetablesubjectsnew = row.getElementsByClassName("timetable-subject")
+            let timetablesubjectsold = rows[i-1].getElementsByClassName("timetable-subject")
+            for (let index = 0; index < timetablesubjectsnew.length; index++) {
+                if (timetablesubjectsnew[index].textContent.trim().split("\n")[0] === timetablesubjectsold[index].textContent.trim().split("\n")[0]) {
+                    itemremoves.push(timetablesubjectsnew[index])
+                }
+            }
+            
+        }
+        i++
+    }
+    for (const item of itemremoves) {
+        item.remove()
+    }
     for (const row of rows) {
         if (RemoveTimetable.some(w => row.querySelector("th").textContent.trim().includes(w))) {
             has_class = false
             for (const cell of row.querySelectorAll("td")) {
-                if (cell.innerText !== "\n") { has_class = true; break; }
+                if (cell.innerText !== "\n" && cell.children[0].children.length > 0) { has_class = true; break; }
             }
             if (!has_class) {
                 row.style.display = "none";
