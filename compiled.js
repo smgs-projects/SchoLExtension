@@ -161,7 +161,7 @@ function Feedback() {
         const currentYear = new Date().getFullYear()
 
         let maxValidYear = currentYear
-        let minValidYear = currentYear - studentYear - 12 + 5
+        let minValidYear = currentYear - (studentYear - 12 + 5)
 
         if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
         if (studentYear == 12) { maxValidYear -= 1 }
