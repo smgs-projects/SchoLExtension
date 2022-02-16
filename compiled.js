@@ -150,6 +150,23 @@ function Feedback() {
             subject.querySelector(".flex-grade").innerHTML += `<div class="grade gradient-9-bg no-margin"><span>Click to view feedback</span></div>`;
         }
     }
+    // Remove grade summary pages for years where there are none to show (Junior school and Yr12)
+    const studentYear = parseInt(document.querySelector(".card p.meta").innerText.replace(/\D/g,''));
+    if (!isNaN(studentYear)) {
+        const currentYear = new Date().getFullYear()
+    
+        let maxValidYear = currentYear
+        let minValidYear = currentYear - studentYear-12+5
+
+        if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
+        if (studentYear == 12) { maxValidYear -= 1 }
+    
+        for (summary of document.querySelectorAll("select#context-selector-semester option[value]")) {
+            if (summary.innerText.includes("Summary") && !(parseInt(summary.value) >= minValidYear && parseInt(summary.value) <= maxValidYear)) {
+                summary.style.display = "none"
+            }
+        }
+    }
 }
 
 function MainPage() {
