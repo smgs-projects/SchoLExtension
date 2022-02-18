@@ -156,7 +156,7 @@ function Feedback() {
         }
     }
     // Remove grade summary pages for years where there are none to show (Junior school and Yr12)
-    const studentYear = parseInt(document.querySelector(".card p.meta").innerText.replace(/\D/g, ''));
+    const studentYear = parseInt(document.querySelector(".card a p.meta").innerText.replace(/\D/g, ''));
     if (!isNaN(studentYear)) {
         const currentYear = new Date().getFullYear()
 
@@ -165,6 +165,7 @@ function Feedback() {
 
         if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
         if (studentYear == 12) { maxValidYear -= 1 }
+        if (minValidYear < 2021) { minValidYear = 2021 }
 
         for (summary of document.querySelectorAll("select#context-selector-semester option[value]")) {
             if (summary.innerText.includes("Summary") && !(parseInt(summary.value) >= minValidYear && parseInt(summary.value) <= maxValidYear)) {
