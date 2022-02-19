@@ -191,7 +191,7 @@ function Feedback() {
 function MainPage() {
     // Timetable - correct colors to match with actual timetable
     // ~ Desktop timetable colouring
-    for (const timetableitem of document.getElementsByClassName("timetable")[0].querySelectorAll("td")) {
+    for (const timetableitem of document.querySelectorAll(".timetable td")) {
         //Blank elements do not have any children so check is here to optomise
         if (timetableitem.children[0].children.length > 0) {
             const classname = timetableitem.getElementsByClassName("timetable-subject")[0].querySelector("div").textContent
@@ -208,7 +208,7 @@ function MainPage() {
         }
     }
     // ~ Mobile timetable colouring
-    for (const timetableitem of document.getElementsByClassName("show-for-small-only")[0].querySelectorAll("tr")) {
+    for (const timetableitem of document.querySelectorAll(".show-for-small-only tr")) {
         if (timetableitem.querySelector("td") && timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]) {
             const classthing = timetableitem.querySelector("td").getElementsByClassName("timetable-subject")[0]
             const classname = classthing.querySelector("div").textContent
@@ -224,8 +224,8 @@ function MainPage() {
 
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
     // ~ Desktop remove blank elements
-    var heading = document.getElementsByClassName("timetable")[0].querySelectorAll("th")
-    var body = document.getElementsByClassName("timetable")[0].querySelectorAll("td")
+    var heading = document.querySelectorAll(".timetable th")
+    var body = document.querySelectorAll(".timetable td")
     for (let index = 0; index < heading.length; index++) {
         //The two checks here is that Period 5 sport exists, so it cannot all be gotten rid of with a simple does it include period check
         if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
