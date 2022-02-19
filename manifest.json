@@ -11,12 +11,12 @@
     "content_scripts": [
         {
             "matches": ["https://learning-dev.stmichaels.vic.edu.au/*"],
-            "js": ["compiled.js"],
+            "js": ["compiled.js", "ColourChange.js"],
             "run_at": "document_idle"
         },
         {
             "matches": ["https://learning.stmichaels.vic.edu.au/*"],
-            "js": ["compiled.js"],
+            "js": ["compiled.js", "ColourChange.js"],
             "run_at": "document_idle"
         }
       ]

@@ -3,7 +3,7 @@ window.addEventListener('load', (event) => {
     if (document.getElementById("profile-drop")) {
         id = document.getElementById("profile-drop").querySelector("img").src.split("=")[1].split("&")[0]
     }
-    if (document.location.pathname.split("/")[document.location.pathname.split("/").length-1] === id) {
+    if (document.location.pathname.split("/")[1] === "search" && document.location.pathname.split("/")[document.location.pathname.split("/").length-1] === id) {
         ProfilePage()
     }
 })
