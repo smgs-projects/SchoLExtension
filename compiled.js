@@ -11,7 +11,7 @@ var regExp = /\(([^)]+)\)/;
 const RemoveTimetable = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
-
+var ColourEnabled = false
 window.addEventListener('load', (event) => {
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
@@ -22,8 +22,8 @@ window.addEventListener('load', (event) => {
         searchbar.addEventListener('keyup', SearchItem);
         document.getElementById("message-list").children[1].appendChild(searchbar)
     }
-    if (localStorage.getItem("cache") && localStorage.getItem("cache") > 8.64e+7) {
-        localStorage.removeItem("cache")
+    if (localStorage.getItem("cache-Colour") && localStorage.getItem("cache-Colour") < 8.64e+7) {
+        localStorage.removeItem("cache-Colour")
     }
     AllPages()
 
@@ -31,7 +31,6 @@ window.addEventListener('load', (event) => {
         //The delay is due that duework has this weird thing (that no other pages do) where it gets the duework items after serving html
         setInterval(DueWork, 1000)
     }
-
     if (window.location.pathname.startsWith("/learning/grades")) {
         Feedback()
     }
@@ -105,7 +104,7 @@ function DisplayColour() {
 async function WriteCache() {
     //Needed since the fetch returns string
     var parser = new DOMParser();
-    const result = localStorage.getItem('cache')
+    const result = localStorage.getItem('cache-Colour')
     if (!result) {
         fetch('/timetable').then(r => r.text()).then(result => {
             const timetable = parser.parseFromString(result, 'text/html')
@@ -122,9 +121,9 @@ async function WriteCache() {
                 }
             }
             //Cache is in unix for recaching
-            localStorage.setItem("cache", Date.now())
+            localStorage.setItem("cache-Colour", Date.now())
         })
-
+        
     }
     //Async so other things do not try to access colours before this is done
     return "done"
@@ -274,6 +273,17 @@ function Timetable() {
         item.remove()
     }
     for (const row of rows) {
+        if (ColourEnabled) {
+            for (const cell of row.querySelectorAll("td")) {
+                const mainelement = cell.getElementsByClassName("timetable-subject")[0]
+                if (mainelement && mainelement.querySelector("div").textContent) {
+                    const classname =regExp.exec(mainelement.querySelector("div").textContent.trim().split("\n")[0]) 
+                    if (classname && localStorage.getItem(classname[1])) {
+                        mainelement.style.backgroundColor = localStorage.getItem(classname[1])
+                    }
+                }
+            }
+        }
         if (RemoveTimetable.some(w => row.querySelector("th").textContent.trim().includes(w))) {
             has_class = false
             for (const cell of row.querySelectorAll("td")) {
