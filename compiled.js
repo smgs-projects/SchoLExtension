@@ -8,7 +8,7 @@
 var regExp = /\(([^)]+)\)/;
 
 // Timetable rows to remove if all blank
-const RemoveTimetable = ["Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport"]
+const RemoveTimetable = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 var ColourEnabled = false
@@ -155,15 +155,16 @@ function Feedback() {
         }
     }
     // Remove grade summary pages for years where there are none to show (Junior school and Yr12)
-    const studentYear = parseInt(document.querySelector(".card p.meta").innerText.replace(/\D/g, ''));
+    const studentYear = parseInt(document.querySelector(".card a p.meta").innerText.replace(/\D/g, ''));
     if (!isNaN(studentYear)) {
         const currentYear = new Date().getFullYear()
 
         let maxValidYear = currentYear
-        let minValidYear = currentYear - studentYear - 12 + 5
+        let minValidYear = currentYear - (studentYear - 12 + 5)
 
         if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
         if (studentYear == 12) { maxValidYear -= 1 }
+        if (minValidYear < 2021) { minValidYear = 2021 }
 
         for (summary of document.querySelectorAll("select#context-selector-semester option[value]")) {
             if (summary.innerText.includes("Summary") && !(parseInt(summary.value) >= minValidYear && parseInt(summary.value) <= maxValidYear)) {
