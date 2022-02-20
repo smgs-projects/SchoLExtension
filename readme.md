@@ -1,6 +1,6 @@
 # What is this?
 
-
+This is an extension for general schol QOL upgrades
 
 ## Installation
 
