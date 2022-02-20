@@ -1,3 +1,18 @@
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+  
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if(result){
+        var r = parseInt(result[1], 16);
+        var g = parseInt(result[2], 16);
+        var b = parseInt(result[3], 16);
+        return r + "," + g + "," + b;
+    } 
+    return null;
+}
+
 window.addEventListener('load', (event) => {
     let id;
     if (document.getElementById("profile-drop")) {
@@ -8,25 +23,34 @@ window.addEventListener('load', (event) => {
     }
 })
 function ProfilePage() {
-    let parentelement = document.createElement("div");
-    parentelement.classList.add("row")
-    parentelement.innerHTML = "<div class='row'>    <div class='small-12 columns'>        <h2 class='subheader' id='accordion'>Class Colours</h2>        <dl class='accordion' id='accordion-main-content' data-accordion=''>        </dl>    </div></div>"
+    let tablerows = "";
     for (const key of Object.keys(localStorage)) {
-        const value = localStorage.getItem(key)
+        const rgbValue = localStorage.getItem(key)
+        const hexValue = rgbToHex(...rgbValue.replace(/[^\d\s]/g, '').split(' ').map(Number))
         if (key !== "cache-Colour") {
-            const classColourAccordian = document.createElement("dd")
-            classColourAccordian.innerHTML = `<a href='#panel${key}' style='background-color: ${value}' aria-expanded='false'>${key}</a><div id='panel${key}' class="content"><input type='search' id='panelinput${key}' placeholder='${value}'></div>`
-            classColourAccordian.querySelector("input").addEventListener('search', UpdateLocalStorage, classColourAccordian.querySelector("input"));
-            classColourAccordian.classList.add("accordion-navigation")
-            classColourAccordian.style.backgroundColor = value;
-            parentelement.querySelector("dl").appendChild(classColourAccordian)
+            tablerows += `<tr role="row" class="subject-color-row">
+                <td>${key}</td>
+                <td><input type="color" value="${hexValue}"></td>
+                <td><a data-target="delete" data-state="closed" href="#" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
+            </tr>`
         }
     }
-    const classColourAccordian = document.createElement("dd")
-    classColourAccordian.innerHTML = "<a id='resetColours' style='background-color: #ff6961' aria-expanded='false'>Reset Class Colours</a>"
-    classColourAccordian.querySelector("a").addEventListener('click', ResetColours);
-    parentelement.querySelector("dl").appendChild(classColourAccordian)
-    document.getElementById("content").appendChild(parentelement)
+
+    document.getElementById("content").innerHTML += `<div class="row">
+        <div class="medium-12 large-6 island">
+            <h2 class="subheader">Timetable Colours</h2>
+            <table class="dataTable no-footer" role="grid">
+                <thead>
+                    <tr role="row">
+                        <th rowspan="1" colspan="1" style="width: 1000px">Subject</th>
+                        <th rowspan="1" colspan="1" style="width: 200px">Pick Colour</th>
+                        <th rowspan="1" colspan="1"></th>
+                    </tr>
+                </thead>
+                <tbody>${tablerows}</tbody>
+            </table>
+        </div>
+    </div>`;
 }
 async function ResetColours() {
     localStorage.removeItem("cache-Colour")
