@@ -12,7 +12,7 @@ Then go to [chrome extensions](chrome://extensions/) and toggle Developer mode !
 After developer mode is toggled press the load unpacked button
 ![Load Unpacked](https://i.ibb.co/rmg1hrg/Load-Unpacked.png)
 Then a menu should show up asking to select a file, press the folder that you downloaded then press select, then the extension is enabled!
-![Select File](https://i.ibb.co/7JHs03k/Select-Schol-Folder.png)
+![Select File](https://i.ibb.co/0Q3DxpY/Schol-Proof-Better.png)
 ## Enable Colour Change Mode
 Download the Colour change branch or via the git CLI
 ```bash
