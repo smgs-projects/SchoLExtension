@@ -174,15 +174,13 @@ function Feedback() {
     }
     // ~ Add colour to feedback classes
     // ~ Desktop
-    if (document.getElementsByClassName("subject-group")) {
-        for (const subject of document.getElementsByClassName("subject-group")) {
-            if (subject.querySelector("span").textContent.trim()) {
-                const colour = localStorage.getItem(regExp.exec(subject.querySelector("span").textContent.trim())[1])
-                if (colour) {
-                    subject.style.borderLeft = "7px solid " + colour
-                    subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-                    subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-                }
+    for (const subject of document.querySelectorAll(".subject-group")) {
+        if (subject.querySelector("span").textContent.trim()) {
+            const colour = localStorage.getItem(regExp.exec(subject.querySelector("span").textContent.trim())[1])
+            if (colour) {
+                subject.style.borderLeft = "7px solid " + colour
+                subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
             }
         }
     }
