@@ -19,9 +19,9 @@ Download the Colour change branch or via the git CLI
 git clone https://github.com/cowbilet/SchoLExtension -b colour-change
 ```
 ## Current Features
-☑️ Colour Consistency across pages
-☑️ Remove blank timetable items but keeps free periods
-☑️ Adds class colours to due work
-☑️ Adds notification search bar
-☑️ Adds the ability to change class colour 
-☑️ Adds general colour to pages
+☑️ Colour Consistency across pages<br/>
+☑️ Remove blank timetable items but keeps free periods<br/>
+☑️ Adds class colours to due work<br/>
+☑️ Adds notification search bar<br/>
+☑️ Adds the ability to change class colour<br/>
+☑️ Adds general colour to pages<br/>
