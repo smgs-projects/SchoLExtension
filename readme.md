@@ -18,6 +18,7 @@ Download the Colour change branch or via the git CLI
 ```bash
 git clone https://github.com/cowbilet/SchoLExtension -b colour-change
 ```
+and follow the steps as listen in Installation
 ## Current Features
 ☑️ Colour Consistency across pages<br/>
 ☑️ Remove blank timetable items but keeps free periods<br/>
