@@ -8,7 +8,7 @@ function hexToRgb(hex) {
         var r = parseInt(result[1], 16);
         var g = parseInt(result[2], 16);
         var b = parseInt(result[3], 16);
-        return r + "," + g + "," + b;
+        return r + ", " + g + ", " + b;
     } 
     return null;
 }
@@ -28,10 +28,9 @@ function ProfilePage() {
         const rgbValue = localStorage.getItem(key)
         const hexValue = rgbToHex(...rgbValue.replace(/[^\d\s]/g, '').split(' ').map(Number))
         if (key !== "cache-Colour") {
-            tablerows += `<tr role="row" class="subject-color-row">
+            tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbValue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbValue}">
                 <td>${key}</td>
-                <td><input type="color" value="${hexValue}"></td>
-                <td><a data-target="delete" data-state="closed" href="#" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
+                <td colspan="2"><input type="color" value="${hexValue}"></td>
             </tr>`
         }
     }
@@ -44,32 +43,52 @@ function ProfilePage() {
                     <tr role="row">
                         <th rowspan="1" colspan="1" style="width: 1000px">Subject</th>
                         <th rowspan="1" colspan="1" style="width: 200px">Pick Colour</th>
-                        <th rowspan="1" colspan="1"></th>
+                        <th rowspan="1" colspan="1"><a id="colReset" data-target="delete" data-state="closed" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></th>
                     </tr>
                 </thead>
                 <tbody>${tablerows}</tbody>
             </table>
         </div>
     </div>`;
+
+    document.getElementById("colReset").addEventListener("click", ResetColours)
+
+    for (const row of document.querySelectorAll(".subject-color-row")) {
+        // Colour picker input
+        row.children[1].children[0].addEventListener("change", function(e) {
+            const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
+            row.style.borderLeft = "7px solid " + rgbval
+            row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
+            localStorage.setItem(row.children[0].innerText, rgbval)
+            UpdateColours();
+            console.log(row, rgbval)
+            console.log(e.target.value)
+        })
+    }
 }
 async function ResetColours() {
     localStorage.removeItem("cache-Colour")
     await WriteCache()
-    UpdateColours()
+    window.location.reload()
 }
+
 function UpdateColours() {
-    for (const tag of document.getElementById("accordion-main-content").querySelectorAll("a")) {
-        if (tag.id === "resetColours") return;
-        tag.style.backgroundColor = localStorage.getItem(tag.textContent)
+    if (document.getElementById("side-menu-mysubjects")) {
+        for (const classtag of document.getElementById("side-menu-mysubjects").querySelectorAll("li")) {
+            const atag = classtag.children[0]
+            //The parent tag is a part of the children, but it is a div instead of A so this is a way to discrimintae
+            if (atag.nodeName === "A") {
+                //Uses the link that it leads to, since that is the only way to get it out of the text
+                let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length - 1])
+                if (color) {
+                    atag.style.borderLeft = "7px solid " + color
+                    atag.style.backgroundColor = color.replace("rgb", "rgba").replace(")", ", 10%)")
+                }
+            }
+        }
     }
-    AllPages()
 }
-function UpdateLocalStorage(item) {
-    const colour = item.target.value
-    const classname = item.target.id.split("panelinput")[1]
-    localStorage.setItem(classname, colour)
-    UpdateColours()
-}
+
 async function WriteCache() {
     //Needed since the fetch returns string
     var parser = new DOMParser();
