@@ -11,8 +11,13 @@ var regExp = /\(([^)]+)\)/;
 const RemoveTimetable = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
+<<<<<<< HEAD
 var ColourEnabled = true
 window.addEventListener('load', (event) => {
+=======
+
+window.addEventListener('load', async (event) => {
+>>>>>>> 542eef088bf20fc649acdde8255a0f62395af764
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -22,32 +27,30 @@ window.addEventListener('load', (event) => {
         searchbar.addEventListener('keyup', SearchItem);
         document.getElementById("message-list").children[1].appendChild(searchbar)
     }
-    if (localStorage.getItem("cache-Colour") && localStorage.getItem("cache-Colour") < 8.64e+7) {
-        localStorage.removeItem("cache-Colour")
+    if (localStorage.getItem("lastTimetableCache") && localStorage.getItem("lastTimetableCache") < 8.64e+7) {
+        localStorage.removeItem("lastTimetableCache")
     }
+    //This is called every page in case the cache expires (happens every 1 day)
+    await WriteCache()
     AllPages()
-
-    if (window.location.pathname.startsWith("/learning/due")) {
-        //The delay is due that duework has this weird thing (that no other pages do) where it gets the duework items after serving html
-        setInterval(DueWork, 1000)
-    }
-    if (window.location.pathname.startsWith("/learning/grades")) {
-        Feedback()
-    }
 
     if (window.location.pathname == "/") {
         MainPage()
     }
-
+    if (window.location.pathname.startsWith("/learning/due")) {
+        //The delay is due that duework has this weird thing (that no other pages do) where it gets the duework items after serving html
+        setInterval(DueWorkColour, 1000)
+    }
+    if (window.location.pathname.startsWith("/learning/grades")) {
+        Feedback()
+    }
     if (window.location.pathname.startsWith("/timetable")) {
         Timetable()
     }
-});
+}, false);
 
 // ~ Called on call pages
 async function AllPages() {
-    //This is called every page in case the cache expires (happens every 1 day)
-    await WriteCache()
     // ~ Change ediary colours
     if (document.getElementsByClassName("fc-list-table")) {
         //Soontm, change ediary colours to the proper colours
@@ -60,7 +63,7 @@ async function AllPages() {
             //The parent tag is a part of the children, but it is a div instead of A so this is a way to discrimintae
             if (atag.nodeName === "A") {
                 //Uses the link that it leads to, since that is the only way to get it out of the text
-                let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length - 1])
+                let color = JSON.parse(localStorage.getItem("timetableColours"))[atag.href.split("/")[atag.href.split("/").length - 1]]
                 if (color) {
                     atag.style.borderLeft = "7px solid " + color
                     atag.style.backgroundColor = color.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -91,7 +94,7 @@ function DisplayColour() {
             if (!regExp.exec(duework.querySelector("a:not(.title)").innerText)) continue;
             const classcodes = regExp.exec(duework.querySelector("a:not(.title)").innerText)[1].split(",")
             for (const classcode of classcodes) {
-                const color = localStorage.getItem(classcode)
+                const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
                 if (!color) { continue; }
                 duework.style.borderLeft = "10px solid " + color
                 //RGBA for transperency to be added (too noisy otherwise)
@@ -102,39 +105,49 @@ function DisplayColour() {
 }
 // ~ Get the timetable colours
 async function WriteCache() {
-    //Needed since the fetch returns string
-    var parser = new DOMParser();
-    const result = localStorage.getItem('cache-Colour')
-    if (!result) {
-        fetch('/timetable').then(r => r.text()).then(result => {
-            const timetable = parser.parseFromString(result, 'text/html')
-            for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
-                //Only items with links are loaded here
-                if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
-                    const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+    return new Promise((resolve,reject)=>{
+        //Needed since the fetch returns string
+        var parser = new DOMParser();
+        const result = localStorage.getItem("lastTimetableCache")
+        let timetableColours = JSON.parse(localStorage.getItem("timetableColours"))
+        if (!result || !timetableColours) {
+            fetch('/timetable').then(r => r.text()).then(result => {
+                if (!timetableColours) { timetableColours = "{}"; }
+                timetableColours = JSON.parse(timetableColours)
+                let defaultTimetableColours = {}
+                const timetable = parser.parseFromString(result, 'text/html')
+                for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
+                    //Only items with links are loaded here
+                    if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
+                        const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
+                        defaultTimetableColours[classname] = classtime.style.backgroundColor
+                    }
+                    //Timetables without links are here (EG sport, private periods)
+                    else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+                        const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
+                        defaultTimetableColours[classname] = classtime.style.backgroundColor
+                    }
                 }
-                //Timetables without links are here (EG sport, private periods)
-                else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
-                    const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                localStorage.setItem("timetableColoursDefault", JSON.stringify(defaultTimetableColours))
+                for (const subject in defaultTimetableColours) {
+                    if (!timetableColours[subject]) {
+                        timetableColours[subject] = defaultTimetableColours[subject]
+                    }
                 }
-            }
-            //Cache is in unix for recaching
-            localStorage.setItem("cache-Colour", Date.now())
-        })
-        
-    }
-    //Async so other things do not try to access colours before this is done
-    return "done"
+                localStorage.setItem("timetableColours", JSON.stringify(timetableColours))
+                localStorage.setItem("lastTimetableCache", Date.now()) // Cache is in unix for recaching
+                resolve()
+            })
+        } else resolve()
+    });
 }
+function DueWorkColour() {
 
-function DueWork() {
     for (const duework of document.getElementsByClassName("event-container")) {
         //Same reason as #MainPage.js, support for multiple merged classes
         const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
         for (const classcode of classcodes) {
-            const color = localStorage.getItem(classcode)
+            const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
             duework.style.backgroundColor = color
             for (const title of duework.children) {
                 //White on the light colours are really hard to read, so black text it is
@@ -142,6 +155,7 @@ function DueWork() {
             }
         }
     }
+
 }
 
 function Feedback() {
@@ -174,15 +188,13 @@ function Feedback() {
     }
     // ~ Add colour to feedback classes
     // ~ Desktop
-    if (document.getElementsByClassName("subject-group")) {
-        for (const subject of document.getElementsByClassName("subject-group")) {
-            if (subject.querySelector("span").textContent.trim()) {
-                const colour = localStorage.getItem(regExp.exec(subject.querySelector("span").textContent.trim())[1])
-                if (colour) {
-                    subject.style.borderLeft = "7px solid " + colour
-                    subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-                    subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-                }
+    for (const subject of document.querySelectorAll(".subject-group")) {
+        if (subject.querySelector("span").textContent.trim()) {
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[regExp.exec(subject.querySelector("span").textContent.trim())[1]]
+            if (colour) {
+                subject.style.borderLeft = "7px solid " + colour
+                subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
             }
         }
     }
@@ -200,7 +212,7 @@ function MainPage() {
             //Merged classesid is (classname1,classname2) so the split and for loop is here to account for god above 3 merged classes
             const classcodes = regExp.exec(classname)[1].split(",")
             for (const classcode of classcodes) {
-                const color = localStorage.getItem(classcode)
+                const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
                 //Timetable for merged classes just show what year you are like year 12 sys and year 11 are merged but it would only show year 12 for a year 12 so the colour can be undefined
                 if (!color) { continue; }
                 timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = color
@@ -215,7 +227,7 @@ function MainPage() {
             if (!regExp.exec(classname)) continue;
             const classcodes = regExp.exec(classname)[1].split(",")
             for (const classcode of classcodes) {
-                const color = localStorage.getItem(classcode)
+                const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
                 if (!color) { continue; }
                 classthing.style.backgroundColor = color
             }
@@ -233,7 +245,7 @@ function MainPage() {
             heading[index].remove()
             body[index].remove()
         } else if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0])) {
-            console.log(heading[index])
+
         }
     }
     // ~ Mobile remove elements
@@ -274,17 +286,6 @@ function Timetable() {
         item.remove()
     }
     for (const row of rows) {
-        if (ColourEnabled) {
-            for (const cell of row.querySelectorAll("td")) {
-                const mainelement = cell.getElementsByClassName("timetable-subject")[0]
-                if (mainelement && mainelement.querySelector("div").textContent) {
-                    const classname =regExp.exec(mainelement.querySelector("div").textContent.trim().split("\n")[0]) 
-                    if (classname && localStorage.getItem(classname[1])) {
-                        mainelement.style.backgroundColor = localStorage.getItem(classname[1])
-                    }
-                }
-            }
-        }
         if (RemoveTimetable.some(w => row.querySelector("th").textContent.trim().includes(w))) {
             has_class = false
             for (const cell of row.querySelectorAll("td")) {
