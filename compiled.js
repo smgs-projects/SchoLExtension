@@ -12,7 +12,7 @@ const RemoveTimetable = ["Before School", "Before School Sport", "Before School 
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 
-window.addEventListener('load', (event) => {
+window.addEventListener('load', async (event) => {
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -26,7 +26,7 @@ window.addEventListener('load', (event) => {
         localStorage.removeItem("lastTimetableCache")
     }
     //This is called every page in case the cache expires (happens every 1 day)
-    WriteCache()
+    await WriteCache()
     AllPages()
 
     if (window.location.pathname == "/") {
@@ -100,38 +100,41 @@ function DisplayColour() {
 }
 // ~ Get the timetable colours
 async function WriteCache() {
-    //Needed since the fetch returns string
-    var parser = new DOMParser();
-    const result = localStorage.getItem("lastTimetableCache")
-    let timetableColours = JSON.parse(localStorage.getItem("timetableColours"))
-    if (!result || !timetableColours) {
-        fetch('/timetable').then(r => r.text()).then(result => {
-            if (!timetableColours) { timetableColours = "{}"; }
-            timetableColours = JSON.parse(timetableColours)
-            let defaultTimetableColours = {}
-            const timetable = parser.parseFromString(result, 'text/html')
-            for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
-                //Only items with links are loaded here
-                if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
-                    const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
-                    defaultTimetableColours[classname] = classtime.style.backgroundColor
+    return new Promise((resolve,reject)=>{
+        //Needed since the fetch returns string
+        var parser = new DOMParser();
+        const result = localStorage.getItem("lastTimetableCache")
+        let timetableColours = JSON.parse(localStorage.getItem("timetableColours"))
+        if (!result || !timetableColours) {
+            fetch('/timetable').then(r => r.text()).then(result => {
+                if (!timetableColours) { timetableColours = "{}"; }
+                timetableColours = JSON.parse(timetableColours)
+                let defaultTimetableColours = {}
+                const timetable = parser.parseFromString(result, 'text/html')
+                for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
+                    //Only items with links are loaded here
+                    if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
+                        const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
+                        defaultTimetableColours[classname] = classtime.style.backgroundColor
+                    }
+                    //Timetables without links are here (EG sport, private periods)
+                    else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+                        const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
+                        defaultTimetableColours[classname] = classtime.style.backgroundColor
+                    }
                 }
-                //Timetables without links are here (EG sport, private periods)
-                else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
-                    const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
-                    defaultTimetableColours[classname] = classtime.style.backgroundColor
+                localStorage.setItem("timetableColoursDefault", JSON.stringify(defaultTimetableColours))
+                for (const subject in defaultTimetableColours) {
+                    if (!timetableColours[subject]) {
+                        timetableColours[subject] = defaultTimetableColours[subject]
+                    }
                 }
-            }
-            localStorage.setItem("timetableColoursDefault", JSON.stringify(defaultTimetableColours))
-            for (const subject in defaultTimetableColours) {
-                if (!timetableColours[subject]) {
-                    timetableColours[subject] = defaultTimetableColours[subject]
-                }
-            }
-            localStorage.setItem("timetableColours", JSON.stringify(timetableColours))
-            localStorage.setItem("lastTimetableCache", Date.now()) // Cache is in unix for recaching
-        })
-    }
+                localStorage.setItem("timetableColours", JSON.stringify(timetableColours))
+                localStorage.setItem("lastTimetableCache", Date.now()) // Cache is in unix for recaching
+                resolve()
+            })
+        } else resolve()
+    });
 }
 
 function DueWork() {
