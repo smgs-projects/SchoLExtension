@@ -22,11 +22,16 @@ window.addEventListener('load', (event) => {
         searchbar.addEventListener('keyup', SearchItem);
         document.getElementById("message-list").children[1].appendChild(searchbar)
     }
-    if (localStorage.getItem("cache-Colour") && localStorage.getItem("cache-Colour") < 8.64e+7) {
-        localStorage.removeItem("cache-Colour")
+    if (localStorage.getItem("lastTimetableCache") && localStorage.getItem("lastTimetableCache") < 8.64e+7) {
+        localStorage.removeItem("lastTimetableCache")
     }
+    //This is called every page in case the cache expires (happens every 1 day)
+    WriteCache()
     AllPages()
 
+    if (window.location.pathname == "/") {
+        MainPage()
+    }
     if (window.location.pathname.startsWith("/learning/due")) {
         //The delay is due that duework has this weird thing (that no other pages do) where it gets the duework items after serving html
         setInterval(DueWork, 1000)
@@ -34,20 +39,13 @@ window.addEventListener('load', (event) => {
     if (window.location.pathname.startsWith("/learning/grades")) {
         Feedback()
     }
-
-    if (window.location.pathname == "/") {
-        MainPage()
-    }
-
     if (window.location.pathname.startsWith("/timetable")) {
         Timetable()
     }
-});
+}, false);
 
 // ~ Called on call pages
 async function AllPages() {
-    //This is called every page in case the cache expires (happens every 1 day)
-    await WriteCache()
     // ~ Change ediary colours
     if (document.getElementsByClassName("fc-list-table")) {
         //Soontm, change ediary colours to the proper colours
@@ -60,7 +58,7 @@ async function AllPages() {
             //The parent tag is a part of the children, but it is a div instead of A so this is a way to discrimintae
             if (atag.nodeName === "A") {
                 //Uses the link that it leads to, since that is the only way to get it out of the text
-                let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length - 1])
+                let color = JSON.parse(localStorage.getItem("timetableColours"))[atag.href.split("/")[atag.href.split("/").length - 1]]
                 if (color) {
                     atag.style.borderLeft = "7px solid " + color
                     atag.style.backgroundColor = color.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -91,7 +89,7 @@ function DisplayColour() {
             if (!regExp.exec(duework.querySelector("a:not(.title)").innerText)) continue;
             const classcodes = regExp.exec(duework.querySelector("a:not(.title)").innerText)[1].split(",")
             for (const classcode of classcodes) {
-                const color = localStorage.getItem(classcode)
+                const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
                 if (!color) { continue; }
                 duework.style.borderLeft = "10px solid " + color
                 //RGBA for transperency to be added (too noisy otherwise)
@@ -104,29 +102,36 @@ function DisplayColour() {
 async function WriteCache() {
     //Needed since the fetch returns string
     var parser = new DOMParser();
-    const result = localStorage.getItem('cache-Colour')
-    if (!result) {
+    const result = localStorage.getItem("lastTimetableCache")
+    let timetableColours = JSON.parse(localStorage.getItem("timetableColours"))
+    if (!result || !timetableColours) {
         fetch('/timetable').then(r => r.text()).then(result => {
+            if (!timetableColours) { timetableColours = "{}"; }
+            timetableColours = JSON.parse(timetableColours)
+            let defaultTimetableColours = {}
             const timetable = parser.parseFromString(result, 'text/html')
             for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
                 //Only items with links are loaded here
                 if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
                     const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                    defaultTimetableColours[classname] = classtime.style.backgroundColor
                 }
                 //Timetables without links are here (EG sport, private periods)
                 else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
                     const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                    defaultTimetableColours[classname] = classtime.style.backgroundColor
                 }
             }
-            //Cache is in unix for recaching
-            localStorage.setItem("cache-Colour", Date.now())
+            localStorage.setItem("timetableColoursDefault", JSON.stringify(defaultTimetableColours))
+            for (const subject in defaultTimetableColours) {
+                if (!timetableColours[subject]) {
+                    timetableColours[subject] = defaultTimetableColours[subject]
+                }
+            }
+            localStorage.setItem("timetableColours", JSON.stringify(timetableColours))
+            localStorage.setItem("lastTimetableCache", Date.now()) // Cache is in unix for recaching
         })
-        
     }
-    //Async so other things do not try to access colours before this is done
-    return "done"
 }
 
 function DueWork() {
@@ -134,7 +139,7 @@ function DueWork() {
         //Same reason as #MainPage.js, support for multiple merged classes
         const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
         for (const classcode of classcodes) {
-            const color = localStorage.getItem(classcode)
+            const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
             duework.style.backgroundColor = color
             for (const title of duework.children) {
                 //White on the light colours are really hard to read, so black text it is
@@ -176,7 +181,7 @@ function Feedback() {
     // ~ Desktop
     for (const subject of document.querySelectorAll(".subject-group")) {
         if (subject.querySelector("span").textContent.trim()) {
-            const colour = localStorage.getItem(regExp.exec(subject.querySelector("span").textContent.trim())[1])
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[regExp.exec(subject.querySelector("span").textContent.trim())[1]]
             if (colour) {
                 subject.style.borderLeft = "7px solid " + colour
                 subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -198,7 +203,7 @@ function MainPage() {
             //Merged classesid is (classname1,classname2) so the split and for loop is here to account for god above 3 merged classes
             const classcodes = regExp.exec(classname)[1].split(",")
             for (const classcode of classcodes) {
-                const color = localStorage.getItem(classcode)
+                const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
                 //Timetable for merged classes just show what year you are like year 12 sys and year 11 are merged but it would only show year 12 for a year 12 so the colour can be undefined
                 if (!color) { continue; }
                 timetableitem.getElementsByClassName("timetable-subject")[0].style.backgroundColor = color
@@ -213,7 +218,7 @@ function MainPage() {
             if (!regExp.exec(classname)) continue;
             const classcodes = regExp.exec(classname)[1].split(",")
             for (const classcode of classcodes) {
-                const color = localStorage.getItem(classcode)
+                const color = JSON.parse(localStorage.getItem("timetableColours"))[classcode]
                 if (!color) { continue; }
                 classthing.style.backgroundColor = color
             }
