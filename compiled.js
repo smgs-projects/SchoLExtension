@@ -11,13 +11,8 @@ var regExp = /\(([^)]+)\)/;
 const RemoveTimetable = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const ShowFeedbacks = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
-<<<<<<< HEAD
-var ColourEnabled = true
-window.addEventListener('load', (event) => {
-=======
 
 window.addEventListener('load', async (event) => {
->>>>>>> 542eef088bf20fc649acdde8255a0f62395af764
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
