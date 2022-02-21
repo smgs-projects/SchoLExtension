@@ -29,7 +29,7 @@ window.addEventListener('load', (event) => {
 
     if (window.location.pathname.startsWith("/learning/due")) {
         //The delay is due that duework has this weird thing (that no other pages do) where it gets the duework items after serving html
-        setInterval(DueWork, 1000)
+        setInterval(DueWorkColour, 1000)
     }
     if (window.location.pathname.startsWith("/learning/grades")) {
         Feedback()
@@ -128,8 +128,8 @@ async function WriteCache() {
     //Async so other things do not try to access colours before this is done
     return "done"
 }
+function DueWorkColour() {
 
-function DueWork() {
     for (const duework of document.getElementsByClassName("event-container")) {
         //Same reason as #MainPage.js, support for multiple merged classes
         const classcodes = regExp.exec(duework.querySelector("span.fc-event-title").innerText)[1].split(",")
@@ -142,6 +142,7 @@ function DueWork() {
             }
         }
     }
+
 }
 
 function Feedback() {
@@ -233,7 +234,7 @@ function MainPage() {
             heading[index].remove()
             body[index].remove()
         } else if (RemoveTimetable.includes(heading[index].textContent.trim().split("\n")[0])) {
-            console.log(heading[index])
+
         }
     }
     // ~ Mobile remove elements
