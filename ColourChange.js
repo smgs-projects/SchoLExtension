@@ -32,7 +32,8 @@ function ProfilePage() {
         const hexValue = rgbToHex(...rgbValue.replace(/[^\d\s]/g, '').split(' ').map(Number))
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbValue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbValue}">
             <td>${subject}</td>
-            <td colspan="2"><input type="color" value="${hexValue}"></td>
+            <td><input type="color" value="${hexValue}"></td>
+            <td style="text-align: center"><a id="colReset" data-target="delete" data-state="closed" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
         </tr>`
     }
 
@@ -42,9 +43,9 @@ function ProfilePage() {
             <table class="dataTable no-footer" role="grid">
                 <thead>
                     <tr role="row">
-                        <th rowspan="1" colspan="1" style="width: 1000px">Subject</th>
-                        <th rowspan="1" colspan="1" style="width: 200px">Pick Colour</th>
-                        <th rowspan="1" colspan="1"><a id="colReset" data-target="delete" data-state="closed" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></th>
+                        <th style="width: 1000px">Subject</th>
+                        <th style="width: 200px">Pick Colour</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>${tablerows}</tbody>
@@ -52,26 +53,32 @@ function ProfilePage() {
         </div>
     </div>`;
 
-    document.getElementById("colReset").addEventListener("click", ResetColours)
-
     for (const row of document.querySelectorAll(".subject-color-row")) {
         // Colour picker input
         row.children[1].children[0].addEventListener("change", function(e) {
             const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
+
+            let userColours = JSON.parse(localStorage.getItem("timetableColours"))
+            userColours[row.children[0].innerText] = rgbval
+            localStorage.setItem("timetableColours", JSON.stringify(userColours))
+            UpdateColours();
+        })
+        // Reset button
+        row.children[2].children[0].addEventListener("click", function () {
+            let defaultColours = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+            const rgbval = defaultColours[row.children[0].innerText]
+            row.style.borderLeft = "7px solid " + rgbval
+            row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
+            row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
+            
             let userColours = JSON.parse(localStorage.getItem("timetableColours"))
             userColours[row.children[0].innerText] = rgbval
             localStorage.setItem("timetableColours", JSON.stringify(userColours))
             UpdateColours();
         })
     }
-}
-async function ResetColours() {
-    localStorage.removeItem("lastTimetableCache")
-    localStorage.removeItem("timetableColours")
-    localStorage.removeItem("timetableColoursDefault")
-    window.location.reload()
 }
 
 function UpdateColours() {
