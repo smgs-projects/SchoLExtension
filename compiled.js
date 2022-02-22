@@ -301,6 +301,18 @@ function Timetable() {
             body[index].remove()
         }
     }
+
+    // Recolour timetable subjects based on custom colors
+    for (const timetablesubject of document.querySelectorAll(".timetable-subject")) {
+        const subjectname = timetablesubject.querySelector("div").innerText
+        if (!regExp.exec(subjectname)) continue;
+        const subjectcodes = regExp.exec(subjectname)[1].split(",")
+        for (const subject of subjectcodes) {
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
+            if (!colour) continue;
+            timetablesubject.style.backgroundColor = colour
+        }
+    }
 }
 
 function SearchItem() {
