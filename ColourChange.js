@@ -13,7 +13,8 @@ function hexToRgb(hex) {
     return null;
 }
 
-window.addEventListener('load', (event) => {
+window.addEventListener('load', async (event) => {
+    await WriteCache()
     let id;
     if (document.getElementById("profile-drop")) {
         id = document.getElementById("profile-drop").querySelector("img").src.split("=")[1].split("&")[0]
@@ -21,18 +22,18 @@ window.addEventListener('load', (event) => {
     if (document.location.pathname.split("/")[1] === "search" && document.location.pathname.split("/")[document.location.pathname.split("/").length-1] === id) {
         ProfilePage()
     }
-})
+}, false);
+
 function ProfilePage() {
     let tablerows = "";
-    for (const key of Object.keys(localStorage)) {
-        const rgbValue = localStorage.getItem(key)
+    let userColours = JSON.parse(localStorage.getItem("timetableColours"))
+    for (const subject in userColours) {
+        const rgbValue = userColours[subject]
         const hexValue = rgbToHex(...rgbValue.replace(/[^\d\s]/g, '').split(' ').map(Number))
-        if (key !== "cache-Colour") {
-            tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbValue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbValue}">
-                <td>${key}</td>
-                <td colspan="2"><input type="color" value="${hexValue}"></td>
-            </tr>`
-        }
+        tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbValue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbValue}">
+            <td>${subject}</td>
+            <td colspan="2"><input type="color" value="${hexValue}"></td>
+        </tr>`
     }
 
     document.getElementById("content").innerHTML += `<div class="row">
@@ -59,16 +60,17 @@ function ProfilePage() {
             const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
-            localStorage.setItem(row.children[0].innerText, rgbval)
+            let userColours = JSON.parse(localStorage.getItem("timetableColours"))
+            userColours[row.children[0].innerText] = rgbval
+            localStorage.setItem("timetableColours", JSON.stringify(userColours))
             UpdateColours();
-            console.log(row, rgbval)
-            console.log(e.target.value)
         })
     }
 }
 async function ResetColours() {
-    localStorage.removeItem("cache-Colour")
-    await WriteCache()
+    localStorage.removeItem("lastTimetableCache")
+    localStorage.removeItem("timetableColours")
+    localStorage.removeItem("timetableColoursDefault")
     window.location.reload()
 }
 
@@ -79,7 +81,7 @@ function UpdateColours() {
             //The parent tag is a part of the children, but it is a div instead of A so this is a way to discrimintae
             if (atag.nodeName === "A") {
                 //Uses the link that it leads to, since that is the only way to get it out of the text
-                let color = localStorage.getItem(atag.href.split("/")[atag.href.split("/").length - 1])
+                let color = JSON.parse(localStorage.getItem("timetableColours"))[atag.href.split("/")[atag.href.split("/").length - 1]]
                 if (color) {
                     atag.style.borderLeft = "7px solid " + color
                     atag.style.backgroundColor = color.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -89,30 +91,41 @@ function UpdateColours() {
     }
 }
 
+// ~ Get the timetable colours
 async function WriteCache() {
-    //Needed since the fetch returns string
-    var parser = new DOMParser();
-    const result = localStorage.getItem('cache-Colour')
-    if (!result) {
-        fetch('/timetable').then(r => r.text()).then(result => {
-            const timetable = parser.parseFromString(result, 'text/html')
-            for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
-                //Only items with links are loaded here
-                if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
-                    const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+    return new Promise((resolve,reject)=>{
+        //Needed since the fetch returns string
+        var parser = new DOMParser();
+        const result = localStorage.getItem("lastTimetableCache")
+        let timetableColours = JSON.parse(localStorage.getItem("timetableColours"))
+        if (!result || !timetableColours) {
+            fetch('/timetable').then(r => r.text()).then(result => {
+                if (!timetableColours) { timetableColours = "{}"; }
+                timetableColours = JSON.parse(timetableColours)
+                let defaultTimetableColours = {}
+                const timetable = parser.parseFromString(result, 'text/html')
+                for (const classtime of timetable.getElementsByClassName("timetable-subject")) {
+                    //Only items with links are loaded here
+                    if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "A") {
+                        const classname = classtime.childNodes[1].href.split("/")[classtime.childNodes[1].href.split("/").length - 1]
+                        defaultTimetableColours[classname] = classtime.style.backgroundColor
+                    }
+                    //Timetables without links are here (EG sport, private periods)
+                    else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
+                        const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
+                        defaultTimetableColours[classname] = classtime.style.backgroundColor
+                    }
                 }
-                //Timetables without links are here (EG sport, private periods)
-                else if (classtime.style.backgroundColor && classtime.childNodes[1].nodeName == "DIV") {
-                    const classname = regExp.exec(classtime.childNodes[1].textContent.split("\n")[0])[1]
-                    localStorage.setItem(classname, classtime.style.backgroundColor)
+                localStorage.setItem("timetableColoursDefault", JSON.stringify(defaultTimetableColours))
+                for (const subject in defaultTimetableColours) {
+                    if (!timetableColours[subject]) {
+                        timetableColours[subject] = defaultTimetableColours[subject]
+                    }
                 }
-            }
-            //Cache is in unix for recaching
-            localStorage.setItem("cache-Colour", Date.now())
-        })
-        
-    }
-    //Async so other things do not try to access colours before this is done
-    return "done"
+                localStorage.setItem("timetableColours", JSON.stringify(timetableColours))
+                localStorage.setItem("lastTimetableCache", Date.now()) // Cache is in unix for recaching
+                resolve()
+            })
+        } else resolve()
+    });
 }
