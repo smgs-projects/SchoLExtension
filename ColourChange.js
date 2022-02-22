@@ -37,8 +37,11 @@ function ProfilePage() {
         </tr>`
     }
 
-    document.getElementById("content").innerHTML += `<div class="row">
-        <div class="medium-12 large-6 island">
+    let contentRow = document.querySelectorAll("#content .row")[3]
+    
+    contentRow.querySelector("div").classList = "medium-12 large-6 island"
+    contentRow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
+    contentRow.insertAdjacentHTML("beforeend", `<div class="medium-12 large-6 island">
             <h2 class="subheader">Timetable Colours</h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
@@ -50,8 +53,7 @@ function ProfilePage() {
                 </thead>
                 <tbody>${tablerows}</tbody>
             </table>
-        </div>
-    </div>`;
+        </div>`)
 
     for (const row of document.querySelectorAll(".subject-color-row")) {
         // Colour picker input
