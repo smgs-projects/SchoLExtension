@@ -181,7 +181,7 @@ function DisplayColour() {
 }
 // ~ Get the timetable colours
 async function WriteCache() {
-    return new Promise((resolve,reject)=>{
+    return new Promise (( resolve ) => {
         //Needed since the fetch returns string
         var parser = new DOMParser();
         const result = localStorage.getItem("lastTimetableCache")
@@ -245,20 +245,22 @@ function Feedback() {
         }
     }
     // Remove grade summary pages for years where there are none to show (Junior school and Yr12)
-    const studentYear = parseInt(document.querySelector(".card a p.meta").innerText.replace(/\D/g, ''));
-    if (!isNaN(studentYear)) {
-        const currentYear = new Date().getFullYear()
+    if (document.querySelector(".card a p.meta")) {
+        const studentYear = parseInt(document.querySelector(".card a p.meta").innerText.replace(/\D/g, ''));
+        if (!isNaN(studentYear)) {
+            const currentYear = new Date().getFullYear()
 
-        let maxValidYear = currentYear
-        let minValidYear = currentYear - (studentYear - 12 + 5)
+            let maxValidYear = currentYear
+            let minValidYear = currentYear - (studentYear - 12 + 5)
 
-        if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
-        if (studentYear == 12) { maxValidYear -= 1 }
-        if (minValidYear < 2021) { minValidYear = 2021 }
+            if (studentYear <= 6 || studentYear > 12) { maxValidYear += 1; minValidYear = maxValidYear }
+            if (studentYear == 12) { maxValidYear -= 1 }
+            if (minValidYear < 2021) { minValidYear = 2021 }
 
-        for (summary of document.querySelectorAll("select#context-selector-semester option[value]")) {
-            if (summary.innerText.includes("Summary") && !(parseInt(summary.value) >= minValidYear && parseInt(summary.value) <= maxValidYear)) {
-                summary.style.display = "none"
+            for (summary of document.querySelectorAll("select#context-selector-semester option[value]")) {
+                if (summary.innerText.includes("Summary") && !(parseInt(summary.value) >= minValidYear && parseInt(summary.value) <= maxValidYear)) {
+                    summary.style.display = "none"
+                }
             }
         }
     }
