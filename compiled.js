@@ -83,7 +83,7 @@ function colourDuework() {
     if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
     
     for (const duework of dueworkitems) {
-        const subjects = regExp.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
+        const subjects = REGEXP.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
         for (const subject of subjects) {
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
             if (!colour) continue;
@@ -97,8 +97,8 @@ function colourDuework() {
 function colourTimetable() {
     // Change timetable subject colours to match everywhere
     for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .show-for-small-only tr td .timetable-subject div")) {
-        if (!regExp.exec(subject.textContent)) continue;
-        const subjectcodes = regExp.exec(subject.innerText)[1].split(",")
+        if (!REGEXP.exec(subject.textContent)) continue;
+        const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
             if (!colour) { continue; }
@@ -168,7 +168,7 @@ function profilePage() {
 
 function colourDueworkCalendar() {
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
-        const subjects = regExp.exec(duework.innerText)[1]?.split(",")
+        const subjects = REGEXP.exec(duework.innerText)[1]?.split(",")
         if (!subjects) continue
         for (const subject of subjects) {
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
@@ -211,8 +211,8 @@ function feedback() {
     // Add colour to feedback classes
     // ~ Desktop
     for (const subject of document.querySelectorAll(".subject-group span")) {
-        if (regExp.exec(subject.innerText)[1]) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[regExp.exec(subject.innerText)[1]]
+        if (REGEXP.exec(subject.innerText)[1]) {
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[REGEXP.exec(subject.innerText)[1]]
             if (!colour) continue
             subject.style.borderLeft = "7px solid " + colour
             subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -327,8 +327,8 @@ async function writeCache() {
                 let defaulttimetablecolours = {}
                 const timetable = parser.parseFromString(result, 'text/html')
                 for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
-                    if (!regExp.exec(subject.innerText)) continue
-                    defaulttimetablecolours[regExp.exec(subject.innerText)[1]] = subject.parentNode.style.backgroundColor
+                    if (!REGEXP.exec(subject.innerText)) continue
+                    defaulttimetablecolours[REGEXP.exec(subject.innerText)[1]] = subject.parentNode.style.backgroundColor
                 }
                 localStorage.setItem("timetableColoursDefault", JSON.stringify(defaulttimetablecolours))
                 for (const subject in defaulttimetablecolours) {
