@@ -169,6 +169,7 @@ function profilePage() {
 }
 
 function colourDueworkCalendar() {
+    colourDuework()
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
         const subjects = REGEXP.exec(duework.innerText)[1]?.split(",")
         if (!subjects) continue
