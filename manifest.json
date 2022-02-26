@@ -2,11 +2,12 @@
     "name": "SchoL Debug Seb App",
     "description": "Random schol changes that make it better maybe?",
     "version": "1.0",
-    "manifest_version": 3,
+    "manifest_version": 2,
     "host_permissions": [
         "https://learning.stmichaels.vic.edu.au/*",
         "https://learning-dev.stmichaels.vic.edu.au/*"
     ],
+    "background": { "scripts": ["hot-reload.js"] },
     "permissions": ["storage"],
     "content_scripts": [
         {
