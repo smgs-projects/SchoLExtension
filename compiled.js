@@ -11,7 +11,7 @@ const REGEXP = /\(([^)]+)\)/;
 const REMOVE_TIMETABLE = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
-
+let id;
 window.addEventListener('load', async (event) => {
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
@@ -25,6 +25,7 @@ window.addEventListener('load', async (event) => {
         localStorage.removeItem("lastTimetableCache")
     }
     //This is called every page in case the cache expires (happens every 1 day)
+    id = (new URL(document.querySelectorAll("#profile-drop img")[0]?.src)).searchParams.get("id")
     await writeCache()
     allPages()
 
@@ -40,7 +41,7 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname.startsWith("/timetable")) {
         timetable()
     }
-    let id = (new URL(document.querySelectorAll("#profile-drop img")[0]?.src)).searchParams.get("id")
+    
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(id)) {
         profilePage()
     }
@@ -321,7 +322,11 @@ async function writeCache() {
         var parser = new DOMParser();
         const result = localStorage.getItem("lastTimetableCache")
         let timetablecolours = JSON.parse(localStorage.getItem("timetableColours"))
-        if (!result || !timetablecolours) {
+        let recacheUser = false
+        if(id !== localStorage.getItem("lastUser")) {
+            recacheUser = true
+        }
+        if (!result || !timetablecolours || recacheUser) {
             fetch('/timetable').then(r => r.text()).then(result => {
                 if (!timetablecolours) { timetablecolours = {}; }
                 let defaulttimetablecolours = {}
@@ -338,6 +343,7 @@ async function writeCache() {
                 }
                 localStorage.setItem("timetableColours", JSON.stringify(timetablecolours))
                 localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
+                localStorage.setItem("lastUser", id) // For recaching if user switch
                 resolve()
             })
         } else resolve()
