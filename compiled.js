@@ -113,7 +113,7 @@ function profilePage() {
     let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
     for (const subject in usercolors) {
         const rgbvalue = usercolors[subject]
-        const hexvalue = rgbToHex(...rgbValue.replace(/[^\d\s]/g, '').split(' ').map(Number))
+        const hexvalue = rgbToHex(...rgbvalue.replace(/[^\d\s]/g, '').split(' ').map(Number))
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td><input type="color" value="${hexvalue}"></td>
@@ -121,7 +121,8 @@ function profilePage() {
         </tr>`
     }
 
-    let contentrow = document.querySelectorAll("#content .row")[3]
+    let contentrow = document.querySelectorAll("#content .row")
+    if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
     
     contentrow.querySelector("div").classList = "medium-12 large-6 island"
     contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
