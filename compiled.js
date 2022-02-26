@@ -320,14 +320,15 @@ function SearchItem() {
 async function writeCache() {
     return new Promise (( resolve ) => {
         //Needed since the fetch returns string
+        if (id !== localStorage.getItem("lastUser")) {
+            localStorage.removeItem("timetableColours");
+            localStorage.removeItem("lastTimetableCache");
+            localStorage.removeItem("lastUser");
+        }
         var parser = new DOMParser();
         const result = localStorage.getItem("lastTimetableCache")
         let timetablecolours = JSON.parse(localStorage.getItem("timetableColours"))
-        let recacheUser = false
-        if(id !== localStorage.getItem("lastUser")) {
-            recacheUser = true
-        }
-        if (!result || !timetablecolours || recacheUser) {
+        if (!result || !timetablecolours) {
             fetch('/timetable').then(r => r.text()).then(result => {
                 if (!timetablecolours) { timetablecolours = {}; }
                 let defaulttimetablecolours = {}
