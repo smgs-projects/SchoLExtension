@@ -63,6 +63,17 @@ function hexToRgb(hex) {
 }
 
 async function allPages() {
+    if (!localStorage.getItem("hasBeenRickrolled")) {
+        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
+        localStorage.setItem("hasBeenRickrolled", true)
+    }
+    else if (getRandomInt(0,200) === 0) {
+        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
+    }
+    else if (getRandomInt(0,100) === 0) {
+        document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif'")
+    }
+    
     colourSidebar();
     colourTimetable();
     colourDuework()
@@ -351,3 +362,8 @@ async function writeCache() {
         } else resolve()
     });
 }
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+  }
