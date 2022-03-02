@@ -7,10 +7,11 @@
 
 // Regex to find timetable codes inside a class string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
-// Timetable rows to remove if all blank
-const REMOVE_TIMETABLE = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
+// Timetable rows NOT to remove if all blank
+const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
+
 let id;
 window.addEventListener('load', async (event) => {
     //Check for when the searchbar is there
@@ -226,24 +227,10 @@ function feedback() {
 
 function mainPage() {
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
-    // ~ Desktop
-    var heading = document.querySelectorAll(".timetable th")
-    var body = document.querySelectorAll(".timetable td")
+    const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
+    const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
     for (let index = 0; index < heading.length; index++) {
-        if (REMOVE_TIMETABLE.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
-            heading[index].remove()
-            body[index].remove()
-        } else if (REMOVE_TIMETABLE.includes(heading[index].textContent.trim().split("\n")[0])) {
-
-        }
-    }
-    // ~ Mobile
-    heading = document.querySelectorAll(".show-for-small-only th")
-    body = document.querySelectorAll(".show-for-small-only td")
-    for (let index = 0; index < heading.length; index++) {
-        if (REMOVE_TIMETABLE.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
             heading[index].remove()
             body[index].remove()
         }
@@ -277,7 +264,7 @@ function timetable() {
     // Removing timetable blank periods
     // ~ Desktop
     for (const row of rows) {
-        if (REMOVE_TIMETABLE.some(w => row.querySelector("th").textContent.trim().includes(w))) {
+        if (!TIMETABLE_WHITELIST.includes(row.querySelector("th").childNodes[0].textContent.trim())) {
             hassubject = false
             for (const cell of row.querySelectorAll("td")) {
                 if (cell.innerText !== "\n" && cell.children[0].children.length > 0) { hassubject = true; break; }
@@ -291,8 +278,7 @@ function timetable() {
     const heading = document.querySelectorAll(".show-for-small-only th")
     const body = document.querySelectorAll(".show-for-small-only td")
     for (let index = 0; index < heading.length; index++) {
-        if (REMOVE_TIMETABLE.some(w => heading[index].textContent.trim().includes(w)) && body[index].querySelectorAll("div").length === 1) {
-            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
             heading[index].remove()
             body[index].remove()
         }
