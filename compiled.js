@@ -99,7 +99,7 @@ function colourDuework() {
 
 function colourTimetable() {
     // Change timetable subject colours to match everywhere
-    for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .show-for-small-only tr td .timetable-subject div")) {
+    for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .timetable-subject[style*='background'] div, .show-for-small-only tr td .timetable-subject div")) {
         if (!REGEXP.exec(subject.textContent)) continue;
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
