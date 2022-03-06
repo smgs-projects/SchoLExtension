@@ -216,12 +216,16 @@ function feedback() {
     // Add colour to feedback classes
     // ~ Desktop
     for (const subject of document.querySelectorAll("ul.activity-list")) {
-        if (REGEXP.exec(subject.innerText)[1]) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[REGEXP.exec(subject.innerText)[1]]
-            if (!colour) continue
-            subject.style.borderLeft = "7px solid " + colour
-            subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-            subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+        const subjectrawcodes = subject.querySelector(".subject-group span.meta")?.innerText.replace("), (", ",")
+        if (REGEXP.exec(subjectrawcodes)[1]) {
+            const subjectcodes = REGEXP.exec(subjectrawcodes)[1]?.split(",")
+            for (const subjectcode of subjectcodes) {
+                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                if (!colour) { continue; }
+                subject.style.borderLeft = "7px solid " + colour
+                subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                subject.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+            }
         }
     }
 }
