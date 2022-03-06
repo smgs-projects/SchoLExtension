@@ -214,7 +214,7 @@ function feedback() {
     }
     // Add colour to feedback classes
     // ~ Desktop
-    for (const subject of document.querySelectorAll(".subject-group span")) {
+    for (const subject of document.querySelectorAll("ul.activity-list")) {
         if (REGEXP.exec(subject.innerText)[1]) {
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[REGEXP.exec(subject.innerText)[1]]
             if (!colour) continue
