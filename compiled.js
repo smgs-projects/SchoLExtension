@@ -14,6 +14,7 @@ const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", 
 
 let id;
 window.addEventListener('load', async (event) => {
+    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -101,7 +102,7 @@ function colourDuework() {
 
 function colourTimetable() {
     // Change timetable subject colours to match everywhere
-    for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .show-for-small-only tr td .timetable-subject div")) {
+    for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .timetable-subject[style*='background'] div, .show-for-small-only tr td .timetable-subject div")) {
         if (!REGEXP.exec(subject.textContent)) continue;
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
@@ -230,12 +231,16 @@ function feedback() {
     // Add colour to feedback classes
     // ~ Desktop
     for (const subject of document.querySelectorAll("ul.activity-list")) {
-        if (REGEXP.exec(subject.innerText)[1]) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[REGEXP.exec(subject.innerText)[1]]
-            if (!colour) continue
-            subject.style.borderLeft = "7px solid " + colour
-            subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-            subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+        const subjectrawcodes = subject.querySelector(".subject-group span.meta")?.innerText.replace("), (", ",")
+        if (REGEXP.exec(subjectrawcodes)[1]) {
+            const subjectcodes = REGEXP.exec(subjectrawcodes)[1]?.split(",")
+            for (const subjectcode of subjectcodes) {
+                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                if (!colour) { continue; }
+                subject.style.borderLeft = "7px solid " + colour
+                subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                subject.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+            }
         }
     }
 }
@@ -253,6 +258,15 @@ function mainPage() {
     
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
+
+    // Correct colours on eDiary list
+    document.querySelectorAll(".fc-list-event").forEach(event => {
+        const subjectCode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
+        if (!subjectCode) return; 
+        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectCode[1]]
+        if (!colour) return; 
+        event.querySelector(".fc-list-event-dot").style.borderColor = colour
+    })
 }
 
 function timetable() {
