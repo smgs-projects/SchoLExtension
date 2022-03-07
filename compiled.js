@@ -37,9 +37,13 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname == "/learning/classes") {
         classPage()
     }
+    if (window.location.pathname.startsWith("/calendar")) {
+        setInterval(eDiary, 1000)
+    }
     if (window.location.pathname.startsWith("/learning/due")) {
         setInterval(colourDueworkCalendar, 1000)
     }
+    
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
@@ -244,7 +248,22 @@ function feedback() {
         }
     }
 }
-
+function eDiary() {
+    if (document.querySelector("div[recoloured]")) return;
+    for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
+        const subjectcode = REGEXP.exec(classname.textContent)
+        if (subjectcode) {
+            let subjectcodes = subjectcode[1].split(",")
+            for (const subjectcode of subjectcodes) {
+                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                if (!colour) { continue; }
+                (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
+            }
+            classname.setAttribute("recoloured", 1)
+        }
+        else classname.setAttribute("recoloured", 1)
+    }
+}
 function mainPage() {
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
     const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
