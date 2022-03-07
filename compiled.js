@@ -243,6 +243,15 @@ function mainPage() {
     
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
+
+    // Correct colours on eDiary list
+    document.querySelectorAll(".fc-list-event").forEach(event => {
+        const subjectCode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
+        if (!subjectCode) return; 
+        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectCode[1]]
+        if (!colour) return; 
+        event.querySelector(".fc-list-event-dot").style.borderColor = colour
+    })
 }
 
 function timetable() {
