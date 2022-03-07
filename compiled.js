@@ -249,8 +249,24 @@ function feedback() {
     }
 }
 function eDiary() {
+    if (document.querySelector("div.fc-popover-body") && !document.querySelector("div.fc-popover-body").querySelector("div[recoloured]")) {
+        for (const classname of document.querySelector("div.fc-popover-body").querySelectorAll("div.fc-daygrid-event-harness")) {
+            const subjectcode = REGEXP.exec(classname.textContent)
+            if (subjectcode) {
+                let subjectcodes = subjectcode[1].split(",")
+                for (const subjectcode of subjectcodes) {
+                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                    if (!colour) { continue; }
+                    (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
+                }
+                classname.setAttribute("recoloured", 1)
+            }
+            else classname.setAttribute("recoloured", 1)
+        }
+    }
     if (document.querySelector("div[recoloured]")) return;
     for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
+        console.log(classname)
         const subjectcode = REGEXP.exec(classname.textContent)
         if (subjectcode) {
             let subjectcodes = subjectcode[1].split(",")
