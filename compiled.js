@@ -34,6 +34,9 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname == "/") {
         mainPage()
     }
+    if (window.location.pathname == "/learning/classes") {
+        classPage()
+    }
     if (window.location.pathname.startsWith("/learning/due")) {
         setInterval(colourDueworkCalendar, 1000)
     }
@@ -109,7 +112,19 @@ function colourTimetable() {
         }
     }
 }
-
+function classPage() {
+    const cards = document.querySelectorAll("div.v-card")
+    for (const card of cards) {
+        for (const name of card.querySelector("p.meta").innerText.split("\n")[0].split(",")) {
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[name]
+            if (colour) {
+                card.querySelector("div.card-class-image").style.borderBottom = `10px solid ${colour}`
+            }
+            else continue;
+        }
+    }
+    // const text = document.querySelectorAll("div.card-content")
+}
 function profilePage() {
     let tablerows = "";
     let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
