@@ -190,8 +190,10 @@ function profilePage() {
 }
 
 function colourDueworkCalendar() {
+    if(!document.querySelector(".event-container span.fc-event-title") !== null && document.querySelector("span[recoloured]") !== null) return;
     colourDuework()
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
+        duework.setAttribute("recoloured", 1)
         const subjects = REGEXP.exec(duework.innerText)[1]?.split(",")
         if (!subjects) continue
         for (const subject of subjects) {
