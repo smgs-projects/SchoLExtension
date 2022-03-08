@@ -38,10 +38,10 @@ window.addEventListener('load', async (event) => {
         classPage()
     }
     if (window.location.pathname.startsWith("/calendar")) {
-        setInterval(eDiary, 1000)
+        setInterval(eDiary, 500)
     }
     if (window.location.pathname.startsWith("/learning/due")) {
-        setInterval(colourDueworkCalendar, 1000)
+        setInterval(colourDueworkCalendar, 500)
     }
     
     if (window.location.pathname.startsWith("/learning/grades")) {
