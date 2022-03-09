@@ -34,9 +34,16 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname == "/") {
         mainPage()
     }
-    if (window.location.pathname.startsWith("/learning/due")) {
-        setInterval(colourDueworkCalendar, 1000)
+    if (window.location.pathname == "/learning/classes") {
+        classPage()
     }
+    if (window.location.pathname.startsWith("/calendar")) {
+        setInterval(eDiary, 500)
+    }
+    if (window.location.pathname.startsWith("/learning/due")) {
+        setInterval(colourDueworkCalendar, 500)
+    }
+    
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
@@ -109,7 +116,19 @@ function colourTimetable() {
         }
     }
 }
-
+function classPage() {
+    const cards = document.querySelectorAll("div.v-card")
+    for (const card of cards) {
+        for (const name of card.querySelector("p.meta").innerText.split("\n")[0].split(",")) {
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[name]
+            if (colour) {
+                card.querySelector("div.card-class-image").style.borderBottom = `10px solid ${colour}`
+            }
+            else continue;
+        }
+    }
+    // const text = document.querySelectorAll("div.card-content")
+}
 function profilePage() {
     let tablerows = "";
     let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
@@ -171,8 +190,10 @@ function profilePage() {
 }
 
 function colourDueworkCalendar() {
+    if(!document.querySelector(".event-container span.fc-event-title") !== null && document.querySelector("span[recoloured]") !== null) return;
     colourDuework()
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
+        duework.setAttribute("recoloured", 1)
         const subjects = REGEXP.exec(duework.innerText)[1]?.split(",")
         if (!subjects) continue
         for (const subject of subjects) {
@@ -229,7 +250,38 @@ function feedback() {
         }
     }
 }
-
+function eDiary() {
+    if (document.querySelector("div.fc-popover-body") && !document.querySelector("div.fc-popover-body").querySelector("div[recoloured]")) {
+        for (const classname of document.querySelector("div.fc-popover-body").querySelectorAll("div.fc-daygrid-event-harness")) {
+            const subjectcode = REGEXP.exec(classname.textContent)
+            if (subjectcode) {
+                let subjectcodes = subjectcode[1].split(",")
+                for (const subjectcode of subjectcodes) {
+                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                    if (!colour) { continue; }
+                    (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
+                }
+                classname.setAttribute("recoloured", 1)
+            }
+            else classname.setAttribute("recoloured", 1)
+        }
+    }
+    if (document.querySelector("div[recoloured]")) return;
+    for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
+        console.log(classname)
+        const subjectcode = REGEXP.exec(classname.textContent)
+        if (subjectcode) {
+            let subjectcodes = subjectcode[1].split(",")
+            for (const subjectcode of subjectcodes) {
+                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                if (!colour) { continue; }
+                (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
+            }
+            classname.setAttribute("recoloured", 1)
+        }
+        else classname.setAttribute("recoloured", 1)
+    }
+}
 function mainPage() {
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
     const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
