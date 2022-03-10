@@ -268,85 +268,30 @@ function feedback() {
     }
 }
 function eDiary() {
-    if (document.querySelector("div.fc-popover-body") && !document.querySelector("div.fc-popover-body").querySelector("div[recoloured]")) {
-        for (const classname of document.querySelector("div.fc-popover-body").querySelectorAll("div.fc-daygrid-event-harness")) {
-            const subjectcode = REGEXP.exec(classname.textContent)
-            if (subjectcode) {
-                let subjectcodes = subjectcode[1].split(",")
-                for (const subjectcode of subjectcodes) {
-                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                    if (!colour) { continue; }
-                    (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
-                }
-                classname.setAttribute("recoloured", 1)
-            }
-            else classname.setAttribute("recoloured", 1)
-        }
-    }
-    if (document.querySelector("div[recoloured], a[recoloured]")) return;
-    if (document.querySelector(("div.fc-dayGridMonth-view"))) {
-        for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
-            const subjectcode = REGEXP.exec(classname.textContent)
-            if (subjectcode) {
-                let subjectcodes = subjectcode[1].split(",")
-                for (const subjectcode of subjectcodes) {
-                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                    if (!colour) { continue; }
-                    (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
-                }
-                classname.setAttribute("recoloured", 1)
-            }
-            else classname.setAttribute("recoloured", 1)
-        }
-    }
-    if (document.querySelector(("div.fc-list-view"))) {
-        for (const classname of document.querySelectorAll("tr.fc-list-event")) {
-            const subjectcode = REGEXP.exec(classname.textContent)
-            if (subjectcode) {
-                let subjectcodes = subjectcode[1].split(",")
-                for (const subjectcode of subjectcodes) {
-                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                    if (!colour) { continue; }
-                    (classname.querySelector("span.fc-list-event-dot")).style.borderColor = colour
-                }
-                classname.setAttribute("recoloured", 1)
-            }
-            else classname.setAttribute("recoloured", 1)
-        }
-    }
-    if (document.querySelector(("div.fc-timeGridDay-view"))) {
-        for (const classname of document.querySelectorAll("div.fc-timegrid-event-harness")) {
-            const subjectcode = REGEXP.exec(classname.textContent)
+    const page = document.querySelector(".fc-button-group .fc-button-active").innerText
 
-            if (subjectcode) {
-                let subjectcodes = subjectcode[1].split(",")
-                for (const subjectcode of subjectcodes) {
-                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                    if (!colour) { continue; }
-                    (classname.querySelector("a.fc-timegrid-event")).style.backgroundColor = colour
-                }
-                classname.setAttribute("recoloured", 1)
-            }
-            else classname.setAttribute("recoloured", 1)
+    if (page == "Month") {
+        for (const event of document.querySelectorAll("div.fc-popover-body .fc-daygrid-event:not([recoloured])")) {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) continue;
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) continue;
+            event.style.backgroundColor = colour
+            event.setAttribute("recoloured", 1)
         }
-    }
-    if (document.querySelector(("div.fc-timeGridWeek-view"))) {
-        console.log(1)
-        for (const classname of document.querySelectorAll("a.fc-timegrid-event")) {
-            const subjectcode = REGEXP.exec(classname.textContent)
-            if (subjectcode) {
-                let subjectcodes = subjectcode[1].split(",")
-                for (const subjectcode of subjectcodes) {
-                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                    if (!colour) { continue; }
-                    (classname).style.backgroundColor = colour
-                }
-                classname.setAttribute("recoloured", 1)
-            }
-            else classname.setAttribute("recoloured", 1)
-        }
+    } else if (page == "List") {
+        colourEDiaryList()
+    } else {
+        document.querySelectorAll(".fc-timegrid-event").forEach(event => {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) return; 
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) return; 
+            event.style.backgroundColor = colour
+        })
     }
 }
+
 function mainPage() {
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
     const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
