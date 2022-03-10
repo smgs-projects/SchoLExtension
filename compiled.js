@@ -214,6 +214,16 @@ function colourDueworkCalendar() {
     }
 }
 
+function colourEDiaryList() {
+    document.querySelectorAll(".fc-list-event").forEach(event => {
+        const subjectcode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
+        if (!subjectcode) return; 
+        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+        if (!colour) return; 
+        event.querySelector(".fc-list-event-dot").style.borderColor = colour
+    })
+}
+
 function feedback() {
     // Add "Click to view feedback" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
@@ -351,14 +361,9 @@ function mainPage() {
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
 
-    // Correct colours on eDiary list
-    document.querySelectorAll(".fc-list-event").forEach(event => {
-        const subjectCode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
-        if (!subjectCode) return; 
-        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectCode[1]]
-        if (!colour) return; 
-        event.querySelector(".fc-list-event-dot").style.borderColor = colour
-    })
+    // eDiary list recolour
+    if (document.querySelectorAll(".fc-list-event").length == 0) setTimeout(mainPage, 100);
+    colourEDiaryList()
 }
 
 function timetable() {
