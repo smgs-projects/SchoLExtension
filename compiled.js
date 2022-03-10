@@ -14,7 +14,7 @@ const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", 
 
 let id;
 window.addEventListener('load', async (event) => {
-    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    // if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -266,20 +266,68 @@ function eDiary() {
             else classname.setAttribute("recoloured", 1)
         }
     }
-    if (document.querySelector("div[recoloured]")) return;
-    for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
-        console.log(classname)
-        const subjectcode = REGEXP.exec(classname.textContent)
-        if (subjectcode) {
-            let subjectcodes = subjectcode[1].split(",")
-            for (const subjectcode of subjectcodes) {
-                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                if (!colour) { continue; }
-                (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
+    if (document.querySelector("div[recoloured], a[recoloured]")) return;
+    if (document.querySelector(("div.fc-dayGridMonth-view"))) {
+        for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
+            const subjectcode = REGEXP.exec(classname.textContent)
+            if (subjectcode) {
+                let subjectcodes = subjectcode[1].split(",")
+                for (const subjectcode of subjectcodes) {
+                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                    if (!colour) { continue; }
+                    (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
+                }
+                classname.setAttribute("recoloured", 1)
             }
-            classname.setAttribute("recoloured", 1)
+            else classname.setAttribute("recoloured", 1)
         }
-        else classname.setAttribute("recoloured", 1)
+    }
+    if (document.querySelector(("div.fc-list-view"))) {
+        for (const classname of document.querySelectorAll("tr.fc-list-event")) {
+            const subjectcode = REGEXP.exec(classname.textContent)
+            if (subjectcode) {
+                let subjectcodes = subjectcode[1].split(",")
+                for (const subjectcode of subjectcodes) {
+                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                    if (!colour) { continue; }
+                    (classname.querySelector("span.fc-list-event-dot")).style.borderColor = colour
+                }
+                classname.setAttribute("recoloured", 1)
+            }
+            else classname.setAttribute("recoloured", 1)
+        }
+    }
+    if (document.querySelector(("div.fc-timeGridDay-view"))) {
+        for (const classname of document.querySelectorAll("div.fc-timegrid-event-harness")) {
+            const subjectcode = REGEXP.exec(classname.textContent)
+
+            if (subjectcode) {
+                let subjectcodes = subjectcode[1].split(",")
+                for (const subjectcode of subjectcodes) {
+                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                    if (!colour) { continue; }
+                    (classname.querySelector("a.fc-timegrid-event")).style.backgroundColor = colour
+                }
+                classname.setAttribute("recoloured", 1)
+            }
+            else classname.setAttribute("recoloured", 1)
+        }
+    }
+    if (document.querySelector(("div.fc-timeGridWeek-view"))) {
+        console.log(1)
+        for (const classname of document.querySelectorAll("a.fc-timegrid-event")) {
+            const subjectcode = REGEXP.exec(classname.textContent)
+            if (subjectcode) {
+                let subjectcodes = subjectcode[1].split(",")
+                for (const subjectcode of subjectcodes) {
+                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                    if (!colour) { continue; }
+                    (classname).style.backgroundColor = colour
+                }
+                classname.setAttribute("recoloured", 1)
+            }
+            else classname.setAttribute("recoloured", 1)
+        }
     }
 }
 function mainPage() {
@@ -316,11 +364,10 @@ function timetable() {
             let timetablesubjectsnew = row.getElementsByClassName("timetable-subject")
             let timetablesubjectsold = rows[i - 1].getElementsByClassName("timetable-subject")
             for (let index = 0; index < timetablesubjectsnew.length; index++) {
-                if (timetablesubjectsnew[index].textContent.trim().split("\n")[0] === timetablesubjectsold[index].textContent.trim().split("\n")[0]) {
+                if (timetablesubjectsnew[index].isEqualNode(timetablesubjectsold[index])) {
                     itemremoves.push(timetablesubjectsnew[index])
                 }
             }
-
         }
         i++
     }
@@ -404,3 +451,4 @@ async function writeCache() {
         } else resolve()
     });
 }
+
