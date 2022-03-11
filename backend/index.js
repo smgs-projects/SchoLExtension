@@ -58,7 +58,7 @@ app.get("/theme/:code", async function(req, res, next) {
         catch(error) { return res.send(500); }
     })
 })
-app.post("/settheme/:code", async function(req, res, next) {
+app.post("/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
