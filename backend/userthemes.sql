@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 11, 2022 at 04:45 AM
+-- Generation Time: Mar 11, 2022 at 05:11 AM
 -- Server version: 10.4.22-MariaDB
 -- PHP Version: 8.0.13
 
@@ -28,18 +28,9 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `userthemes` (
-  `code` varchar(200) NOT NULL,
+  `code` varchar(64) NOT NULL,
   `theme` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`theme`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `userthemes`
---
-
-INSERT INTO `userthemes` (`code`, `theme`) VALUES
-('Hotel-Foxtrot-X-ray-261-942', '{\"11PS-SUPSH02\":\"rgb(255, 224, 204)\",\"11SC-CHEMI03\":\"rgb(204, 255, 204)\",\"11TE-COMPU01\":\"rgb(204, 224, 255)\",\"11MA-MATHM01\":\"rgb(255, 204, 245)\",\"11EN-ELANG02\":\"rgb(255, 245, 204)\",\"11HU-LEGAL02\":\"rgb(197, 198, 200)\",\"12SC-BIOLO02\":\"rgb(204, 204, 255)\",\"11HH-HOUSE02\":\"rgb(221, 221, 153)\",\"SEN-ROBOTICS\":\"rgb(245, 255, 204)\",\"SS-SPORT01\":\"rgb(255, 153, 153)\"}'),
-('Quebec-Yankee-Golf-361-790', '{\"11PS-SUPSH02\":\"rgb(0, 0, 0)\",\"11SC-CHEMI03\":\"rgb(204, 255, 204)\",\"11TE-COMPU01\":\"rgb(204, 224, 255)\",\"11MA-MATHM01\":\"rgb(255, 204, 245)\",\"11EN-ELANG02\":\"rgb(255, 245, 204)\",\"11HU-LEGAL02\":\"rgb(197, 198, 200)\",\"12SC-BIOLO02\":\"rgb(204, 204, 255)\",\"11HH-HOUSE02\":\"rgb(221, 221, 153)\",\"SEN-ROBOTICS\":\"rgb(245, 255, 204)\",\"SS-SPORT01\":\"rgb(255, 153, 153)\"}'),
-('Victor-Whiskey-Sierra-417-115', '{\"0\":\"{\",\"1\":\"}\",\"11PS-SUPSH02\":\"rgb(0, 0, 0)\"}');
 
 --
 -- Indexes for dumped tables

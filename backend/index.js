@@ -51,9 +51,15 @@ app.get("/theme/:code", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            let [user] = await promisePool.execute("SELECT theme FROM userthemes WHERE code = ?", [req.params.code]);
+            let [customthemes] = await promisePool.execute("SELECT * FROM serverthemes WHERE name = ?", [req.params.code]);
+
+            if (customthemes[0]) {
+                res.send({theme: JSON.parse(customthemes[0]["theme"]), type: "servergenned"}).status(200)
+                return;
+            }
+            let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code]);
             if (!user || user.length < 1) return res.status(404).send("Unknown User")
-            res.json(user[0]["theme"]);
+            res.json({theme: JSON.parse(user[0]["theme"]), type: "usergenned"});
         }
         catch(error) { return res.send(500); }
     })
@@ -71,7 +77,6 @@ app.post("/theme/:code", async function(req, res, next) {
             const [existinguser] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [user]);
             if (!existinguser[0])  {res.send(403).status("could not find code");return}
             for (const key of Object.keys(JSON.parse(existinguser[0]["theme"]))) {
-                console.log(key)
                 if (!theme[key] && JSON.parse(existinguser[0]["theme"])[key] !== undefined) theme[key] = JSON.parse(existinguser[0]["theme"])[key]
             }  
             await promisePool.execute("UPDATE userthemes SET theme = ? WHERE code = ?", [JSON.stringify(theme), user])
