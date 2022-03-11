@@ -46,7 +46,7 @@ app.get("/gencode", async function(req, res, next) {
         catch(error) { res.status(501).send("Internal server error") }
     })
 })
-app.get("/gettheme/:code", async function(req, res, next) {
+app.get("/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
