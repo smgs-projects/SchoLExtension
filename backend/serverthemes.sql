@@ -1,41 +1,9 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.1
--- https://www.phpmyadmin.net/
---
--- Host: localhost
--- Generation Time: Mar 12, 2022 at 08:33 AM
--- Server version: 10.4.22-MariaDB
--- PHP Version: 8.0.13
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Database: `themes`
---
-
--- --------------------------------------------------------
-
---
--- Table structure for table `serverthemes`
---
-
 CREATE TABLE `serverthemes` (
   `name` varchar(30) NOT NULL,
   `theme` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`theme`)),
   `creator` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `serverthemes`
---
 
 INSERT INTO `serverthemes` (`name`, `theme`, `creator`) VALUES
 ('beach', '[\"rgb(0, 41, 107)\",\"rgb(0, 52, 122)\",\"rgb(0, 63, 136)\",\"rgb(0, 72, 147)\",\"rgb(0, 80, 157)\",\"rgb(253, 197, 0)\",\"rgb(254, 205, 0)\",\"rgb(255, 213, 0)\"]', 'Sebastien'),
@@ -51,17 +19,6 @@ INSERT INTO `serverthemes` (`name`, `theme`, `creator`) VALUES
 ('sarum', '[\"rgb(246, 217, 2)\",\"rgb(236, 205, 3)\",\"rgb(246, 218, 0)\",\"rgb(104, 66)\",\"rgb(251, 237, 150)\",\"rgb(188, 153, 6)\"]', 'Sebastien'),
 ('zac', '[\"rgb(219, 219, 255)\",\"rgb(229, 253, 255)\",\"rgb(255, 219, 248)\",\"rgb(224, 237, 255)\",\"rgb(255, 224, 224)\",\"rgb(224, 255, 224)\",\"rgb(255, 248, 219)\",\"rgb(255, 234, 219)\",\"rgb(249, 255, 224)\",\"rgb(219, 214, 255)\"]', 'Sebastien');
 
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `serverthemes`
---
 ALTER TABLE `serverthemes`
   ADD PRIMARY KEY (`name`);
-COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
