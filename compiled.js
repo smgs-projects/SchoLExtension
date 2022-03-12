@@ -16,7 +16,7 @@ const THEME_API = "http://localhost:3000"
 
 let id;
 window.addEventListener('load', async (event) => {
-    // if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
 
     // Search bar
     if (document.getElementById("message-list").children[1]) {
