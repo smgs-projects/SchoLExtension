@@ -40,7 +40,7 @@ app.get("/gencode", async function(req, res, next) {
                        + nato[Math.floor(Math.random()*nato.length)] + "-"
                        + Math.floor(Math.random() * 900 + 100) + "-"
                        + Math.floor(Math.random() * 900 + 100)
-            promisePool.execute("INSERT INTO userthemes (code, theme) VALUES (?, ?);", [code, JSON.stringify({})]);
+            promisePool.execute("INSERT INTO userthemes (code, theme) VALUES (?, ?);", [code.toUpperCase(), JSON.stringify({})]);
             res.send({"code": code}).status(200)
         }
         catch(error) { res.status(501).send("Internal server error") }
@@ -51,15 +51,15 @@ app.get("/theme/:code", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            let [customthemes] = await promisePool.execute("SELECT * FROM serverthemes WHERE name = ?", [req.params.code]);
+            let [customthemes] = await promisePool.execute("SELECT * FROM serverthemes WHERE name = ?", [req.params.code.toUpperCase()]);
 
             if (customthemes[0]) {
-                res.send({theme: JSON.parse(customthemes[0]["theme"]), type: "servergenned"}).status(200)
+                res.send({theme: JSON.parse(customthemes[0]["theme"]), type: "server"}).status(200)
                 return;
             }
-            let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code]);
+            let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code.toUpperCase()]);
             if (!user || user.length < 1) return res.status(404).send("Unknown User")
-            res.json({theme: JSON.parse(user[0]["theme"]), type: "usergenned"});
+            res.json({theme: JSON.parse(user[0]["theme"]), type: "user"});
         }
         catch(error) { return res.send(500); }
     })
@@ -74,12 +74,12 @@ app.post("/theme/:code", async function(req, res, next) {
             // if (!(/^-?\d+$/.test(user))) return res.status(400).send("Invalid User") // Ensures user ID is an integer
             // if (parseInt(user) < 0) return res.status(400).send("Invalid User")
             if (!theme) return res.status(400).send("Invalid Theme")
-            const [existinguser] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [user]);
+            const [existinguser] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [user.toUpperCase()]);
             if (!existinguser[0]) return res.status(403).send("Invalid Code")
             for (const key of Object.keys(JSON.parse(existinguser[0]["theme"]))) {
                 if (!theme[key] && JSON.parse(existinguser[0]["theme"])[key] !== undefined) theme[key] = JSON.parse(existinguser[0]["theme"])[key]
             }  
-            await promisePool.execute("UPDATE userthemes SET theme = ? WHERE code = ?", [JSON.stringify(theme), user])
+            await promisePool.execute("UPDATE userthemes SET theme = ? WHERE code = ?", [JSON.stringify(theme), user.toUpperCase()])
             res.sendStatus(200)
         } 
         catch (error) { return next(error) }
