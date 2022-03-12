@@ -16,7 +16,7 @@ const THEME_API = "http://localhost:3000"
 
 let id;
 window.addEventListener('load', async (event) => {
-    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    // if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
 
     // Search bar
     if (document.getElementById("message-list").children[1]) {
@@ -236,6 +236,13 @@ function profilePage() {
                             <a class="button disabled" id="updatesynccode">Update</a>
                         </div><p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
                     </div>
+                    <div class="small-12 columns">
+                        <label>Convert Coloors Link</label>
+                        <div class="input-group">
+                            <input type="text" id="coolors" placeholder="https://coolors.co/*">
+                            <a class="button disabled" id="convertcoolors">Convert</a>
+                        </div><p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
+                    </div>
                 </fieldset>
                 <div class="component-action">
                     <section>
@@ -291,7 +298,8 @@ function profilePage() {
     let elem_updatesynccode = document.getElementById("updatesynccode")
     let elem_themereset = document.getElementById("themereset")
     let elem_modalclosebtn = document.getElementById("modalclosebtn")
-
+    let elem_coolorstext = document.getElementById("coolors")
+    let elem_coolorsbutton = document.getElementById("convertcoolors")
     elem_modalclosebtn.addEventListener("click", function () {
         elem_modalclosebtn.removeAttribute("aria-hidden")
         elem_modalclosebtn.removeAttribute("tab-index")
@@ -299,7 +307,19 @@ function profilePage() {
         document.getElementById("themereset-modal").style = ""
         document.querySelector(".reveal-modal-bg").remove()
     })
-
+    elem_coolorsbutton.addEventListener("click", function () {
+        if (!elem_coolorstext.value.startsWith("https://coolors.co/")) { return }
+        let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        const newtheme = ColoorsImport(elem_coolorstext.value)
+        console.log(newtheme)
+        let i = 0
+        for (subjectcode in currenttheme) {
+            currenttheme[subjectcode] = newtheme[i]
+            i++; if (i >= newtheme.length) { i = 0; }
+        }
+        localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
+        window.location.reload()
+    })
     elem_gensynccode.addEventListener("click", async function () {
         const newcode = await genThemeCode()
         elem_synccode.value = newcode.toUpperCase()
@@ -317,7 +337,13 @@ function profilePage() {
         elem_syncstatus.style.color = "#ff7d7d"
         window.location.reload()
     })
-
+    elem_coolorstext.addEventListener("keyup", function () {
+        if (elem_coolorstext.value.startsWith("https://coolors.co/")) {
+            elem_coolorsbutton.classList = "button"
+        } else {
+            elem_coolorsbutton.classList = "button disabled"
+        }
+    })
     elem_synccode.addEventListener("keyup", function () {
         if (elem_synccode.value != localStorage.getItem("themeCode")) {
             elem_updatesynccode.classList = "button"
@@ -364,7 +390,7 @@ function profilePage() {
         }
     })
 
-    if (localStorage.getItem("themeCode")) {
+    if (localStorage.getItem("themeCode")) {    
         elem_synccode.value = localStorage.getItem("themeCode")
         elem_syncstatus.innerText = "ON"
         elem_syncstatus.style.color = "green"
@@ -621,4 +647,15 @@ async function postTheme() {
             body: JSON.stringify({"theme" : JSON.parse(localStorage.getItem("timetableColours"))})
         }).then(r => { resolve() })
     });
+}
+function ColoorsImport(url) {
+    const coolorapi = (new URL(url))
+    const rgbs = []
+    if (coolorapi.origin !== "https://coolors.co") return null;
+    for (const hex of coolorapi.pathname.replace("/", "").split("-")) {
+        const hexcode = hexToRgb(hex)
+        if (hexcode === null) return null
+        rgbs.push("rgb(" + hexcode + ")")
+    }
+    return rgbs
 }
