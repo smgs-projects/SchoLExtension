@@ -13,7 +13,10 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 
 let id;
-window.addEventListener('load', async (event) => {
+if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
+else { window.addEventListener('load', () => { load() }); }
+
+async function load() {
     if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
@@ -54,7 +57,7 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(id)) {
         profilePage()
     }
-}, false);
+}
 
 function rgbToHex(r, g, b) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
