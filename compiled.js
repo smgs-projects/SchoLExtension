@@ -313,24 +313,6 @@ function mainPage() {
 
 function timetable() {
     const rows = document.querySelectorAll(".timetable tbody tr")
-    // Remove duplicate periods in a column
-    let i = 0
-    let itemremoves = []
-    for (const row of rows) {
-        if (rows[i - 1]) {
-            let timetablesubjectsnew = row.getElementsByClassName("timetable-subject")
-            let timetablesubjectsold = rows[i - 1].getElementsByClassName("timetable-subject")
-            for (let index = 0; index < timetablesubjectsnew.length; index++) {
-                if (timetablesubjectsnew[index].isEqualNode(timetablesubjectsold[index])) {
-                    itemremoves.push(timetablesubjectsnew[index])
-                }
-            }
-        }
-        i++
-    }
-    for (const item of itemremoves) {
-        item.remove()
-    }
     // Removing timetable blank periods
     // ~ Desktop
     for (const row of rows) {
