@@ -7,13 +7,17 @@
 
 // Regex to find timetable codes inside a class string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
-// Timetable rows to remove if all blank
-const REMOVE_TIMETABLE = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
+// Timetable rows NOT to remove if all blank
+const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 const urlrick = "localhost:3001/gotrickrolled/"
 let id;
-window.addEventListener('load', async (event) => {
+if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
+else { window.addEventListener('load', () => { load() }); }
+
+async function load() {
+    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -33,9 +37,16 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname == "/") {
         mainPage()
     }
-    if (window.location.pathname.startsWith("/learning/due")) {
-        setInterval(colourDueworkCalendar, 1000)
+    if (window.location.pathname == "/learning/classes") {
+        classPage()
     }
+    if (window.location.pathname.startsWith("/calendar")) {
+        setInterval(eDiary, 500)
+    }
+    if (window.location.pathname.startsWith("/learning/due")) {
+        setInterval(colourDueworkCalendar, 500)
+    }
+    
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
@@ -46,7 +57,7 @@ window.addEventListener('load', async (event) => {
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(id)) {
         profilePage()
     }
-}, false);
+}
 
 function rgbToHex(r, g, b) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
@@ -110,7 +121,7 @@ function colourDuework() {
 
 function colourTimetable() {
     // Change timetable subject colours to match everywhere
-    for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .show-for-small-only tr td .timetable-subject div")) {
+    for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .timetable-subject[style*='background'] div, .show-for-small-only tr td .timetable-subject div")) {
         if (!REGEXP.exec(subject.textContent)) continue;
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
@@ -120,7 +131,19 @@ function colourTimetable() {
         }
     }
 }
-
+function classPage() {
+    const cards = document.querySelectorAll("div.v-card")
+    for (const card of cards) {
+        for (const name of card.querySelector("p.meta").innerText.split("\n")[0].split(",")) {
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[name]
+            if (colour) {
+                card.querySelector("div.card-class-image").style.borderBottom = `10px solid ${colour}`
+            }
+            else continue;
+        }
+    }
+    // const text = document.querySelectorAll("div.card-content")
+}
 function profilePage() {
     let tablerows = "";
     let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
@@ -151,6 +174,13 @@ function profilePage() {
                 </thead>
                 <tbody>${tablerows}</tbody>
             </table>
+            <div class="component-action">
+                <section>
+                    <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
+                        Feature made by Zac McWilliam (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
+                    </span>
+                </section>
+            </div>
         </div>`)
 
     for (const row of document.querySelectorAll(".subject-color-row")) {
@@ -182,7 +212,10 @@ function profilePage() {
 }
 
 function colourDueworkCalendar() {
+    if(!document.querySelector(".event-container span.fc-event-title") !== null && document.querySelector("span[recoloured]") !== null) return;
+    colourDuework()
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
+        duework.setAttribute("recoloured", 1)
         const subjects = REGEXP.exec(duework.innerText)[1]?.split(",")
         if (!subjects) continue
         for (const subject of subjects) {
@@ -194,6 +227,16 @@ function colourDueworkCalendar() {
             }
         }
     }
+}
+
+function colourEDiaryList() {
+    document.querySelectorAll(".fc-list-event").forEach(event => {
+        const subjectcode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
+        if (!subjectcode) return; 
+        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+        if (!colour) return; 
+        event.querySelector(".fc-list-event-dot").style.borderColor = colour
+    })
 }
 
 function feedback() {
@@ -225,37 +268,51 @@ function feedback() {
     }
     // Add colour to feedback classes
     // ~ Desktop
-    for (const subject of document.querySelectorAll(".subject-group span")) {
-        if (REGEXP.exec(subject.innerText)[1]) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[REGEXP.exec(subject.innerText)[1]]
-            if (!colour) continue
-            subject.style.borderLeft = "7px solid " + colour
-            subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
-            subject.parentElement.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+    for (const subject of document.querySelectorAll("ul.activity-list")) {
+        const subjectrawcodes = subject.querySelector(".subject-group span.meta")?.innerText.replace("), (", ",")
+        if (REGEXP.exec(subjectrawcodes)[1]) {
+            const subjectcodes = REGEXP.exec(subjectrawcodes)[1]?.split(",")
+            for (const subjectcode of subjectcodes) {
+                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
+                if (!colour) { continue; }
+                subject.style.borderLeft = "7px solid " + colour
+                subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                subject.children[1].style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+            }
         }
+    }
+}
+function eDiary() {
+    const page = document.querySelector(".fc-button-group .fc-button-active").innerText
+
+    if (page == "Month") {
+        for (const event of document.querySelectorAll("div.fc-popover-body .fc-daygrid-event:not([recoloured])")) {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) continue;
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) continue;
+            event.style.backgroundColor = colour
+            event.setAttribute("recoloured", 1)
+        }
+    } else if (page == "List") {
+        colourEDiaryList()
+    } else {
+        document.querySelectorAll(".fc-timegrid-event").forEach(event => {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) return; 
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) return; 
+            event.style.backgroundColor = colour
+        })
     }
 }
 
 function mainPage() {
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
-    // ~ Desktop
-    var heading = document.querySelectorAll(".timetable th")
-    var body = document.querySelectorAll(".timetable td")
+    const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
+    const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
     for (let index = 0; index < heading.length; index++) {
-        if (REMOVE_TIMETABLE.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
-            heading[index].remove()
-            body[index].remove()
-        } else if (REMOVE_TIMETABLE.includes(heading[index].textContent.trim().split("\n")[0])) {
-
-        }
-    }
-    // ~ Mobile
-    heading = document.querySelectorAll(".show-for-small-only th")
-    body = document.querySelectorAll(".show-for-small-only td")
-    for (let index = 0; index < heading.length; index++) {
-        if (REMOVE_TIMETABLE.includes(heading[index].textContent.trim().split("\n")[0]) && body[index].querySelectorAll("div").length === 1) {
-            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
             heading[index].remove()
             body[index].remove()
         }
@@ -263,33 +320,18 @@ function mainPage() {
     
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
+
+    // eDiary list recolour
+    if (document.querySelectorAll(".fc-list-event").length == 0) setTimeout(mainPage, 100);
+    colourEDiaryList()
 }
 
 function timetable() {
     const rows = document.querySelectorAll(".timetable tbody tr")
-    // Remove duplicate periods in a column
-    let i = 0
-    let itemremoves = []
-    for (const row of rows) {
-        if (rows[i - 1]) {
-            let timetablesubjectsnew = row.getElementsByClassName("timetable-subject")
-            let timetablesubjectsold = rows[i - 1].getElementsByClassName("timetable-subject")
-            for (let index = 0; index < timetablesubjectsnew.length; index++) {
-                if (timetablesubjectsnew[index].textContent.trim().split("\n")[0] === timetablesubjectsold[index].textContent.trim().split("\n")[0]) {
-                    itemremoves.push(timetablesubjectsnew[index])
-                }
-            }
-
-        }
-        i++
-    }
-    for (const item of itemremoves) {
-        item.remove()
-    }
     // Removing timetable blank periods
     // ~ Desktop
     for (const row of rows) {
-        if (REMOVE_TIMETABLE.some(w => row.querySelector("th").textContent.trim().includes(w))) {
+        if (!TIMETABLE_WHITELIST.includes(row.querySelector("th").childNodes[0].textContent.trim())) {
             hassubject = false
             for (const cell of row.querySelectorAll("td")) {
                 if (cell.innerText !== "\n" && cell.children[0].children.length > 0) { hassubject = true; break; }
@@ -303,8 +345,7 @@ function timetable() {
     const heading = document.querySelectorAll(".show-for-small-only th")
     const body = document.querySelectorAll(".show-for-small-only td")
     for (let index = 0; index < heading.length; index++) {
-        if (REMOVE_TIMETABLE.some(w => heading[index].textContent.trim().includes(w)) && body[index].querySelectorAll("div").length === 1) {
-            //The heading and body are seperate elements if you just remove the body it would shuffle everything down
+        if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
             heading[index].remove()
             body[index].remove()
         }

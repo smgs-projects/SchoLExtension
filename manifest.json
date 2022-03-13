@@ -9,15 +9,13 @@
     ],
     "background": { "scripts": ["hot-reload.js"] },
     "permissions": ["storage"],
+    "web_accessible_resources": [
+        "compiled.js"
+    ],
     "content_scripts": [
         {
-            "matches": ["https://learning-dev.stmichaels.vic.edu.au/*"],
-            "js": ["compiled.js"],
-            "run_at": "document_idle"
-        },
-        {
             "matches": ["https://learning.stmichaels.vic.edu.au/*"],
-            "js": ["compiled.js"],
+            "js": ["extension.js"],
             "run_at": "document_idle"
         }
       ]
