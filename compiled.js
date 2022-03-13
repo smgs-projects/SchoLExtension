@@ -70,6 +70,30 @@ window.addEventListener('load', async (event) => {
     }
 }, false);
 
+window.Clipboard = (function(window, document, navigator) {
+    var textArea, copy, range, selection;
+    copy = function(text) {
+      textArea = document.createElement('textArea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      if (navigator.userAgent.match(/ipad|iphone/i)) {
+          range = document.createRange();
+          range.selectNodeContents(textArea);
+          selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          textArea.setSelectionRange(0, 999999);
+      } else {
+          textArea.select();
+      }
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    };
+    return {
+        copy: copy
+    };
+})(window, document, navigator);
+
 function rgbToHex(r, g, b) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
@@ -88,17 +112,7 @@ function hexToRgb(hex) {
 function getRGB(c) {
     return parseInt(c, 16) || c
 }
-  function ColoorsImport(url) {
-    const coolorapi = (new URL(url))
-    const rgbs = []
-    if (coolorapi.origin !== "https://coolors.co") return null;
-    for (const hex of coolorapi.pathname.replace("/", "").split("-")) {
-        const hexcode = hexToRgb(hex)
-        if (hexcode === null) return null
-        rgbs.push("rgb(" + hexcode + ")")
-    }
-    return rgbs
-}
+  
 function getsRGB(c) {
     return getRGB(c) / 255 <= 0.03928
       ? getRGB(c) / 255 / 12.92
@@ -123,6 +137,18 @@ function getTextColor(bgColor) {
     const blackContrast = getContrast(bgColor, '#000000')
   
     return whiteContrast > blackContrast ? '#ffffff' : '#000000'
+}
+
+function rgbsFromHexes(url) {
+    const matches = [...url.matchAll(/(?:[0-9a-fA-F]{6})/g)]
+
+    let rgbs = []
+    for (const match of matches) {
+        const rgbcode = hexToRgb(match)
+        if (!rgbcode) continue;
+        rgbs.push(`rgb(${rgbcode})`);
+    }
+    return rgbs
 }
 
 async function allPages() {
@@ -234,23 +260,39 @@ function profilePage() {
             <h2 class="subheader">Theme Manager</h2>
             <section>
                 <fieldset class="content">
-                    <legend>Device Sync: <span style="color: #ff7d7d" id="syncstatus">OFF</span></legend>
+                    <legend><strong>Theme Import/Export</strong></legend>
                     <div class="small-12 columns">
-                        <p>You can generate a <code>Sync Code</code> to share theme colours between devices<br><br></p>
+                        <p>Import a theme (list of hex codes seperated by dashes), this also supports URLs from <a href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
                     </div>
                     <div class="small-12 columns">
-                        <label>Current Sync Code</label>
+                        <div class="input-group">
+                            <input type="text" id="importtext" placeholder="Hex codes seperated by dashes (#FDFD96-#22AA66...) or https://coolors.co/ link">
+                            <a class="button disabled" id="importbtn">Import</a>
+                        </div>
+                    </div>
+                    <div class="small-12 columns">
+                        <p>Export your current theme to share it with friends!</p>
+                    </div>
+                    <div class="small-12 columns">
+                        <div class="input-group">
+                            <input type="text" id="currenttheme" readonly>
+                            <a class="button" id="exportbtn">Export</a>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="content">
+                    <legend><strong>Device Sync: <span style="color: #ff7d7d" id="syncstatus">OFF</span></strong></legend>
+                    <div class="small-12 columns">
+                        <p>You can generate a <code>Sync Code</code> to share theme colours between devices</p>
+                    </div>
+                    <div class="small-12 columns">
                         <div class="input-group">
                             <input type="text" id="synccode" placeholder="There is no sync code associated with this device, enter one here!">
                             <a class="button disabled" id="updatesynccode">Update</a>
-                        </div><p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
+                        </div>
                     </div>
                     <div class="small-12 columns">
-                        <label>Convert Coloors Link</label>
-                        <div class="input-group">
-                            <input type="text" id="coolors" placeholder="https://coolors.co/*">
-                            <a class="button disabled" id="convertcoolors">Convert</a>
-                        </div><p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
+                        <p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
                     </div>
                 </fieldset>
                 <div class="component-action">
@@ -271,6 +313,24 @@ function profilePage() {
             </section>
         </div>`)
 
+    let elem_synccode = document.getElementById("synccode")
+    let elem_gensynccode = document.getElementById("gensynccode")
+    let elem_syncstatus = document.getElementById("syncstatus")
+    let elem_updatesynccode = document.getElementById("updatesynccode")
+    let elem_themereset = document.getElementById("themereset")
+    let elem_currenttheme = document.getElementById("currenttheme")
+    let elem_importtext = document.getElementById("importtext")
+    let elem_modalclosebtn = document.getElementById("modalclosebtn")
+    let elem_importbtn = document.getElementById("importbtn")
+    let elem_exportbtn = document.getElementById("exportbtn")
+
+    function updateThemeExport() {
+        elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableColours"])).map((e) => { 
+            return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) }
+        ).join("-").replaceAll("#", "")
+    }
+    updateThemeExport();
+
     for (const row of document.querySelectorAll(".subject-color-row")) {
         // Colour picker input
         if (!row.children[1]) continue;
@@ -283,6 +343,7 @@ function profilePage() {
             usercols[row.children[0].innerText] = rgbval
             localStorage.setItem("timetableColours", JSON.stringify(usercols))
             colourSidebar();
+            updateThemeExport();
             await postTheme();
         })
         // Reset button
@@ -297,18 +358,11 @@ function profilePage() {
             usercols[row.children[0].innerText] = rgbval
             localStorage.setItem("timetableColours", JSON.stringify(usercols))
             colourSidebar();
+            updateThemeExport();
             await postTheme();
         })
     }
 
-    let elem_synccode = document.getElementById("synccode")
-    let elem_gensynccode = document.getElementById("gensynccode")
-    let elem_syncstatus = document.getElementById("syncstatus")
-    let elem_updatesynccode = document.getElementById("updatesynccode")
-    let elem_themereset = document.getElementById("themereset")
-    let elem_modalclosebtn = document.getElementById("modalclosebtn")
-    let elem_coolorstext = document.getElementById("coolors")
-    let elem_coolorsbutton = document.getElementById("convertcoolors")
     elem_modalclosebtn.addEventListener("click", function () {
         elem_modalclosebtn.removeAttribute("aria-hidden")
         elem_modalclosebtn.removeAttribute("tab-index")
@@ -316,26 +370,45 @@ function profilePage() {
         document.getElementById("themereset-modal").style = ""
         document.querySelector(".reveal-modal-bg").remove()
     })
-    elem_coolorsbutton.addEventListener("click", function () {
-        if (!elem_coolorstext.value.startsWith("https://coolors.co/")) { return }
+    elem_exportbtn.addEventListener("click", function () {
+        elem_exportbtn.innerText = "Copied!"        
+        if (navigator.userAgent.match(/ipad|iphone/i)) {
+            Clipboard.copy(elem_currenttheme.value)
+        } else {
+            elem_currenttheme.select();
+            document.execCommand("copy");
+        }
+        setTimeout(() => { elem_exportbtn.innerText = "Export" }, 1000)
+    })
+    elem_importbtn.addEventListener("click", async function () {
+        if (!elem_importtext.value) { return }
         let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-        const newtheme = ColoorsImport(elem_coolorstext.value)
-        console.log(newtheme)
+        const newtheme = rgbsFromHexes(elem_importtext.value)
+        if (newtheme.length == 0) { 
+            elem_importbtn.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Input:</strong> Ensure the text you enter is a list of hex codes seperated by dashes or a coolors.co link.<br><br>For example: "d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4"</div>`)
+            setTimeout(function () {
+                document.querySelector(".themecodealert")?.remove()
+            }, 6000)
+            return
+        }
         let i = 0
         for (subjectcode in currenttheme) {
             currenttheme[subjectcode] = newtheme[i]
             i++; if (i >= newtheme.length) { i = 0; }
         }
         localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
+        await postTheme();
         window.location.reload()
     })
     elem_gensynccode.addEventListener("click", async function () {
         const newcode = await genThemeCode()
         elem_synccode.value = newcode.toUpperCase()
+        elem_syncstatus.innerText = "ON"
+        elem_syncstatus.style.color = "green"
+        elem_updatesynccode.classList = "button disabled"
         localStorage.setItem("themeCode", newcode.toUpperCase())
         await postTheme()
     })
-
     elem_themereset.addEventListener("click", async function () {
         localStorage.removeItem("themeCode") 
         localStorage.removeItem("timetableColours")
@@ -346,11 +419,11 @@ function profilePage() {
         elem_syncstatus.style.color = "#ff7d7d"
         window.location.reload()
     })
-    elem_coolorstext.addEventListener("keyup", function () {
-        if (elem_coolorstext.value.startsWith("https://coolors.co/")) {
-            elem_coolorsbutton.classList = "button"
+    elem_importtext.addEventListener("keyup", function () {
+        if (!elem_importtext.value) {
+            elem_importbtn.classList = "button disabled"
         } else {
-            elem_coolorsbutton.classList = "button disabled"
+            elem_importbtn.classList = "button"
         }
     })
     elem_synccode.addEventListener("keyup", function () {
