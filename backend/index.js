@@ -2,9 +2,17 @@ import express from "express"
 import connection from "express-myconnection"
 import cors from "cors"
 import mysql from "mysql2"
-import dotnev from "dotenv";
+import dotenv from "dotenv";
+import morgan from "morgan"
+import https from "https"
+import fs from "fs"
+dotenv.config()
 
-dotnev.config()
+const certOptions = {
+    cert: fs.readFileSync(process.env.CERT),
+    key: fs.readFileSync(process.env.CERT_KEY)
+};
+
 const nato = [
     "Alpha", "Bravo", "Charlie", 
     "Delta", "Echo", "Foxtrot", 
@@ -27,6 +35,7 @@ app.use(connection(mysql, {
     database: process.env.DB_NAME
 }, "pool"));
 
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :remote-addr'));
 app.use(cors());
 app.use(express.json())
 
@@ -85,4 +94,5 @@ app.post("/theme/:code", async function(req, res, next) {
         catch (error) { return next(error) }
     })
 })
-app.listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) })
+
+https.createServer(certOptions, app).listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) });

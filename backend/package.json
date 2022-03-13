@@ -11,6 +11,9 @@
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "express-myconnection": "^1.0.4",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "morgan": "^1.10.0",
     "mysql2": "^2.3.3"
   },
   "engines": {
