@@ -88,7 +88,17 @@ function hexToRgb(hex) {
 function getRGB(c) {
     return parseInt(c, 16) || c
 }
-  
+  function ColoorsImport(url) {
+    const coolorapi = (new URL(url))
+    const rgbs = []
+    if (coolorapi.origin !== "https://coolors.co") return null;
+    for (const hex of coolorapi.pathname.replace("/", "").split("-")) {
+        const hexcode = hexToRgb(hex)
+        if (hexcode === null) return null
+        rgbs.push("rgb(" + hexcode + ")")
+    }
+    return rgbs
+}
 function getsRGB(c) {
     return getRGB(c) / 255 <= 0.03928
       ? getRGB(c) / 255 / 12.92
@@ -647,15 +657,4 @@ async function postTheme() {
             body: JSON.stringify({"theme" : JSON.parse(localStorage.getItem("timetableColours"))})
         }).then(r => { resolve() })
     });
-}
-function ColoorsImport(url) {
-    const coolorapi = (new URL(url))
-    const rgbs = []
-    if (coolorapi.origin !== "https://coolors.co") return null;
-    for (const hex of coolorapi.pathname.replace("/", "").split("-")) {
-        const hexcode = hexToRgb(hex)
-        if (hexcode === null) return null
-        rgbs.push("rgb(" + hexcode + ")")
-    }
-    return rgbs
 }
