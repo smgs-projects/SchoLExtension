@@ -159,6 +159,13 @@ function profilePage() {
                 </thead>
                 <tbody>${tablerows}</tbody>
             </table>
+            <div class="component-action">
+                <section>
+                    <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
+                        Feature made by Zac McWilliam (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
+                    </span>
+                </section>
+            </div>
         </div>`)
 
     for (const row of document.querySelectorAll(".subject-color-row")) {
@@ -207,6 +214,16 @@ function colourDueworkCalendar() {
     }
 }
 
+function colourEDiaryList() {
+    document.querySelectorAll(".fc-list-event").forEach(event => {
+        const subjectcode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
+        if (!subjectcode) return; 
+        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+        if (!colour) return; 
+        event.querySelector(".fc-list-event-dot").style.borderColor = colour
+    })
+}
+
 function feedback() {
     // Add "Click to view feedback" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
@@ -251,37 +268,30 @@ function feedback() {
     }
 }
 function eDiary() {
-    if (document.querySelector("div.fc-popover-body") && !document.querySelector("div.fc-popover-body").querySelector("div[recoloured]")) {
-        for (const classname of document.querySelector("div.fc-popover-body").querySelectorAll("div.fc-daygrid-event-harness")) {
-            const subjectcode = REGEXP.exec(classname.textContent)
-            if (subjectcode) {
-                let subjectcodes = subjectcode[1].split(",")
-                for (const subjectcode of subjectcodes) {
-                    const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                    if (!colour) { continue; }
-                    (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
-                }
-                classname.setAttribute("recoloured", 1)
-            }
-            else classname.setAttribute("recoloured", 1)
+    const page = document.querySelector(".fc-button-group .fc-button-active").innerText
+
+    if (page == "Month") {
+        for (const event of document.querySelectorAll("div.fc-popover-body .fc-daygrid-event:not([recoloured])")) {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) continue;
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) continue;
+            event.style.backgroundColor = colour
+            event.setAttribute("recoloured", 1)
         }
-    }
-    if (document.querySelector("div[recoloured]")) return;
-    for (const classname of document.querySelectorAll("div.fc-daygrid-event-harness")) {
-        console.log(classname)
-        const subjectcode = REGEXP.exec(classname.textContent)
-        if (subjectcode) {
-            let subjectcodes = subjectcode[1].split(",")
-            for (const subjectcode of subjectcodes) {
-                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-                if (!colour) { continue; }
-                (classname.querySelector("a.fc-daygrid-event")).style.backgroundColor = colour
-            }
-            classname.setAttribute("recoloured", 1)
-        }
-        else classname.setAttribute("recoloured", 1)
+    } else if (page == "List") {
+        colourEDiaryList()
+    } else {
+        document.querySelectorAll(".fc-timegrid-event").forEach(event => {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) return; 
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) return; 
+            event.style.backgroundColor = colour
+        })
     }
 }
+
 function mainPage() {
     // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
     const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -296,14 +306,9 @@ function mainPage() {
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
 
-    // Correct colours on eDiary list
-    document.querySelectorAll(".fc-list-event").forEach(event => {
-        const subjectCode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
-        if (!subjectCode) return; 
-        const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectCode[1]]
-        if (!colour) return; 
-        event.querySelector(".fc-list-event-dot").style.borderColor = colour
-    })
+    // eDiary list recolour
+    if (document.querySelectorAll(".fc-list-event").length == 0) setTimeout(mainPage, 100);
+    colourEDiaryList()
 }
 
 function timetable() {
@@ -316,11 +321,10 @@ function timetable() {
             let timetablesubjectsnew = row.getElementsByClassName("timetable-subject")
             let timetablesubjectsold = rows[i - 1].getElementsByClassName("timetable-subject")
             for (let index = 0; index < timetablesubjectsnew.length; index++) {
-                if (timetablesubjectsnew[index].textContent.trim().split("\n")[0] === timetablesubjectsold[index].textContent.trim().split("\n")[0]) {
+                if (timetablesubjectsnew[index].isEqualNode(timetablesubjectsold[index])) {
                     itemremoves.push(timetablesubjectsnew[index])
                 }
             }
-
         }
         i++
     }
@@ -404,3 +408,4 @@ async function writeCache() {
         } else resolve()
     });
 }
+
