@@ -112,7 +112,6 @@ function getLuminance(hexColor) {
       0.0722 * getsRGB(hexColor.substr(-2))
     )
 }
-  
 function getContrast(f, b) {
     const L1 = getLuminance(f)
     const L2 = getLuminance(b)
