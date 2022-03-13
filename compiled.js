@@ -454,14 +454,15 @@ function profilePage() {
                 return
             }
             
-            localStorage.setItem("themeCode", elem_synccode.value)
-            elem_syncstatus.innerText = "ON"
-            elem_syncstatus.style.color = "green"
             elem_updatesynccode.classList = "button disabled"
             if (newtheme.type == "user") {
+                elem_syncstatus.innerText = "ON"
+                elem_syncstatus.style.color = "green"
+                localStorage.setItem("themeCode", elem_synccode.value)
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
                 window.location.reload()
             } else {
+                localStorage.removeItem("themeCode")
                 let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
                 let i = 0
                 for (subjectcode in currenttheme) {
