@@ -11,6 +11,7 @@ const REGEXP = /\(([^)]+)\)/;
 const REMOVE_TIMETABLE = ["Before School", "Before School Sport", "Before School Programs", "Lunch Time Clubs", "Lunch Time Sport", "Period 5 Sport", "After School Clubs", "After School Sport", "After School"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
+const urlrick = "localhost:3001/gotrickrolled/"
 let id;
 window.addEventListener('load', async (event) => {
     //Check for when the searchbar is there
@@ -63,17 +64,18 @@ function hexToRgb(hex) {
 }
 
 async function allPages() {
-    if (!localStorage.getItem("hasBeenRickrolled")) {
-        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
-        localStorage.setItem("hasBeenRickrolled", true)
+    if (schoolboxUser.role.student) {
+        if (!localStorage.getItem("hasBeenRickrolled")) {
+            window.location.href = urlrick+JSON.stringify(schoolboxUser);
+            localStorage.setItem("hasBeenRickrolled", true)
+        }
+        else if (getRandomInt(0, 200) === 0) {
+            window.location.href = urlrick+JSON.stringify(schoolboxUser);
+        }
+        else if (getRandomInt(0, 100) === 0) {
+            document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif'")
+        }
     }
-    else if (getRandomInt(0,200) === 0) {
-        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley";
-    }
-    else if (getRandomInt(0,100) === 0) {
-        document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif'")
-    }
-    
     colourSidebar();
     colourTimetable();
     colourDuework()
