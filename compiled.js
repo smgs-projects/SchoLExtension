@@ -15,10 +15,12 @@ const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", 
 const THEME_API = "https://rcja.app:3000"
 
 let id;
-window.addEventListener('load', async (event) => {
-    // if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
+else { window.addEventListener('load', () => { load() }); }
 
-    // Search bar
+async function load() {
+    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
         searchbar.id = "searchbar-Better"
@@ -68,7 +70,7 @@ window.addEventListener('load', async (event) => {
             }
         }
     }
-}, false);
+}
 
 window.Clipboard = (function(window, document, navigator) {
     var textArea, copy, range, selection;
