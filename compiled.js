@@ -11,6 +11,8 @@ const REGEXP = /\(([^)]+)\)/;
 const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
+// Theme API location
+const THEME_API = "https://rcja.app:3000"
 
 let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
@@ -26,14 +28,14 @@ async function load() {
         searchbar.addEventListener('keyup', SearchItem);
         document.getElementById("message-list").children[1].appendChild(searchbar)
     }
+    // Cache management
     if (localStorage.getItem("lastTimetableCache") && localStorage.getItem("lastTimetableCache") < 8.64e+7) {
         localStorage.removeItem("lastTimetableCache")
     }
-    //This is called every page in case the cache expires (happens every 1 day)
     id = (new URL(document.querySelectorAll("#profile-drop img")[0]?.src)).searchParams.get("id")
     await writeCache()
-    allPages()
 
+    allPages()
     if (window.location.pathname == "/") {
         mainPage()
     }
@@ -46,18 +48,53 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/due")) {
         setInterval(colourDueworkCalendar, 500)
     }
-    
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
     if (window.location.pathname.startsWith("/timetable")) {
         timetable()
     }
-    
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(id)) {
         profilePage()
     }
+
+    // Theme management
+    if (localStorage.getItem("themeCode")) {
+        const newtheme = await getTheme();
+
+        if (newtheme && newtheme.type == "user") { 
+            if (JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
+                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+                document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
+                setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
+            }
+        }
+    }
 }
+
+window.Clipboard = (function(window, document, navigator) {
+    var textArea, copy, range, selection;
+    copy = function(text) {
+      textArea = document.createElement('textArea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      if (navigator.userAgent.match(/ipad|iphone/i)) {
+          range = document.createRange();
+          range.selectNodeContents(textArea);
+          selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          textArea.setSelectionRange(0, 999999);
+      } else {
+          textArea.select();
+      }
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    };
+    return {
+        copy: copy
+    };
+})(window, document, navigator);
 
 function rgbToHex(r, g, b) {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
@@ -74,10 +111,52 @@ function hexToRgb(hex) {
     return null;
 }
 
+function getRGB(c) {
+    return parseInt(c, 16) || c
+}
+  
+function getsRGB(c) {
+    return getRGB(c) / 255 <= 0.03928
+      ? getRGB(c) / 255 / 12.92
+      : Math.pow((getRGB(c) / 255 + 0.055) / 1.055, 2.4)
+}
+  
+function getLuminance(hexColor) {
+    return (
+      0.2126 * getsRGB(hexColor.substr(1, 2)) +
+      0.7152 * getsRGB(hexColor.substr(3, 2)) +
+      0.0722 * getsRGB(hexColor.substr(-2))
+    )
+}
+function getContrast(f, b) {
+    const L1 = getLuminance(f)
+    const L2 = getLuminance(b)
+    return (Math.max(L1, L2) + 0.25) / (Math.min(L1, L2) + 0.25)
+}
+  
+function getTextColor(bgColor) {
+    const whiteContrast = getContrast(bgColor, '#ffffff')
+    const blackContrast = getContrast(bgColor, '#000000')
+  
+    return whiteContrast > blackContrast ? '#ffffff' : '#000000'
+}
+
+function rgbsFromHexes(url) {
+    const matches = [...url.matchAll(/(?:[0-9a-fA-F]{6})/g)]
+
+    let rgbs = []
+    for (const match of matches) {
+        const rgbcode = hexToRgb(match)
+        if (!rgbcode) continue;
+        rgbs.push(`rgb(${rgbcode})`);
+    }
+    return rgbs
+}
+
 async function allPages() {
     colourSidebar();
     colourTimetable();
-    colourDuework()
+    colourDuework();
     setTimeout(colourDuework, 1000) // Some pages require extra loading time
 }
 
@@ -115,7 +194,13 @@ function colourTimetable() {
         for (const subjectcode of subjectcodes) {
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
             if (!colour) { continue; }
+            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             subject.parentNode.style.backgroundColor = colour
+            subject.parentNode.style.color = textcol
+            subject.parentNode.querySelectorAll("*:not(a)").forEach(e => { e.style.color = textcol })
+
+            if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
+
         }
     }
 }
@@ -144,6 +229,11 @@ function profilePage() {
             <td style="text-align: center"><a id="colReset" data-target="delete" data-state="closed" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
         </tr>`
     }
+    if (Object.keys(usercolors).length < 1) {
+        tablerows += `<tr role="row" class="subject-color-row">
+            <td colspan="3">There are no timetable subjects associated with your account</td>
+        </tr>`
+    }
 
     let contentrow = document.querySelectorAll("#content .row")
     if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
@@ -169,11 +259,84 @@ function profilePage() {
                     </span>
                 </section>
             </div>
+            <h2 class="subheader">Theme Manager</h2>
+            <section>
+                <fieldset class="content">
+                    <legend><strong>Theme Import/Export</strong></legend>
+                    <div class="small-12 columns">
+                        <p>Import a theme (list of hex codes seperated by dashes), this also supports URLs from <a href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
+                    </div>
+                    <div class="small-12 columns">
+                        <div class="input-group">
+                            <input type="text" id="importtext" placeholder="Hex codes seperated by dashes (#FDFD96-#22AA66...) or https://coolors.co/ link">
+                            <a class="button disabled" id="importbtn">Import</a>
+                        </div>
+                    </div>
+                    <div class="small-12 columns">
+                        <p>Export your current theme to share it with friends!</p>
+                    </div>
+                    <div class="small-12 columns">
+                        <div class="input-group">
+                            <input type="text" id="currenttheme" readonly>
+                            <a class="button" id="exportbtn">Export</a>
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="content">
+                    <legend><strong>Device Sync: <span style="color: #ff7d7d" id="syncstatus">OFF</span></strong></legend>
+                    <div class="small-12 columns">
+                        <p>You can generate a <code>Sync Code</code> to share theme colours between devices</p>
+                    </div>
+                    <div class="small-12 columns">
+                        <div class="input-group">
+                            <input type="text" id="synccode" placeholder="There is no sync code associated with this device, enter one here!">
+                            <a class="button disabled" id="updatesynccode">Update</a>
+                        </div>
+                    </div>
+                    <div class="small-12 columns">
+                        <p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
+                    </div>
+                </fieldset>
+                <div class="component-action">
+                    <section>
+                        <a class="button" id="gensynccode">Generate new sync code</a>
+                        <a class="button" style="color: #ff5555;" data-reveal-id="themereset-modal">Reset</a>
+                        <div data-reveal id="themereset-modal" class="reveal-modal small">
+                            <h2>Reset Timetable Theme</h2>
+                            <p>This will reset all your theme colours back to original, are you sure you want to do this?</p> 
+                            <ul class="flex-list buttons">
+                                <li><a class="button" style="background-color: #ffbfbf; color: #f44;" id="themereset">Reset Theme</a></li>
+                                <li><a class="button" id="modalclosebtn">Cancel</a></li>
+                            </ul> 
+                            <a aria-label="Close" class="close-reveal-modal">×</a>
+                        </div>
+                    </section>
+                </div>
+            </section>
         </div>`)
+
+    let elem_synccode = document.getElementById("synccode")
+    let elem_gensynccode = document.getElementById("gensynccode")
+    let elem_syncstatus = document.getElementById("syncstatus")
+    let elem_updatesynccode = document.getElementById("updatesynccode")
+    let elem_themereset = document.getElementById("themereset")
+    let elem_currenttheme = document.getElementById("currenttheme")
+    let elem_importtext = document.getElementById("importtext")
+    let elem_modalclosebtn = document.getElementById("modalclosebtn")
+    let elem_importbtn = document.getElementById("importbtn")
+    let elem_exportbtn = document.getElementById("exportbtn")
+
+    function updateThemeExport() {
+        elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableColours"])).map((e) => { 
+            return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) }
+        ).join("-").replaceAll("#", "")
+    }
+    updateThemeExport();
 
     for (const row of document.querySelectorAll(".subject-color-row")) {
         // Colour picker input
-        row.children[1].children[0].addEventListener("change", function(e) {
+        if (!row.children[1]) continue;
+        row.children[1].children[0].addEventListener("change", async function(e) {
             const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -182,9 +345,11 @@ function profilePage() {
             usercols[row.children[0].innerText] = rgbval
             localStorage.setItem("timetableColours", JSON.stringify(usercols))
             colourSidebar();
+            updateThemeExport();
+            await postTheme();
         })
         // Reset button
-        row.children[2].children[0].addEventListener("click", function () {
+        row.children[2].children[0].addEventListener("click", async function () {
             let defaultColours = JSON.parse(localStorage.getItem("timetableColoursDefault"))
             const rgbval = defaultColours[row.children[0].innerText]
             row.style.borderLeft = "7px solid " + rgbval
@@ -195,7 +360,126 @@ function profilePage() {
             usercols[row.children[0].innerText] = rgbval
             localStorage.setItem("timetableColours", JSON.stringify(usercols))
             colourSidebar();
+            updateThemeExport();
+            await postTheme();
         })
+    }
+
+    elem_modalclosebtn.addEventListener("click", function () {
+        elem_modalclosebtn.removeAttribute("aria-hidden")
+        elem_modalclosebtn.removeAttribute("tab-index")
+        document.getElementById("themereset-modal").classList = "reveal-modal small"
+        document.getElementById("themereset-modal").style = ""
+        document.querySelector(".reveal-modal-bg").remove()
+    })
+    elem_exportbtn.addEventListener("click", function () {
+        elem_exportbtn.innerText = "Copied!"        
+        if (navigator.userAgent.match(/ipad|iphone/i)) {
+            Clipboard.copy(elem_currenttheme.value)
+        } else {
+            elem_currenttheme.select();
+            document.execCommand("copy");
+        }
+        setTimeout(() => { elem_exportbtn.innerText = "Export" }, 1000)
+    })
+    elem_importbtn.addEventListener("click", async function () {
+        if (!elem_importtext.value) { return }
+        let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        const newtheme = rgbsFromHexes(elem_importtext.value)
+        if (newtheme.length == 0) { 
+            elem_importbtn.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Input:</strong> Ensure the text you enter is a list of hex codes seperated by dashes or a coolors.co link.<br><br>For example: "d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4"</div>`)
+            setTimeout(function () {
+                document.querySelector(".themecodealert")?.remove()
+            }, 6000)
+            return
+        }
+        let i = 0
+        for (subjectcode in currenttheme) {
+            currenttheme[subjectcode] = newtheme[i]
+            i++; if (i >= newtheme.length) { i = 0; }
+        }
+        localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
+        await postTheme();
+        window.location.reload()
+    })
+    elem_gensynccode.addEventListener("click", async function () {
+        const newcode = await genThemeCode()
+        elem_synccode.value = newcode.toUpperCase()
+        elem_syncstatus.innerText = "ON"
+        elem_syncstatus.style.color = "green"
+        elem_updatesynccode.classList = "button disabled"
+        localStorage.setItem("themeCode", newcode.toUpperCase())
+        await postTheme()
+    })
+    elem_themereset.addEventListener("click", async function () {
+        localStorage.removeItem("themeCode") 
+        localStorage.removeItem("timetableColours")
+        localStorage.removeItem("defaultTimetableColours")
+        localStorage.removeItem("lastTimetableCache")
+        elem_updatesynccode.classList = "button disabled"
+        elem_syncstatus.innerText = "OFF"
+        elem_syncstatus.style.color = "#ff7d7d"
+        window.location.reload()
+    })
+    elem_importtext.addEventListener("keyup", function () {
+        if (!elem_importtext.value) {
+            elem_importbtn.classList = "button disabled"
+        } else {
+            elem_importbtn.classList = "button"
+        }
+    })
+    elem_synccode.addEventListener("keyup", function () {
+        if (elem_synccode.value != localStorage.getItem("themeCode")) {
+            elem_updatesynccode.classList = "button"
+        } else {
+            elem_updatesynccode.classList = "button disabled"
+        }
+    })
+
+    elem_updatesynccode.addEventListener("click", async function () {
+        if (elem_synccode.value == localStorage.getItem("themeCode")) { return }
+        
+        if (elem_synccode.value == "") { 
+            localStorage.removeItem("themeCode") 
+            elem_updatesynccode.classList = "button disabled"
+            elem_syncstatus.innerText = "OFF"
+            elem_syncstatus.style.color = "#ff7d7d"
+        } else {
+            const newtheme = await getTheme(elem_synccode.value)
+            if (!newtheme) {
+                elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Theme Code:</strong> Ensure you have entered a valid theme code</div>`)
+                setTimeout(function () {
+                    document.querySelector(".themecodealert")?.remove()
+                }, 3000)
+                return
+            }
+            
+            elem_updatesynccode.classList = "button disabled"
+            if (newtheme.type == "user") {
+                elem_syncstatus.innerText = "ON"
+                elem_syncstatus.style.color = "green"
+                localStorage.setItem("themeCode", elem_synccode.value)
+                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+                window.location.reload()
+            } else {
+                localStorage.removeItem("themeCode")
+                let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+                let i = 0
+                for (subjectcode in currenttheme) {
+                    currenttheme[subjectcode] = newtheme.theme[i]
+                    i++; if (i >= newtheme.theme.length) { i = 0; }
+                }
+                localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
+                window.location.reload()
+            }
+        }
+    })
+
+    if (localStorage.getItem("themeCode")) {    
+        elem_synccode.value = localStorage.getItem("themeCode")
+        elem_syncstatus.innerText = "ON"
+        elem_syncstatus.style.color = "green"
+        elem_updatesynccode.classList = "button disabled"
     }
 }
 
@@ -208,10 +492,11 @@ function colourDueworkCalendar() {
         if (!subjects) continue
         for (const subject of subjects) {
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
+            if (!colour) { continue }
+            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             duework.parentNode.style.backgroundColor = colour
             for (const title of duework.parentNode.children) {
-                //White on the light colours are really hard to read, so black text it is
-                title.style.color = "black"
+                title.style.color = textcol
             }
         }
     }
@@ -279,7 +564,9 @@ function eDiary() {
             if (!subjectcode) continue;
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
             if (!colour) continue;
+            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             event.style.backgroundColor = colour
+            event.querySelectorAll("*").forEach(e => { e.style.color = textcol })
             event.setAttribute("recoloured", 1)
         }
     } else if (page == "List") {
@@ -290,7 +577,9 @@ function eDiary() {
             if (!subjectcode) return; 
             const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
             if (!colour) return; 
+            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             event.style.backgroundColor = colour
+            event.querySelectorAll("*").forEach(e => { e.style.color = textcol })
         })
     }
 }
@@ -394,3 +683,35 @@ async function writeCache() {
     });
 }
 
+async function genThemeCode() {
+    return new Promise (( resolve ) => {
+        fetch(THEME_API + "/gencode").then(r => r.json()).then(result => {
+            resolve(result["code"])
+        })
+    });
+}
+
+async function getTheme(themeCode) {
+    return new Promise (( resolve ) => {
+        if (!localStorage.getItem("themeCode") && !themeCode) { resolve(false) }
+        fetch(THEME_API + "/theme/" + (!themeCode ? localStorage.getItem("themeCode") : themeCode)).then(r => r.json()).then(result => {
+            resolve(result)
+        })
+        .catch((error) => {
+            resolve(false)
+        });
+    });
+}
+
+async function postTheme() {
+    return new Promise (( resolve ) => {
+        const themecode = localStorage.getItem("themeCode")
+        fetch(THEME_API + "/theme/" + themecode.toUpperCase(), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({"theme" : JSON.parse(localStorage.getItem("timetableColours"))})
+        }).then(r => { resolve() })
+    });
+}
