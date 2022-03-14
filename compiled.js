@@ -255,7 +255,7 @@ function profilePage() {
             <div class="component-action">
                 <section>
                     <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
-                        Feature made by Zac McWilliam (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
+                        Feature made by Zac McWilliams (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
                     </span>
                 </section>
             </div>
