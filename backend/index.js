@@ -38,6 +38,10 @@ app.use(connection(mysql, {
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :remote-addr'));
 app.use(cors());
 app.use(express.json())
+
+app.get("/smgsapi/compiled.js", async function (req, res, next) {
+    res.sendFile("compiled.js", { root: "." });
+})
 app.get("/smgsapi/gencode", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
