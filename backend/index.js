@@ -38,8 +38,7 @@ app.use(connection(mysql, {
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :remote-addr'));
 app.use(cors());
 app.use(express.json())
-//
-app.get("/gencode", async function(req, res, next) {
+app.get("/smgsapi/gencode", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -52,10 +51,16 @@ app.get("/gencode", async function(req, res, next) {
             promisePool.execute("INSERT INTO userthemes (code, theme) VALUES (?, ?);", [code.toUpperCase(), JSON.stringify({})]);
             res.send({"code": code}).status(200)
         }
-        catch(error) { res.status(501).send("Internal server error") }
+        catch(error) { res.sendStatus(500) }
     })
 })
-app.get("/theme/:code", async function(req, res, next) {
+app.get("/smgsapi/theme/undefined", async function(req, res, next) {
+    return res.sendStatus(200)
+})
+app.post("/smgsapi/theme/undefined", async function(req, res, next) {
+    return res.sendStatus(200)
+})
+app.get("/smgsapi/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -67,13 +72,13 @@ app.get("/theme/:code", async function(req, res, next) {
                 return;
             }
             let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code.toUpperCase()]);
-            if (!user || user.length < 1) return res.status(404).send("Unknown User")
+            if (!user || user.length < 1) return res.status(404).send("Invalid Code")
             res.json({theme: JSON.parse(user[0]["theme"]), type: "user"});
         }
-        catch(error) { return res.send(500); }
+        catch(error) { return res.sendStatus(500); }
     })
 })
-app.post("/theme/:code", async function(req, res, next) {
+app.post("/smgsapi/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -88,10 +93,9 @@ app.post("/theme/:code", async function(req, res, next) {
             }
             const [existinguser] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [user.toUpperCase()]);
             if (!existinguser[0]) return res.status(403).send("Invalid Code")
-            for (const key of Object.keys(JSON.parse(existinguser[0]["theme"]))) {
-                if (!theme[key] && JSON.parse(existinguser[0]["theme"])[key] !== undefined) theme[key] = JSON.parse(existinguser[0]["theme"])[key]
-            }  
-            await promisePool.execute("UPDATE userthemes SET theme = ? WHERE code = ?", [JSON.stringify(theme), user.toUpperCase()])
+
+            const newtheme = Object.assign({}, JSON.parse(existinguser[0]["theme"]), theme)
+            await promisePool.execute("UPDATE userthemes SET theme = ? WHERE code = ?", [JSON.stringify(newtheme), user.toUpperCase()])
             res.sendStatus(200)
         } 
         catch (error) { return next(error) }
