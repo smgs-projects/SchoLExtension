@@ -61,7 +61,7 @@ async function load() {
     // Theme management
     if (localStorage.getItem("themeCode")) {
         const newtheme = await getTheme();
-
+        
         if (newtheme && newtheme.type == "user") { 
             if (JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
@@ -70,6 +70,7 @@ async function load() {
             }
         }
     }
+    await checkTimetable();
 }
 
 window.Clipboard = (function(window, document, navigator) {
@@ -226,7 +227,7 @@ function profilePage() {
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td><input type="color" value="${hexvalue}"></td>
-            <td style="text-align: center"><a id="colReset" data-target="delete" data-state="closed" class="icon-delete" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
+            <td style="text-align: center"><a id="colReset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
         </tr>`
     }
     if (Object.keys(usercolors).length < 1) {
@@ -300,16 +301,7 @@ function profilePage() {
                 <div class="component-action">
                     <section>
                         <a class="button" id="gensynccode">Generate new sync code</a>
-                        <a class="button" style="color: #ff5555;" data-reveal-id="themereset-modal">Reset</a>
-                        <div data-reveal id="themereset-modal" class="reveal-modal small">
-                            <h2>Reset Timetable Theme</h2>
-                            <p>This will reset all your theme colours back to original, are you sure you want to do this?</p> 
-                            <ul class="flex-list buttons">
-                                <li><a class="button" style="background-color: #ffbfbf; color: #f44;" id="themereset">Reset Theme</a></li>
-                                <li><a class="button" id="modalclosebtn">Cancel</a></li>
-                            </ul> 
-                            <a aria-label="Close" class="close-reveal-modal">×</a>
-                        </div>
+                        <a class="button" style="color: #ff5555;" id="themereset">Reset</a>
                     </section>
                 </div>
             </section>
@@ -322,7 +314,6 @@ function profilePage() {
     let elem_themereset = document.getElementById("themereset")
     let elem_currenttheme = document.getElementById("currenttheme")
     let elem_importtext = document.getElementById("importtext")
-    let elem_modalclosebtn = document.getElementById("modalclosebtn")
     let elem_importbtn = document.getElementById("importbtn")
     let elem_exportbtn = document.getElementById("exportbtn")
 
@@ -365,13 +356,6 @@ function profilePage() {
         })
     }
 
-    elem_modalclosebtn.addEventListener("click", function () {
-        elem_modalclosebtn.removeAttribute("aria-hidden")
-        elem_modalclosebtn.removeAttribute("tab-index")
-        document.getElementById("themereset-modal").classList = "reveal-modal small"
-        document.getElementById("themereset-modal").style = ""
-        document.querySelector(".reveal-modal-bg").remove()
-    })
     elem_exportbtn.addEventListener("click", function () {
         elem_exportbtn.innerText = "Copied!"        
         if (navigator.userAgent.match(/ipad|iphone/i)) {
@@ -412,6 +396,7 @@ function profilePage() {
         await postTheme()
     })
     elem_themereset.addEventListener("click", async function () {
+        if (!confirm("Theme Reset: This will reset all your theme colours back to original, are you sure you want to do this?")) return;
         localStorage.removeItem("themeCode") 
         localStorage.removeItem("timetableColours")
         localStorage.removeItem("defaultTimetableColours")
@@ -445,7 +430,7 @@ function profilePage() {
             elem_syncstatus.innerText = "OFF"
             elem_syncstatus.style.color = "#ff7d7d"
         } else {
-            const newtheme = await getTheme(elem_synccode.value)
+            let newtheme = await getTheme(elem_synccode.value)
             if (!newtheme) {
                 elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Theme Code:</strong> Ensure you have entered a valid theme code</div>`)
                 setTimeout(function () {
@@ -459,6 +444,8 @@ function profilePage() {
                 elem_syncstatus.innerText = "ON"
                 elem_syncstatus.style.color = "green"
                 localStorage.setItem("themeCode", elem_synccode.value)
+                await postTheme()
+                newtheme = await getTheme(elem_synccode.value)
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
                 window.location.reload()
             } else {
@@ -703,15 +690,31 @@ async function getTheme(themeCode) {
     });
 }
 
+async function checkTimetable() {
+    return new Promise (async ( resolve ) => {
+        let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
+
+        for (const subject of Object.keys(defaultTheme)) {
+            if (!currentTheme[subject]) {
+                currentTheme[subject] = defaultTheme[subject]
+                localStorage.setItem("timetableColours", currentTheme)
+            }
+        }
+        await postTheme()
+        resolve()
+    });
+}
+
 async function postTheme() {
     return new Promise (( resolve ) => {
         const themecode = localStorage.getItem("themeCode")
-        fetch(THEME_API + "/theme/" + themecode.toUpperCase(), {
+        fetch(THEME_API + "/theme/" + themecode?.toUpperCase(), {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({"theme" : JSON.parse(localStorage.getItem("timetableColours"))})
+            body: JSON.stringify({"theme" : JSON.parse(localStorage.getItem("timetableColours")), "sbu" : schoolboxUser})
         }).then(r => { resolve() })
     });
 }
