@@ -545,6 +545,19 @@ function feedback() {
 function eDiary() {
     const page = document.querySelector(".fc-button-group .fc-button-active").innerText
 
+    if (page == "List") {
+        colourEDiaryList()
+    } else {
+        document.querySelectorAll(".fc-timegrid-event, .fc-daygrid-event").forEach(event => {
+            const subjectcode = REGEXP.exec(event.innerText)
+            if (!subjectcode) return; 
+            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
+            if (!colour) return; 
+            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
+            event.style.backgroundColor = colour
+            event.querySelectorAll("*").forEach(e => { e.style.color = textcol })
+        })
+    }
     if (page == "Month") {
         for (const event of document.querySelectorAll("div.fc-popover-body .fc-daygrid-event:not([recoloured])")) {
             const subjectcode = REGEXP.exec(event.innerText)
@@ -556,18 +569,6 @@ function eDiary() {
             event.querySelectorAll("*").forEach(e => { e.style.color = textcol })
             event.setAttribute("recoloured", 1)
         }
-    } else if (page == "List") {
-        colourEDiaryList()
-    } else {
-        document.querySelectorAll(".fc-timegrid-event").forEach(event => {
-            const subjectcode = REGEXP.exec(event.innerText)
-            if (!subjectcode) return; 
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
-            if (!colour) return; 
-            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
-            event.style.backgroundColor = colour
-            event.querySelectorAll("*").forEach(e => { e.style.color = textcol })
-        })
     }
 }
 
