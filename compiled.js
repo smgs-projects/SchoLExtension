@@ -265,7 +265,7 @@ function profilePage() {
                 <fieldset class="content">
                     <legend><strong>Theme Import/Export</strong></legend>
                     <div class="small-12 columns">
-                        <p>Import a theme (list of hex codes seperated by dashes), this also supports URLs from <a href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
+                        <p>Import a theme (list of hex codes seperated by dashes), this also supports URLs from <a target="_blank" href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
                     </div>
                     <div class="small-12 columns">
                         <div class="input-group">
