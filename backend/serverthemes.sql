@@ -1,40 +1,8 @@
--- phpMyAdmin SQL Dump
--- version 5.1.1
--- https://www.phpmyadmin.net/
---
--- Host: localhost
--- Generation Time: Mar 13, 2022 at 12:06 PM
--- Server version: 10.4.22-MariaDB
--- PHP Version: 8.0.13
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Database: `themes`
---
-
--- --------------------------------------------------------
-
---
--- Table structure for table `serverthemes`
---
-
 CREATE TABLE `serverthemes` (
   `name` varchar(30) NOT NULL,
   `theme` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`theme`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
--- Dumping data for table `serverthemes`
---
 
 INSERT INTO `serverthemes` (`name`, `theme`) VALUES
 ('beach', '[\"rgb(0, 41, 107)\",\"rgb(0, 52, 122)\",\"rgb(0, 63, 136)\",\"rgb(0, 72, 147)\",\"rgb(0, 80, 157)\",\"rgb(253, 197, 0)\",\"rgb(254, 205, 0)\",\"rgb(255, 213, 0)\"]'),
@@ -63,20 +31,7 @@ INSERT INTO `serverthemes` (`name`, `theme`) VALUES
 ('sunset', '[\"rgb(255, 109, 0)\",\"rgb(255, 121, 0)\",\"rgb(255, 133, 0)\",\"rgb(255, 145, 0)\",\"rgb(255, 158, 0)\",\"rgb(36, 0, 70)\",\"rgb(60, 9, 108)\",\"rgb(90, 24, 154)\",\"rgb(123, 44, 191)\",\"rgb(157, 78, 221)\"]'),
 ('void', '[\"rgb(0, 0, 0)\"]');
 ('robocup', '[\"rgb(155, 188, 61)\"]');
-('little', '[\"rgb(204, 204, 9)\"]');
 
 
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `serverthemes`
---
 ALTER TABLE `serverthemes`
   ADD PRIMARY KEY (`name`);
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
