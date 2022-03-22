@@ -82,7 +82,7 @@ app.get("/smgsapi/theme/:code", async function(req, res, next) {
         catch(error) { return res.sendStatus(500); }
     })
 })
-app.get("smgsapi/communityengagment/gotrickrolled/:user", async function(req, res, next) {
+app.get("smgsapi/communityengagment/rickroll/log/:user", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -95,6 +95,9 @@ app.get("smgsapi/communityengagment/gotrickrolled/:user", async function(req, re
         }
         catch(error) { return res.send(500); }
     })
+})
+app.get("smgsapi/communityengagment/rickrolled/heartbeat/", async function(req, res, next) {
+    //just for future use
 })
 app.post("/smgsapi/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
