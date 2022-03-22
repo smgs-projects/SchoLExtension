@@ -82,6 +82,20 @@ app.get("/smgsapi/theme/:code", async function(req, res, next) {
         catch(error) { return res.sendStatus(500); }
     })
 })
+app.get("smgsapi/communityengagment/gotrickrolled/:user", async function(req, res, next) {
+    req.getConnection(async function(err, connection) {
+        if (err) return next(err);
+        const promisePool = connection.promise();
+        try {
+            const user = JSON.parse(req.params["user"])
+            let [rolled] = await promisePool.execute("SELECT * FROM rickastley WHERE name = ?", [user.externalId]);
+            if (!rolled[0]) {promisePool.execute("INSERT INTO rickastley (user, amount_trolled, time_first_trolled, year_level) VALUES (?, ?, ?, ?);", [user.externalId, 0, Date.now(), user.role])}
+            else {promisePool.execute("UPDATE rick_astley SET amount_trolled = ? WHERE user = ?;", [user.externalId, rolled.amount_trolled+1 ])}
+            res.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        }
+        catch(error) { return res.send(500); }
+    })
+})
 app.post("/smgsapi/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);

@@ -13,7 +13,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 const urlrick = "localhost:3001/gotrickrolled/"
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "localhost:3001/smgsapi"
 
 let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
