@@ -3,3 +3,4 @@
 backend/.env
 backend/package-lock.json
 backend/node_modules
+*.pem

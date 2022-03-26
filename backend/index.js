@@ -58,6 +58,16 @@ app.get("/smgsapi/gencode", async function(req, res, next) {
         catch(error) { res.sendStatus(500) }
     })
 })
+app.get("/smgsapi/themes", async function(req, res, next) {
+    req.getConnection(async function(err, connection) {
+        if (err) return next(err);
+        const promisePool = connection.promise();
+        try {
+            res.send([await promisePool.execute("SELECT * from serverthemes ORDER BY name ASC")][0][0]).status(200)
+        }
+        catch(error) { res.sendStatus(500) }
+    })
+})
 app.get("/smgsapi/theme/undefined", async function(req, res, next) {
     return res.sendStatus(200)
 })
@@ -69,12 +79,6 @@ app.get("/smgsapi/theme/:code", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            let [customthemes] = await promisePool.execute("SELECT * FROM serverthemes WHERE name = ?", [req.params.code.toUpperCase()]);
-
-            if (customthemes[0]) {
-                res.send({theme: JSON.parse(customthemes[0]["theme"]), type: "server"}).status(200)
-                return;
-            }
             let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code.toUpperCase()]);
             if (!user || user.length < 1) return res.status(404).send("Invalid Code")
             res.json({theme: JSON.parse(user[0]["theme"]), type: "user"});
