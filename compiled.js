@@ -13,7 +13,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 const urlrick = "localhost:3001/gotrickrolled/"
 // Theme API location
-const THEME_API = "localhost:3001/smgsapi"
+const THEME_API = "https://rcja.app/smgsapi"
 
 let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
@@ -231,7 +231,7 @@ function classPage() {
     }
     // const text = document.querySelectorAll("div.card-content")
 }
-function profilePage() {
+async function profilePage() {
     let tablerows = "";
     let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
     for (const subject in usercolors) {
@@ -247,6 +247,15 @@ function profilePage() {
         tablerows += `<tr role="row" class="subject-color-row">
             <td colspan="3">There are no timetable subjects associated with your account</td>
         </tr>`
+    }
+
+    let themeoptions = ""
+    const themes = await getThemes()
+    if (themes) {
+        themeoptions += `<option disabled selected>Click to select a theme</option>`
+        for (const theme of themes) {
+            themeoptions += `<option value='${theme.theme}'>${theme.name}</option>`
+        }
     }
 
     let contentrow = document.querySelectorAll("#content .row")
@@ -295,6 +304,15 @@ function profilePage() {
                             <a class="button" id="exportbtn">Export</a>
                         </div>
                     </div>
+                    <div class="small-12 columns">
+                        <p>Or choose a premade theme!</p>
+                    </div>
+                    <div class="small-12 columns">
+                    <select id="context-selector-themes">
+                        ${themeoptions}
+                    </select>
+                    </div>
+                    
                 </fieldset>
                 <fieldset class="content">
                     <legend><strong>Device Sync: <span style="color: #ff7d7d" id="syncstatus">OFF</span></strong></legend>
@@ -329,14 +347,15 @@ function profilePage() {
     let elem_importtext = document.getElementById("importtext")
     let elem_importbtn = document.getElementById("importbtn")
     let elem_exportbtn = document.getElementById("exportbtn")
+    let elem_themeselector = document.getElementById("context-selector-themes")
 
     function updateThemeExport() {
         elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableColours"])).map((e) => { 
             return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) }
-        ).join("-").replaceAll("#", "")
+        ).join("-").replaceAll("#", "").toUpperCase()
     }
     updateThemeExport();
-
+    
     for (const row of document.querySelectorAll(".subject-color-row")) {
         // Colour picker input
         if (!row.children[1]) continue;
@@ -368,7 +387,19 @@ function profilePage() {
             await postTheme();
         })
     }
-
+    elem_themeselector.addEventListener("change", async function(evt){
+        localStorage.removeItem("themeCode")
+        let newtheme = evt.target.value.split("-")
+        let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        let i = 0
+        for (subjectcode in currenttheme) {
+            currenttheme[subjectcode] = "rgb(" + hexToRgb(newtheme[i]) + ")"
+            i++; if (i >= newtheme.length) { i = 0; }
+        }
+        localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
+        await postTheme()
+        window.location.reload()
+    })
     elem_exportbtn.addEventListener("click", function () {
         elem_exportbtn.innerText = "Copied!"        
         if (navigator.userAgent.match(/ipad|iphone/i)) {
@@ -445,7 +476,7 @@ function profilePage() {
         } else {
             let newtheme = await getTheme(elem_synccode.value)
             if (!newtheme) {
-                elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Theme Code:</strong> Ensure you have entered a valid theme code</div>`)
+                elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Sync Code:</strong> Ensure you have entered a valid theme sync code</div>`)
                 setTimeout(function () {
                     document.querySelector(".themecodealert")?.remove()
                 }, 3000)
@@ -696,7 +727,17 @@ async function genThemeCode() {
         })
     });
 }
-
+async function getThemes() {
+    return new Promise (( resolve ) => {
+        fetch(THEME_API + "/themes").then(result => {
+            resolve(result.json())
+        })
+        .catch((error) => {
+            resolve(false)
+        });
+    });
+    
+}
 async function getTheme(themeCode) {
     return new Promise (( resolve ) => {
         if (!localStorage.getItem("themeCode") && !themeCode) { resolve(false) }

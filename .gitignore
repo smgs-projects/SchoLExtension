@@ -1,4 +1,8 @@
 node_modules
 .env
-*.pem
 package*
+.DS_Store
+backend/.env
+backend/package-lock.json
+backend/node_modules
+*.pem
