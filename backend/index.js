@@ -7,10 +7,12 @@ import morgan from "morgan"
 import https from "https"
 import fs from "fs"
 dotenv.config()
+
 const certOptions = {
     cert: fs.readFileSync(process.env.CERT),
     key: fs.readFileSync(process.env.CERT_KEY)
 };
+
 const nato = [
     "Alpha", "Bravo", "Charlie", 
     "Delta", "Echo", "Foxtrot", 
@@ -61,7 +63,7 @@ app.get("/smgsapi/themes", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            res.send({"themes": [await promisePool.execute("SELECT * from serverthemes")][0][0]}).status(200)
+            res.send([await promisePool.execute("SELECT * from serverthemes ORDER BY name ASC")][0][0]).status(200)
         }
         catch(error) { res.sendStatus(500) }
     })
@@ -77,11 +79,6 @@ app.get("/smgsapi/theme/:code", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            let [customthemes] = await promisePool.execute("SELECT * FROM serverthemes WHERE name = ?", [req.params.code.toUpperCase()]);
-            if (customthemes[0]) {
-                res.send({theme: JSON.parse(customthemes[0]["theme"]), type: "server"}).status(200)
-                return;
-            }
             let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code.toUpperCase()]);
             if (!user || user.length < 1) return res.status(404).send("Invalid Code")
             res.json({theme: JSON.parse(user[0]["theme"]), type: "user"});

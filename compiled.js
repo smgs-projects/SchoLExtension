@@ -236,22 +236,17 @@ async function profilePage() {
         </tr>`
     }
 
-    let contentrow = document.querySelectorAll("#content .row")
-    if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
     let themeoptions = ""
-    const themes = (await getThemes())
-    if (themes["themes"]) {
-        themeoptions += `<option value="no-theme"></option>`
-        for (const theme of themes["themes"]) {
-            if (theme.name === localStorage.getItem("currentTheme")) {
-                themeoptions += `<option value='${theme["name"]}' selected>${theme.name}</option>`
-
-            }
-            else {
-                themeoptions += `<option value='${theme["name"]}'>${theme.name}</option>`
-            }
+    const themes = await getThemes()
+    if (themes) {
+        themeoptions += `<option disabled selected>Click to select a theme</option>`
+        for (const theme of themes) {
+            themeoptions += `<option value='${theme.theme}'>${theme.name}</option>`
         }
     }
+
+    let contentrow = document.querySelectorAll("#content .row")
+    if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
     
     contentrow.querySelector("div").classList = "medium-12 large-6 island"
     contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
@@ -297,7 +292,7 @@ async function profilePage() {
                         </div>
                     </div>
                     <div class="small-12 columns">
-                        <p>Or use a premade theme!</p>
+                        <p>Or choose a premade theme!</p>
                     </div>
                     <div class="small-12 columns">
                     <select id="context-selector-themes">
@@ -339,11 +334,12 @@ async function profilePage() {
     let elem_importtext = document.getElementById("importtext")
     let elem_importbtn = document.getElementById("importbtn")
     let elem_exportbtn = document.getElementById("exportbtn")
+    let elem_themeselector = document.getElementById("context-selector-themes")
 
     function updateThemeExport() {
         elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableColours"])).map((e) => { 
             return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) }
-        ).join("-").replaceAll("#", "")
+        ).join("-").replaceAll("#", "").toUpperCase()
     }
     updateThemeExport();
     
@@ -378,24 +374,19 @@ async function profilePage() {
             await postTheme();
         })
     }
-    document.getElementById("context-selector-themes").onchange = async function(evt){
-        const themename = evt.target.value;
-        if (localStorage.getItem("currentTheme") && localStorage.getItem("currentTheme") === themename) return;
-        const theme = await getTheme(themename)
-        if (theme) {
-            localStorage.setItem("currentTheme", themename)
-            localStorage.removeItem("themeCode")
-            let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-            let i = 0
-            for (subjectcode in currenttheme) {
-                currenttheme[subjectcode] = theme.theme[i]
-                i++; if (i >= theme.theme.length) { i = 0; }
-            }
-            localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
-            await postTheme()
-            window.location.reload()
+    elem_themeselector.addEventListener("change", async function(evt){
+        localStorage.removeItem("themeCode")
+        let newtheme = evt.target.value.split("-")
+        let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        let i = 0
+        for (subjectcode in currenttheme) {
+            currenttheme[subjectcode] = "rgb(" + hexToRgb(newtheme[i]) + ")"
+            i++; if (i >= newtheme.length) { i = 0; }
         }
-    };
+        localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
+        await postTheme()
+        window.location.reload()
+    })
     elem_exportbtn.addEventListener("click", function () {
         elem_exportbtn.innerText = "Copied!"        
         if (navigator.userAgent.match(/ipad|iphone/i)) {
@@ -472,7 +463,7 @@ async function profilePage() {
         } else {
             let newtheme = await getTheme(elem_synccode.value)
             if (!newtheme) {
-                elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Theme Code:</strong> Ensure you have entered a valid theme code</div>`)
+                elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Sync Code:</strong> Ensure you have entered a valid theme sync code</div>`)
                 setTimeout(function () {
                     document.querySelector(".themecodealert")?.remove()
                 }, 3000)
