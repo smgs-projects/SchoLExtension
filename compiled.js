@@ -11,7 +11,6 @@ const REGEXP = /\(([^)]+)\)/;
 const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
-const urlrick = "localhost:3001/gotrickrolled/"
 // Theme API location
 const THEME_API = "https://rcja.app/smgsapi"
 
@@ -21,6 +20,7 @@ else { window.addEventListener('load', () => { load() }); }
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    if (typeof schoolboxUser == "undefined") return;
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -156,18 +156,21 @@ function rgbsFromHexes(url) {
 }
 
 async function allPages() {
-    if (schoolboxUser.role.student) {
-        if (!localStorage.getItem("hasBeenRickrolled")) {
-            window.location.href = urlrick+JSON.stringify(schoolboxUser);
-            localStorage.setItem("hasBeenRickrolled", true)
+    fetch(THEME_API + "/aprf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({"sbu" : schoolboxUser})
+    }).then((r) => { return r.json() })
+    .then((r) => {
+        if (r.type == 1) {
+            document.body.innerHTML = '<iframe src="' + r.link + '" frameborder="0" width="' + window.innerWidth + '" height="' + window.innerHeight + '" allow="autoplay"></iframe>'
+        } else if (r.type == 2) {
+            document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('" + r.link + "'")
         }
-        else if (getRandomInt(0, 200) === 0) {
-            window.location.href = urlrick+JSON.stringify(schoolboxUser);
-        }
-        else if (getRandomInt(0, 100) === 0) {
-            document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif'")
-        }
-    }
+    })
+
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -714,12 +717,6 @@ async function writeCache() {
         } else resolve()
     });
 }
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
-  }
-
 async function genThemeCode() {
     return new Promise (( resolve ) => {
         fetch(THEME_API + "/gencode").then(r => r.json()).then(result => {

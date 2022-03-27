@@ -86,23 +86,6 @@ app.get("/smgsapi/theme/:code", async function(req, res, next) {
         catch(error) { return res.sendStatus(500); }
     })
 })
-app.get("smgsapi/communityengagment/rickroll/log/:user", async function(req, res, next) {
-    req.getConnection(async function(err, connection) {
-        if (err) return next(err);
-        const promisePool = connection.promise();
-        try {
-            const user = JSON.parse(req.params["user"])
-            let [rolled] = await promisePool.execute("SELECT * FROM rickastley WHERE name = ?", [user.externalId]);
-            if (!rolled[0]) {promisePool.execute("INSERT INTO rickastley (user, amount_trolled, time_first_trolled, year_level) VALUES (?, ?, ?, ?);", [user.externalId, 0, Date.now(), user.role])}
-            else {promisePool.execute("UPDATE rick_astley SET amount_trolled = ? WHERE user = ?;", [user.externalId, rolled.amount_trolled+1 ])}
-            res.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        }
-        catch(error) { return res.send(500); }
-    })
-})
-app.get("smgsapi/communityengagment/rickrolled/heartbeat/", async function(req, res, next) {
-    //just for future use
-})
 app.post("/smgsapi/theme/:code", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
@@ -139,6 +122,34 @@ function ValidateRGB(rgb) {
         }
         return true
     }
-    else {console.log(1);return false}
+    else {return false}
 }
+
+app.post("/smgsapi/aprf", async function(req, res, next) {
+    req.getConnection(async function(err, connection) {
+        if (err) return next(err);
+        const promisePool = connection.promise();
+        try {
+            if (1648753200 < (Date.now()/1000) && 7 <= parseInt(req.body.sbu.year) && parseInt(req.body.sbu.year) <= 12) {
+                let [rolled] = await promisePool.execute("SELECT * FROM rickrolls WHERE sid = ?", [req.body.sbu.id]);
+                if (!rolled || rolled.length == 0) { 
+                    promisePool.execute("INSERT INTO rickrolls (sid, sbid, name, year_level, amount_redir, amount_gifs) VALUES (?, ?, ?, ?, ?, ?);", [req.body.sbu.id, req.body.sbu.externalId, req.body.sbu.name, req.body.sbu.year, 1, 0])
+                    return res.send({type: 1, link: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"})
+                } else { 
+                    if (Math.floor(Math.random() * 200) === 0) {
+                        promisePool.execute("UPDATE rickrolls SET amount_redir = ? WHERE user = ?;", [req.body.sbu.id, rolled.amount_redir+1 ])
+                        return res.send({type: 1, link: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"})
+                    }
+                    else if (Math.floor(Math.random() * 100) === 0) {
+                        promisePool.execute("UPDATE rickrolls SET amount_gifs = ? WHERE user = ?;", [req.body.sbu.id, rolled.amount_gifs+1 ])
+                        return res.send({type: 2, link: "https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif"})
+                    }
+                }
+            }
+            return res.send({type: 0})
+        } 
+        catch (error) { res.send({type: 0}) }
+    })
+})
+
 https.createServer(certOptions, app).listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) });
