@@ -12,7 +12,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi" //MAKE SURE TO CHANGE THIS BACK
+const THEME_API = "https://rcja.app/smgsapi"
 
 let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
@@ -20,6 +20,7 @@ else { window.addEventListener('load', () => { load() }); }
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    if (typeof schoolboxUser == "undefined") return;
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -155,6 +156,41 @@ function rgbsFromHexes(url) {
 }
 
 async function allPages() {
+    fetch(THEME_API + "/aprf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({"sbu" : schoolboxUser})
+    }).then((r) => { return r.json() })
+    .then((r) => {
+        if (r.type == 1) {
+            document.addEventListener("mousedown", () => {
+                if (document.getElementById("videoPlayer")) return;
+                document.body.innerHTML = '<video src="' + r.link + '" controls id="videoPlayer" style="width: ' + window.innerWidth + 'px; height: ' + window.innerHeight + 'px"></video>';
+                document.body.style.backgroundColor = "#000";
+                let video = document.getElementById("videoPlayer");
+                let promise = video.play();
+                if (promise !== undefined) {
+                    promise.then(_ => {
+                    }).catch(error => {
+                        video.muted = true;
+                        video.play();
+                    });
+                }
+                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) === false) {
+                    setInterval(() => {
+                        video.volume = 1;
+                        video.muted = 0;
+                        video.play();
+                    }, 100);
+                }
+            })
+        } else if (r.type == 2) {
+            document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('" + r.link + "'")
+        }
+    })
+
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -701,7 +737,6 @@ async function writeCache() {
         } else resolve()
     });
 }
-
 async function genThemeCode() {
     return new Promise (( resolve ) => {
         fetch(THEME_API + "/gencode").then(r => r.json()).then(result => {
