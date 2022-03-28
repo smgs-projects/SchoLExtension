@@ -19,7 +19,7 @@ if (document.readyState === "complete" || document.readyState === "interactive")
 else { window.addEventListener('load', () => { load() }); }
 
 async function load() {
-    if (localStorage.getItem("disableQOL") != undefined) return; // Allow disabling of QOL features (mainly for testing)
+    if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
