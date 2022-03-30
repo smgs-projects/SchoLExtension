@@ -203,17 +203,20 @@ function colourSidebar() {
 }
 
 function colourDuework() {
-    let dueworkitems = document.querySelectorAll(".Schoolbox_Learning_Component_Dashboard_UpcomingWorkController li")
-    if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
-    
-    for (const duework of dueworkitems) {
-        const subjects = REGEXP.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
-        for (const subject of subjects) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
-            if (!colour) continue;
-            duework.style.borderLeft = "10px solid " + colour
-            //RGBA for transperency to be added (too noisy otherwise)
-            duework.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    if (extSettings["colourduework"] || typeof(extSettings["colourduework"]) == "undefined") {
+        let dueworkitems = document.querySelectorAll(".Schoolbox_Learning_Component_Dashboard_UpcomingWorkController li")
+        if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
+        
+        for (const duework of dueworkitems) {
+            const subjects = REGEXP.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
+            for (const subject of subjects) {
+                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
+                if (!colour) continue;
+                duework.style.borderLeft = "10px solid " + colour
+                //RGBA for transperency to be added (too noisy otherwise)
+                duework.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+            }
         }
     }
 }
@@ -332,33 +335,122 @@ async function profilePage() {
                     
                 </fieldset>
                 <fieldset class="content">
-                    <legend><strong>Device Sync: <span style="color: #ff7d7d" id="syncstatus">OFF</span></strong></legend>
+                    <legend><strong>Settings</strong></legend>
                     <div class="small-12 columns">
-                        <p>You can generate a <code>Sync Code</code> to share theme colours between devices</p>
-                    </div>
-                    <div class="small-12 columns">
-                        <div class="input-group">
-                            <input type="text" id="synccode" placeholder="There is no sync code associated with this device, enter one here!">
-                            <a class="button disabled" id="updatesynccode">Update</a>
-                        </div>
-                    </div>
-                    <div class="small-12 columns">
-                        <p class="meta"><strong>Note:</strong> Sharing this code with others will allow them to edit your theme</p>
+                        <table class="no-margin">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <label for="toggle_themesync">Theme Syncronisation<p>Sync timetable themes between devices</p></label>
+                                    </td>
+                                    <td>
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_themesync" type="checkbox" name="toggle_themesync" value="1" checked>
+                                            <label for="toggle_themesync">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="toggle_autoreload">Auto Reload<p>Automatically reload the page when your theme changes on another device</p></label>
+                                    </td>
+                                    <td>
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_autoreload" type="checkbox" name="toggle_autoreload" value="0">
+                                            <label for="toggle_autoreload">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="toggle_colourduework">Coloured Due Work<p>Add colours to due work items based on the timetable</p></label>
+                                    </td>
+                                    <td>
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_colourduework" type="checkbox" name="toggle_colourduework" value="1" checked>
+                                            <label for="toggle_colourduework">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 0px">
+                                        <label for="toggle_compacttimetable">Compact Timetable<p>Remove empty items/rows from the timetable on the dashboard and timetable page</p></label>
+                                    </td>
+                                    <td style="border: 0px">
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_compacttimetable" type="checkbox" name="toggle_compacttimetable" value="1" checked>
+                                            <label for="toggle_compacttimetable">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </fieldset>
                 <div class="component-action">
                     <section>
-                        <a class="button" id="gensynccode">Generate new sync code</a>
-                        <a class="button" style="color: #ff5555;" id="themereset">Reset</a>
+                        <a class="button" id="gensynccode">Reset Settings</a>
+                        <a class="button" style="color: #ff5555;" id="themereset">Reset Theme</a>
                     </section>
                 </div>
             </section>
         </div>`)
 
-    let elem_synccode = document.getElementById("synccode")
-    let elem_gensynccode = document.getElementById("gensynccode")
-    let elem_syncstatus = document.getElementById("syncstatus")
-    let elem_updatesynccode = document.getElementById("updatesynccode")
+    
+    let toggle_themesync = document.getElementById("toggle_themesync")
+    let toggle_autoreload = document.getElementById("toggle_autoreload")
+    let toggle_colourduework = document.getElementById("toggle_colourduework")
+    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")        
+    
+    if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", "{}"); }
+
+    let extSettings = JSON.parse(localStorage.getItem("extSettings"))
+    
+    if (extSettings["themesync"]) { toggle_themesync.setAttribute("checked", 1) } 
+    else if (typeof(extSettings["themesync"]) !== "undefined") { toggle_themesync.removeAttribute("checked", 1) };
+
+    if (extSettings["autoreload"]) { toggle_autoreload.setAttribute("checked", 1) } 
+    else if (typeof(extSettings["autoreload"]) !== "undefined") { toggle_autoreload.removeAttribute("checked", 1) };
+    
+    if (extSettings["colourduework"]) { toggle_colourduework.setAttribute("checked", 1) } 
+    else if (typeof(extSettings["colourduework"]) !== "undefined") { toggle_colourduework.removeAttribute("checked", 1) };
+    
+    if (extSettings["compacttimetable"]) { toggle_compacttimetable.setAttribute("checked", 1) } 
+    else if (typeof(extSettings["compacttimetable"]) !== "undefined") { toggle_compacttimetable.removeAttribute("checked", 1) };
+    
+    toggle_themesync.addEventListener("change", function () {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        extSettings["themesync"] = toggle_themesync.checked;
+        localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+    toggle_autoreload.addEventListener("change", function () {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        extSettings["autoreload"] = toggle_autoreload.checked;
+        localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+    toggle_colourduework.addEventListener("change", function () {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        extSettings["colourduework"] = toggle_colourduework.checked;
+        localStorage.setItem("extSettings",JSON.stringify( extSettings))
+    })
+    toggle_compacttimetable.addEventListener("change", function () {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        extSettings["compacttimetable"] = toggle_compacttimetable.checked;
+        localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+
     let elem_themereset = document.getElementById("themereset")
     let elem_currenttheme = document.getElementById("currenttheme")
     let elem_importtext = document.getElementById("importtext")
@@ -581,13 +673,16 @@ function eDiary() {
 }
 
 function mainPage() {
-    // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
-    const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
-    const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
-    for (let index = 0; index < heading.length; index++) {
-        if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
-            heading[index].remove()
-            body[index].remove()
+    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    if (extSettings["compacttimetable"] || typeof(extSettings["compacttimetable"]) == "undefined") {
+        // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
+        const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
+        const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
+        for (let index = 0; index < heading.length; index++) {
+            if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
+                heading[index].remove()
+                body[index].remove()
+            }
         }
     }
     
@@ -600,27 +695,30 @@ function mainPage() {
 }
 
 function timetable() {
-    const rows = document.querySelectorAll(".timetable tbody tr")
-    // Removing timetable blank periods
-    // ~ Desktop
-    for (const row of rows) {
-        if (!TIMETABLE_WHITELIST.includes(row.querySelector("th").childNodes[0].textContent.trim())) {
-            hassubject = false
-            for (const cell of row.querySelectorAll("td")) {
-                if (cell.innerText !== "\n" && cell.children[0].children.length > 0) { hassubject = true; break; }
-            }
-            if (!hassubject) {
-                row.style.display = "none";
+    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    if (extSettings["compacttimetable"] || typeof(extSettings["compacttimetable"]) == "undefined") {
+        const rows = document.querySelectorAll(".timetable tbody tr")
+        // Removing timetable blank periods
+        // ~ Desktop
+        for (const row of rows) {
+            if (!TIMETABLE_WHITELIST.includes(row.querySelector("th").childNodes[0].textContent.trim())) {
+                hassubject = false
+                for (const cell of row.querySelectorAll("td")) {
+                    if (cell.innerText !== "\n" && cell.children[0].children.length > 0) { hassubject = true; break; }
+                }
+                if (!hassubject) {
+                    row.style.display = "none";
+                }
             }
         }
-    }
-    // ~ Mobile
-    const heading = document.querySelectorAll(".show-for-small-only th")
-    const body = document.querySelectorAll(".show-for-small-only td")
-    for (let index = 0; index < heading.length; index++) {
-        if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
-            heading[index].remove()
-            body[index].remove()
+        // ~ Mobile
+        const heading = document.querySelectorAll(".show-for-small-only th")
+        const body = document.querySelectorAll(".show-for-small-only td")
+        for (let index = 0; index < heading.length; index++) {
+            if (!TIMETABLE_WHITELIST.includes(heading[index].childNodes[0].textContent.trim()) && !body[index].textContent.trim()) {
+                heading[index].remove()
+                body[index].remove()
+            }
         }
     }
 }
@@ -716,12 +814,20 @@ async function postTheme() {
 }
 async function themeSync() {
     return new Promise (async ( resolve ) => {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        if (extSettings["themesync"] || typeof(extSettings["themesync"]) == "undefined") {
             const newtheme = await getTheme();
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+                if (extSettings["autoreload"]) {
+                    window.location.reload()
+                    return resolve();
+                }
                 document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
                 setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
             }
+        }
+
         let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
         let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
 
@@ -733,18 +839,5 @@ async function themeSync() {
         }
         await postTheme();
         resolve()
-    });
-}
-
-async function postTheme() {
-    return new Promise (( resolve ) => {
-        const themecode = localStorage.getItem("themeCode")
-        fetch(THEME_API + "/theme/" + themecode?.toUpperCase(), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({"theme" : JSON.parse(localStorage.getItem("timetableColours")), "sbu" : schoolboxUser})
-        }).then(r => { resolve() })
     });
 }
