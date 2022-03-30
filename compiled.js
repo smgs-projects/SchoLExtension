@@ -562,11 +562,14 @@ function colourDueworkCalendar() {
 
 function colourEDiaryList() {
     document.querySelectorAll(".fc-list-event").forEach(event => {
+        const eventDot = event.querySelector(".fc-list-event-dot");
+        eventDot.style.backgroundColor = eventDot.style.borderColor
         const subjectcode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
         if (!subjectcode) return; 
         const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode[1]]
         if (!colour) return; 
-        event.querySelector(".fc-list-event-dot").style.borderColor = colour
+        eventDot.style.borderColor = colour
+        eventDot.style.backgroundColor = colour
     })
 }
 
