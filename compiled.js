@@ -403,7 +403,7 @@ async function profilePage() {
                 </fieldset>
                 <div class="component-action">
                     <section>
-                        <a class="button" id="gensynccode">Reset Settings</a>
+                        <a class="button" id="settingsreset">Reset Settings</a>
                         <a class="button" style="color: #ff5555;" id="themereset">Reset Theme</a>
                     </section>
                 </div>
@@ -415,6 +415,7 @@ async function profilePage() {
     let toggle_autoreload = document.getElementById("toggle_autoreload")
     let toggle_colourduework = document.getElementById("toggle_colourduework")
     let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")        
+    let elem_settingsreset = document.getElementById("settingsreset")
     
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", "{}"); }
 
@@ -451,6 +452,11 @@ async function profilePage() {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
         extSettings["compacttimetable"] = toggle_compacttimetable.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+
+    elem_settingsreset.addEventListener("click", function () {
+        localStorage.setItem("extSettings", "{}");
+        window.location.reload()
     })
 
     let elem_themereset = document.getElementById("themereset")
