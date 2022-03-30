@@ -13,6 +13,8 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
 const THEME_API = "https://rcja.app/smgsapi"
+// SchoL Remote Service API Link
+const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=fbcb3130caab9547b2ac0701ee46f88c217add8c"
 
@@ -64,19 +66,7 @@ async function load() {
         profilePage()
     }
 
-    // Theme management
-    if (localStorage.getItem("themeCode")) {
-        const newtheme = await getTheme();
-        
-        if (newtheme && newtheme.type == "user") { 
-            if (JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
-                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
-                document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
-                setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
-            }
-        }
-    }
-    await checkTimetable();
+    await themeSync();
 }
 
 window.Clipboard = (function(window, document, navigator) {
@@ -457,15 +447,6 @@ async function profilePage() {
         await postTheme();
         window.location.reload()
     })
-    elem_gensynccode.addEventListener("click", async function () {
-        const newcode = await genThemeCode()
-        elem_synccode.value = newcode.toUpperCase()
-        elem_syncstatus.innerText = "ON"
-        elem_syncstatus.style.color = "green"
-        elem_updatesynccode.classList = "button disabled"
-        localStorage.setItem("themeCode", newcode.toUpperCase())
-        await postTheme()
-    })
     elem_themereset.addEventListener("click", async function () {
         if (!confirm("Theme Reset: This will reset all your theme colours back to original, are you sure you want to do this?")) return;
         localStorage.removeItem("themeCode") 
@@ -484,61 +465,6 @@ async function profilePage() {
             elem_importbtn.classList = "button"
         }
     })
-    elem_synccode.addEventListener("keyup", function () {
-        if (elem_synccode.value != localStorage.getItem("themeCode")) {
-            elem_updatesynccode.classList = "button"
-        } else {
-            elem_updatesynccode.classList = "button disabled"
-        }
-    })
-
-    elem_updatesynccode.addEventListener("click", async function () {
-        if (elem_synccode.value == localStorage.getItem("themeCode")) { return }
-        
-        if (elem_synccode.value == "") { 
-            localStorage.removeItem("themeCode") 
-            elem_updatesynccode.classList = "button disabled"
-            elem_syncstatus.innerText = "OFF"
-            elem_syncstatus.style.color = "#ff7d7d"
-        } else {
-            let newtheme = await getTheme(elem_synccode.value)
-            if (!newtheme) {
-                elem_synccode.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Sync Code:</strong> Ensure you have entered a valid theme sync code</div>`)
-                setTimeout(function () {
-                    document.querySelector(".themecodealert")?.remove()
-                }, 3000)
-                return
-            }
-            
-            elem_updatesynccode.classList = "button disabled"
-            if (newtheme.type == "user") {
-                elem_syncstatus.innerText = "ON"
-                elem_syncstatus.style.color = "green"
-                localStorage.setItem("themeCode", elem_synccode.value)
-                await postTheme()
-                newtheme = await getTheme(elem_synccode.value)
-                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
-                window.location.reload()
-            } else {
-                localStorage.removeItem("themeCode")
-                let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-                let i = 0
-                for (subjectcode in currenttheme) {
-                    currenttheme[subjectcode] = newtheme.theme[i]
-                    i++; if (i >= newtheme.theme.length) { i = 0; }
-                }
-                localStorage.setItem("timetableColours", JSON.stringify(currenttheme))
-                window.location.reload()
-            }
-        }
-    })
-
-    if (localStorage.getItem("themeCode")) {    
-        elem_synccode.value = localStorage.getItem("themeCode")
-        elem_syncstatus.innerText = "ON"
-        elem_syncstatus.style.color = "green"
-        elem_updatesynccode.classList = "button disabled"
-    }
 }
 
 function colourDueworkCalendar() {
@@ -752,38 +678,50 @@ async function writeCache() {
         } else resolve()
     });
 }
-async function genThemeCode() {
+async function remoteAuth() {
     return new Promise (( resolve ) => {
-        fetch(THEME_API + "/gencode").then(r => r.json()).then(result => {
-            resolve(result["code"])
+        fetch(REMOTE_API).then(r => r.json()).then(result => {
+            localStorage.setItem("userToken", result.token);
+            resolve()
         })
     });
 }
 async function getThemes() {
     return new Promise (( resolve ) => {
-        fetch(THEME_API + "/themes").then(result => {
-            resolve(result.json())
+        fetch(THEME_API + "/themes").then(r => {
+            resolve(r.json())
         })
-        .catch((error) => {
-            resolve(false)
-        });
-    });
-    
-}
-async function getTheme(themeCode) {
-    return new Promise (( resolve ) => {
-        if (!localStorage.getItem("themeCode") && !themeCode) { resolve(false) }
-        fetch(THEME_API + "/theme/" + (!themeCode ? localStorage.getItem("themeCode") : themeCode)).then(r => r.json()).then(result => {
-            resolve(result)
-        })
-        .catch((error) => {
-            resolve(false)
-        });
     });
 }
-
-async function checkTimetable() {
+async function getTheme() {
     return new Promise (async ( resolve ) => {
+        if (!localStorage.getItem("userToken")) { await remoteAuth(); }
+        fetch(THEME_API + "/theme", { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
+        .then(r => r.json())
+        .then(r => { resolve(r) })
+    });
+}
+async function postTheme() {
+    return new Promise (async ( resolve ) => {
+        if (!localStorage.getItem("userToken")) { await remoteAuth(); }
+        fetch(THEME_API + "/theme", {
+            method: "POST",
+            headers: new Headers({
+                "Authorization": "Basic " + localStorage.getItem("userToken"),
+                "Content-Type": "application/json"
+            }),
+            body: JSON.stringify({"defaultTheme": JSON.parse(localStorage.getItem("timetableColoursDefault")), "theme" : JSON.parse(localStorage.getItem("timetableColours")), "sbu" : schoolboxUser})
+        }).then(r => { resolve() })
+    });
+}
+async function themeSync() {
+    return new Promise (async ( resolve ) => {
+            const newtheme = await getTheme();
+            if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
+                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+                document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
+                setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
+            }
         let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
         let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
 
@@ -793,7 +731,7 @@ async function checkTimetable() {
                 localStorage.setItem("timetableColours", currentTheme)
             }
         }
-        await postTheme()
+        await postTheme();
         resolve()
     });
 }
