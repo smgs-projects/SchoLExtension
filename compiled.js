@@ -13,6 +13,8 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
 const THEME_API = "https://rcja.app/smgsapi"
+// Link to image to show at the bottom of all due work items (levels of achievement table)
+const ACHIEVEMENT_IMG = "/storage/image.php?hash=fbcb3130caab9547b2ac0701ee46f88c217add8c"
 
 let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
@@ -51,6 +53,9 @@ async function load() {
     }
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
+    }
+    if (window.location.pathname.startsWith("/learning/assessments/")) {
+        assessments()
     }
     if (window.location.pathname.startsWith("/timetable")) {
         timetable()
@@ -252,7 +257,6 @@ function classPage() {
             else continue;
         }
     }
-    // const text = document.querySelectorAll("div.card-content")
 }
 async function profilePage() {
     let tablerows = "";
@@ -592,7 +596,7 @@ function feedback() {
                 summary.style.display = "none"
             }
         }
-    }
+    }    
     // Add colour to feedback classes
     // ~ Desktop
     for (const subject of document.querySelectorAll("ul.activity-list")) {
@@ -608,6 +612,14 @@ function feedback() {
             }
         }
     }
+}
+function assessments() {
+    const rows = document.querySelectorAll(".row");
+    rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
+        <section style="text-align: center;">
+            <img src="${ACHIEVEMENT_IMG}">
+        </section>
+    </div>`)
 }
 function eDiary() {
     const page = document.querySelector(".fc-button-group .fc-button-active").innerText
