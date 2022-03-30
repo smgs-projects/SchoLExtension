@@ -6,7 +6,9 @@
 //
 
 // Regex to find timetable codes inside a class string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
+// Regex2 to find timetable codes inside a class string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
+const REGEXP2 = /\[([^)]+)\]/;
 // Timetable rows NOT to remove if all blank
 const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
@@ -635,12 +637,18 @@ function feedback() {
     }
 }
 function assessments() {
-    const rows = document.querySelectorAll(".row");
-    rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
-        <section style="text-align: center;">
-            <img src="${ACHIEVEMENT_IMG}">
-        </section>
-    </div>`)
+    let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
+    let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
+    let match = matches ? matches[0] : matches2[0];
+
+    if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
+        const rows = document.querySelectorAll(".row");
+        rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
+            <section style="text-align: center;">
+                <img src="${ACHIEVEMENT_IMG}">
+            </section>
+        </div>`)
+    }
 }
 function eDiary() {
     const page = document.querySelector(".fc-button-group .fc-button-active").innerText
