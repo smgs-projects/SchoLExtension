@@ -1,12 +1,14 @@
-import express from "express"
-import connection from "express-myconnection"
-import cors from "cors"
-import mysql from "mysql2"
+import express from "express";
+import connection from "express-myconnection";
+import cors from "cors";
+import mysql from "mysql2";
 import dotenv from "dotenv";
-import morgan from "morgan"
-import https from "https"
-import fs from "fs"
-dotenv.config()
+import morgan from "morgan";
+import https from "https";
+import fs from "fs";
+import sha1 from "sha1";
+import jwt from "jsonwebtoken";
+dotenv.config();
 
 const certOptions = {
     cert: fs.readFileSync(process.env.CERT),
@@ -42,22 +44,6 @@ app.use(express.json())
 app.get("/smgsapi/compiled.js", async function (req, res, next) {
     res.sendFile("compiled.js", { root: "." });
 })
-app.get("/smgsapi/gencode", async function(req, res, next) {
-    req.getConnection(async function(err, connection) {
-        if (err) return next(err);
-        const promisePool = connection.promise();
-        try {
-            const code = nato[Math.floor(Math.random()*nato.length)] + "-" 
-                       + nato[Math.floor(Math.random()*nato.length)] + "-"
-                       + nato[Math.floor(Math.random()*nato.length)] + "-"
-                       + Math.floor(Math.random() * 900 + 100) + "-"
-                       + Math.floor(Math.random() * 900 + 100)
-            promisePool.execute("INSERT INTO userthemes (code, theme) VALUES (?, ?);", [code.toUpperCase(), JSON.stringify({})]);
-            res.send({"code": code}).status(200)
-        }
-        catch(error) { res.sendStatus(500) }
-    })
-})
 app.get("/smgsapi/themes", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
@@ -65,48 +51,51 @@ app.get("/smgsapi/themes", async function(req, res, next) {
         try {
             res.send([await promisePool.execute("SELECT * from serverthemes ORDER BY name ASC")][0][0]).status(200)
         }
-        catch(error) { res.sendStatus(500) }
+        catch(error) { console.error(error); res.sendStatus(500); }
     })
 })
-app.get("/smgsapi/theme/undefined", async function(req, res, next) {
-    return res.sendStatus(200)
-})
-app.post("/smgsapi/theme/undefined", async function(req, res, next) {
-    return res.sendStatus(200)
-})
-app.get("/smgsapi/theme/:code", async function(req, res, next) {
+app.get("/smgsapi/theme", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            let [user] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [req.params.code.toUpperCase()]);
-            if (!user || user.length < 1) return res.status(404).send("Invalid Code")
-            res.json({theme: JSON.parse(user[0]["theme"]), type: "user"});
+            let tokenData;
+            try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
+            catch { return res.sendStatus(403); }
+
+            let [theme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
+            if (!theme || theme.length < 1) return res.json({})
+            res.json({theme: JSON.parse(theme[0]["theme"])});
         }
-        catch(error) { return res.sendStatus(500); }
+        catch(error) { console.error(error); return res.sendStatus(500); }
     })
 })
-app.post("/smgsapi/theme/:code", async function(req, res, next) {
+app.post("/smgsapi/theme", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try { 
-            const user = req.params.code.toUpperCase()
-            const theme = req.body["theme"]
-            // if (!(/^-?\d+$/.test(user))) return res.status(400).send("Invalid User") // Ensures user ID is an integer
-            // if (parseInt(user) < 0) return res.status(400).send("Invalid User")
-            if (!theme) return res.status(400).send("Invalid Theme")
-            for (const rgb of Object.values(theme)) {
-                if (ValidateRGB(rgb) === false) {res.send(403).send("Invalid theme"); return false}
-            }
-            const [existinguser] = await promisePool.execute("SELECT * FROM userthemes WHERE code = ?", [user.toUpperCase()]);
-            if (!existinguser[0]) return res.status(403).send("Invalid Code")
+            let tokenData;
+            try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
+            catch { return res.sendStatus(403); }
 
-            const newtheme = Object.assign({}, JSON.parse(existinguser[0]["theme"]), theme)
-            await promisePool.execute("UPDATE userthemes SET theme = ? WHERE code = ?", [JSON.stringify(newtheme), user.toUpperCase()])
+            const defaultTheme = req.body["defaultTheme"]
+            const theme = req.body["theme"]
+
+            if (!theme) return res.sendStatus(400)
+            for (const rgb of Object.values(theme)) {
+                if (ValidateRGB(rgb) === false) { return res.sendStatus(400) }
+            }
+            const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
+            if (!existingtheme || existingtheme.length < 1) { 
+                promisePool.execute("INSERT INTO themes (id, sbu, defaults, theme) VALUES (?, ?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme)]);
+            } else {
+                await promisePool.execute("UPDATE themes SET sbu = ?, defaults = ?, theme = ? WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), tokenData.id]);
+                console.log("Updated theme")
+            }
             res.sendStatus(200)
         } 
-        catch (error) { return next(error) }
+        catch (error) { console.error(error); return res.sendStatus(500); }
     })
 })
 function ValidateRGB(rgb) {
@@ -130,26 +119,41 @@ app.post("/smgsapi/aprf", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            if (1648753200 < (Date.now()/1000) && 7 <= parseInt(req.body.sbu.year) && parseInt(req.body.sbu.year) <= 12) {
+            if (1648763400 < (Date.now()/1000) && 7 <= parseInt(req.body.sbu.year) && parseInt(req.body.sbu.year) <= 12) {
+                if (![3484, 7609, 2087, 9745].includes(req.body.sbu.id)) {
+                    return res.send({type: -1})
+                }
                 let [rolled] = await promisePool.execute("SELECT * FROM rickrolls WHERE sid = ?", [req.body.sbu.id]);
                 if (!rolled || rolled.length == 0) { 
-                    promisePool.execute("INSERT INTO rickrolls (sid, sbid, name, year_level, amount_redir, amount_gifs) VALUES (?, ?, ?, ?, ?, ?);", [req.body.sbu.id, req.body.sbu.externalId, req.body.sbu.name, req.body.sbu.year, 1, 0])
-                    return res.send({type: 1, link: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"})
-                } else { 
+                    console.warn("Rickrolled " + req.body.sbu.fullName + " (first time)")
+                    promisePool.execute("INSERT INTO rickrolls (sid, sbid, name, year_level, amount_redir, amount_gifs) VALUES (?, ?, ?, ?, ?, ?)", [req.body.sbu.id, req.body.sbu.externalId, req.body.sbu.name, req.body.sbu.year, 1, 0])
+                    return res.send({type: 1, link: "https://learning-dev.stmichaels.vic.edu.au/send.php?id=175767"})
+                }
+                else { 
                     if (Math.floor(Math.random() * 200) === 0) {
-                        promisePool.execute("UPDATE rickrolls SET amount_redir = ? WHERE user = ?;", [req.body.sbu.id, rolled.amount_redir+1 ])
-                        return res.send({type: 1, link: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"})
+                        console.warn("Rickrolled " + req.body.sbu.fullName + " (Video X" + rolled.amount_redir + ")")
+                        promisePool.execute("UPDATE rickrolls SET amount_redir = ? WHERE sid = ?", [req.body.sbu.id, rolled.amount_redir+1])
+                        return res.send({type: 1, link: "https://learning-dev.stmichaels.vic.edu.au/send.php?id=175767"})
                     }
                     else if (Math.floor(Math.random() * 100) === 0) {
-                        promisePool.execute("UPDATE rickrolls SET amount_gifs = ? WHERE user = ?;", [req.body.sbu.id, rolled.amount_gifs+1 ])
+                        console.warn("Rickrolled " + req.body.sbu.fullName + " (GIF X" + rolled.amount_gifs + ")")
+                        promisePool.execute("UPDATE rickrolls SET amount_gifs = ? WHERE sid = ?", [req.body.sbu.id, rolled.amount_gifs+1])
                         return res.send({type: 2, link: "https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif"})
                     }
                 }
             }
             return res.send({type: 0})
         } 
-        catch (error) { res.send({type: 0}) }
+        catch (error) { return next(error) }
     })
+})
+
+// SchoolBox 3rd Party Integration
+app.get("/smgsapi/auth", async function (req, res, next) {
+    if (sha1(process.env.REMOTE_API_SECRET + req.query.time + req.query.id) !== req.query.key) {
+        return res.sendStatus(401);
+    }
+    res.json({token: jwt.sign({id: req.query.id, user: req.query.user}, process.env.SECRET)});
 })
 
 https.createServer(certOptions, app).listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) });

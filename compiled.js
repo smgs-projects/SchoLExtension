@@ -5,8 +5,10 @@
 //    _.-'` '---'  '
 //
 
-// Regex to find timetable codes inside a class string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
+// Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
+// Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
+const REGEXP2 = /\[([^)]+)\]/;
 // Timetable rows NOT to remove if all blank
 const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
@@ -16,7 +18,7 @@ const THEME_API = "https://rcja.app/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
-const ACHIEVEMENT_IMG = "/storage/image.php?hash=fbcb3130caab9547b2ac0701ee46f88c217add8c"
+const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 
 let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
@@ -401,7 +403,7 @@ async function profilePage() {
                 </fieldset>
                 <div class="component-action">
                     <section>
-                        <a class="button" id="gensynccode">Reset Settings</a>
+                        <a class="button" id="settingsreset">Reset Settings</a>
                         <a class="button" style="color: #ff5555;" id="themereset">Reset Theme</a>
                     </section>
                 </div>
@@ -413,6 +415,7 @@ async function profilePage() {
     let toggle_autoreload = document.getElementById("toggle_autoreload")
     let toggle_colourduework = document.getElementById("toggle_colourduework")
     let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")        
+    let elem_settingsreset = document.getElementById("settingsreset")
     
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", "{}"); }
 
@@ -449,6 +452,11 @@ async function profilePage() {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
         extSettings["compacttimetable"] = toggle_compacttimetable.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+
+    elem_settingsreset.addEventListener("click", function () {
+        localStorage.setItem("extSettings", "{}");
+        window.location.reload()
     })
 
     let elem_themereset = document.getElementById("themereset")
@@ -635,12 +643,18 @@ function feedback() {
     }
 }
 function assessments() {
-    const rows = document.querySelectorAll(".row");
-    rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
-        <section style="text-align: center;">
-            <img src="${ACHIEVEMENT_IMG}">
-        </section>
-    </div>`)
+    let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
+    let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
+    let match = matches ? matches[0] : matches2[0];
+
+    if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
+        const rows = document.querySelectorAll(".row");
+        rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
+            <section style="text-align: center;">
+                <img src="${ACHIEVEMENT_IMG}">
+            </section>
+        </div>`)
+    }
 }
 function eDiary() {
     const page = document.querySelector(".fc-button-group .fc-button-active").innerText

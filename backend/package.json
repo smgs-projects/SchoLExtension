@@ -13,8 +13,10 @@
     "express-myconnection": "^1.0.4",
     "fs": "^0.0.1-security",
     "https": "^1.0.0",
+    "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "sha1": "^1.1.1"
   },
   "engines": {
     "node": "16.13.x"
