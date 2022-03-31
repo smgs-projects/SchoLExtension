@@ -421,17 +421,17 @@ async function profilePage() {
 
     let extSettings = JSON.parse(localStorage.getItem("extSettings"))
     
-    if (extSettings["themesync"]) { toggle_themesync.setAttribute("checked", 1) } 
-    else if (typeof(extSettings["themesync"]) !== "undefined") { toggle_themesync.removeAttribute("checked", 1) };
+    if (extSettings?.themesync) { toggle_themesync.setAttribute("checked", 1) } 
+    else if (typeof(extSettings?.themesync) !== "undefined") { toggle_themesync.removeAttribute("checked", 1) };
 
-    if (extSettings["autoreload"]) { toggle_autoreload.setAttribute("checked", 1) } 
-    else if (typeof(extSettings["autoreload"]) !== "undefined") { toggle_autoreload.removeAttribute("checked", 1) };
+    if (extSettings?.autoreload) { toggle_autoreload.setAttribute("checked", 1) } 
+    else if (typeof(extSettings?.autoreload) !== "undefined") { toggle_autoreload.removeAttribute("checked", 1) };
     
-    if (extSettings["colourduework"]) { toggle_colourduework.setAttribute("checked", 1) } 
-    else if (typeof(extSettings["colourduework"]) !== "undefined") { toggle_colourduework.removeAttribute("checked", 1) };
+    if (extSettings?.colourduework) { toggle_colourduework.setAttribute("checked", 1) } 
+    else if (typeof(extSettings?.colourduework) !== "undefined") { toggle_colourduework.removeAttribute("checked", 1) };
     
-    if (extSettings["compacttimetable"]) { toggle_compacttimetable.setAttribute("checked", 1) } 
-    else if (typeof(extSettings["compacttimetable"]) !== "undefined") { toggle_compacttimetable.removeAttribute("checked", 1) };
+    if (extSettings?.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1) } 
+    else if (typeof(extSettings?.compacttimetable) !== "undefined") { toggle_compacttimetable.removeAttribute("checked", 1) };
     
     toggle_themesync.addEventListener("change", function () {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
@@ -688,7 +688,7 @@ function eDiary() {
 
 function mainPage() {
     let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-    if (extSettings["compacttimetable"] || typeof(extSettings["compacttimetable"]) == "undefined") {
+    if (extSettings?.compacttimetable || typeof(extSettings?.compacttimetable) == "undefined") {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
         const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
@@ -710,7 +710,7 @@ function mainPage() {
 
 function timetable() {
     let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-    if (extSettings["compacttimetable"] || typeof(extSettings["compacttimetable"]) == "undefined") {
+    if (extSettings?.compacttimetable || typeof(extSettings?.compacttimetable) == "undefined") {
         const rows = document.querySelectorAll(".timetable tbody tr")
         // Removing timetable blank periods
         // ~ Desktop
@@ -829,7 +829,7 @@ async function postTheme() {
 async function themeSync() {
     return new Promise (async ( resolve ) => {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-        if (extSettings["themesync"] || typeof(extSettings["themesync"]) == "undefined") {
+        if (extSettings?.themesync || typeof(extSettings?.themesync) == "undefined") {
             const newtheme = await getTheme();
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
