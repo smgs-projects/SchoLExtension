@@ -20,7 +20,6 @@ const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + 
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 
-let id;
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
 
@@ -39,7 +38,6 @@ async function load() {
     if (localStorage.getItem("lastTimetableCache") && localStorage.getItem("lastTimetableCache") < 8.64e+7) {
         localStorage.removeItem("lastTimetableCache")
     }
-    id = (new URL(document.querySelectorAll("#profile-drop img")[0]?.src)).searchParams.get("id")
     await writeCache()
 
     allPages()
@@ -64,7 +62,7 @@ async function load() {
     if (window.location.pathname.startsWith("/timetable")) {
         timetable()
     }
-    if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(id)) {
+    if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) {
         profilePage()
     }
 
@@ -206,7 +204,7 @@ function colourSidebar() {
 
 function colourDuework() {
     let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-    if (extSettings["colourduework"] || typeof(extSettings["colourduework"]) == "undefined") {
+    if (extSettings?.colourduework || typeof(extSettings?.colourduework) == "undefined") {
         let dueworkitems = document.querySelectorAll(".Schoolbox_Learning_Component_Dashboard_UpcomingWorkController li")
         if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
         
@@ -759,15 +757,17 @@ function SearchItem() {
 async function writeCache() {
     return new Promise (( resolve ) => {
         //Needed since the fetch returns string
-        if (id !== localStorage.getItem("lastUser")) {
+        if (schoolboxUser.id != localStorage.getItem("lastUser")) {
             localStorage.removeItem("timetableColours");
             localStorage.removeItem("lastTimetableCache");
+            localStorage.removeItem("extSettings");
+            localStorage.removeItem("userToken");
             localStorage.removeItem("lastUser");
         }
         var parser = new DOMParser();
-        const result = localStorage.getItem("lastTimetableCache")
         let timetablecolours = JSON.parse(localStorage.getItem("timetableColours"))
-        if (!result || !timetablecolours) {
+        if (!localStorage.getItem("lastTimetableCache") || !timetablecolours) {
+            remoteAuth();
             fetch('/timetable').then(r => r.text()).then(result => {
                 if (!timetablecolours) { timetablecolours = {}; }
                 let defaulttimetablecolours = {}
@@ -784,7 +784,7 @@ async function writeCache() {
                 }
                 localStorage.setItem("timetableColours", JSON.stringify(timetablecolours))
                 localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
-                localStorage.setItem("lastUser", id) // For recaching if user switch
+                localStorage.setItem("lastUser", schoolboxUser.id) // For recaching if user switch
                 resolve()
             })
         } else resolve()
@@ -833,7 +833,7 @@ async function themeSync() {
             const newtheme = await getTheme();
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
-                if (extSettings["autoreload"]) {
+                if (extSettings?.autoreload) {
                     window.location.reload()
                     return resolve();
                 }
