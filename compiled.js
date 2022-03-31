@@ -58,7 +58,7 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
-    if (window.location.pathname.startsWith("/learning/assessments/")) {
+    if (window.location.pathname.startsWith("/learning/assessments/") && !window.location.pathname.endsWith("/modify")) {
         assessments()
     }
     if (window.location.pathname.startsWith("/timetable")) {
