@@ -16,7 +16,7 @@ const certOptions = {
     key: fs.readFileSync(process.env.CERT_KEY)
 };
 
-const validSettings = ["autoreload", "themesync", "colourduework", "compacttimetable"]
+const validSettings = ["autoreload", "settingsync", "themesync", "colourduework", "compacttimetable"]
 
 const app = express()
 
