@@ -113,40 +113,6 @@ function ValidateRGB(rgb) {
     else {return false}
 }
 
-app.post("/smgsapi/aprf", async function(req, res, next) {
-    req.getConnection(async function(err, connection) {
-        if (err) return next(err);
-        const promisePool = connection.promise();
-        try {
-            if (1648763400 < (Date.now()/1000) && 7 <= parseInt(req.body.sbu.year) && parseInt(req.body.sbu.year) <= 12) {
-                if (![3484, 7609, 2087, 9745].includes(req.body.sbu.id)) {
-                    return res.send({type: -1})
-                }
-                let [rolled] = await promisePool.execute("SELECT * FROM rickrolls WHERE sid = ?", [req.body.sbu.id]);
-                if (!rolled || rolled.length == 0) { 
-                    console.warn("Rickrolled " + req.body.sbu.fullName + " (first time)")
-                    promisePool.execute("INSERT INTO rickrolls (sid, sbid, name, year_level, amount_redir, amount_gifs) VALUES (?, ?, ?, ?, ?, ?)", [req.body.sbu.id, req.body.sbu.externalId, req.body.sbu.name, req.body.sbu.year, 1, 0])
-                    return res.send({type: 1, link: "https://learning-dev.stmichaels.vic.edu.au/send.php?id=175767"})
-                }
-                else { 
-                    if (Math.floor(Math.random() * 200) === 0) {
-                        console.warn("Rickrolled " + req.body.sbu.fullName + " (Video X" + rolled.amount_redir + ")")
-                        promisePool.execute("UPDATE rickrolls SET amount_redir = ? WHERE sid = ?", [req.body.sbu.id, rolled.amount_redir+1])
-                        return res.send({type: 1, link: "https://learning-dev.stmichaels.vic.edu.au/send.php?id=175767"})
-                    }
-                    else if (Math.floor(Math.random() * 100) === 0) {
-                        console.warn("Rickrolled " + req.body.sbu.fullName + " (GIF X" + rolled.amount_gifs + ")")
-                        promisePool.execute("UPDATE rickrolls SET amount_gifs = ? WHERE sid = ?", [req.body.sbu.id, rolled.amount_gifs+1])
-                        return res.send({type: 2, link: "https://c.tenor.com/yheo1GGu3FwAAAAd/rick-roll-rick-ashley.gif"})
-                    }
-                }
-            }
-            return res.send({type: 0})
-        } 
-        catch (error) { return next(error) }
-    })
-})
-
 // SchoolBox 3rd Party Integration
 app.get("/smgsapi/auth", async function (req, res, next) {
     if (sha1(process.env.REMOTE_API_SECRET + req.query.time + req.query.id) !== req.query.key) {
