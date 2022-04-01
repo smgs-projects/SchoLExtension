@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "https://localhost:3000/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -355,6 +355,20 @@ async function profilePage() {
                                 </tr>
                                 <tr>
                                     <td>
+                                        <label for="toggle_settingsync">Setting Syncronisation<p>Sync settings between devices</p></label>
+                                    </td>
+                                    <td>
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_settingsync" type="checkbox" name="toggle_settingsync" value="1" checked>
+                                            <label for="toggle_settingsync">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
                                         <label for="toggle_autoreload">Auto Reload<p>Automatically reload the page when your theme changes on another device</p></label>
                                     </td>
                                     <td>
@@ -412,7 +426,9 @@ async function profilePage() {
     let toggle_themesync = document.getElementById("toggle_themesync")
     let toggle_autoreload = document.getElementById("toggle_autoreload")
     let toggle_colourduework = document.getElementById("toggle_colourduework")
-    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")        
+    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")       
+    let toggle_settingsync = document.getElementById("toggle_settingsync")        
+
     let elem_settingsreset = document.getElementById("settingsreset")
     
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", "{}"); }
@@ -421,6 +437,9 @@ async function profilePage() {
     
     if (extSettings?.themesync) { toggle_themesync.setAttribute("checked", 1) } 
     else if (typeof(extSettings?.themesync) !== "undefined") { toggle_themesync.removeAttribute("checked", 1) };
+
+    if (extSettings?.settingsync) { toggle_settingsync.setAttribute("checked", 1) } 
+    else if (typeof(extSettings?.settingsync) !== "undefined") { toggle_settingsync.removeAttribute("checked", 1) };
 
     if (extSettings?.autoreload) { toggle_autoreload.setAttribute("checked", 1) } 
     else if (typeof(extSettings?.autoreload) !== "undefined") { toggle_autoreload.removeAttribute("checked", 1) };
@@ -449,6 +468,11 @@ async function profilePage() {
     toggle_compacttimetable.addEventListener("change", function () {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
         extSettings["compacttimetable"] = toggle_compacttimetable.checked;
+        localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+    toggle_settingsync.addEventListener("change", function () {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        extSettings["settingsync"] = toggle_settingsync.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
     })
 
@@ -822,36 +846,46 @@ async function postTheme() {
                 "Authorization": "Basic " + localStorage.getItem("userToken"),
                 "Content-Type": "application/json"
             }),
-            body: JSON.stringify({"defaultTheme": JSON.parse(localStorage.getItem("timetableColoursDefault")), "theme" : JSON.parse(localStorage.getItem("timetableColours")), "sbu" : schoolboxUser})
+            body: JSON.stringify({"settings": JSON.parse(localStorage.getItem("extSettings")),"defaultTheme": JSON.parse(localStorage.getItem("timetableColoursDefault")), "theme" : JSON.parse(localStorage.getItem("timetableColours")), "sbu" : schoolboxUser})
         }).then(r => { resolve() })
     });
 }
 async function themeSync() {
     return new Promise (async ( resolve ) => {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-        if (extSettings?.themesync || typeof(extSettings?.themesync) == "undefined") {
+        if (extSettings?.themesync || typeof(extSettings?.themesync) == "undefined" || extSettings?.settingsync || typeof(extSettings?.settingsync) == "undefined") {
             const newtheme = await getTheme();
-            if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
-                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+            if (extSettings?.themesync || typeof(extSettings?.themesync) == "undefined") {
+                if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
+                    localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+                    if (extSettings?.autoreload) {
+                        window.location.reload()
+                        return resolve();
+                    }
+                    document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
+                    setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
+                }
+                let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+                let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
+                for (const subject of Object.keys(defaultTheme)) {
+                    if (!currentTheme[subject]) {
+                        currentTheme[subject] = defaultTheme[subject]
+                        localStorage.setItem("timetableColours", currentTheme)
+                    }
+                }
+                await postTheme();
+            }
+            if (extSettings?.settingsync) {
+                localStorage.setItem("extSettings", JSON.stringify(newtheme["settings"]))
                 if (extSettings?.autoreload) {
                     window.location.reload()
                     return resolve();
                 }
-                document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
+                document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Settings have changed on another device. Reload to update</div>`);
                 setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
+                await postTheme();
             }
         }
-
-        let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-        let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
-
-        for (const subject of Object.keys(defaultTheme)) {
-            if (!currentTheme[subject]) {
-                currentTheme[subject] = defaultTheme[subject]
-                localStorage.setItem("timetableColours", currentTheme)
-            }
-        }
-        await postTheme();
         resolve()
     });
 }

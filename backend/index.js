@@ -10,22 +10,13 @@ import sha1 from "sha1";
 import jwt from "jsonwebtoken";
 dotenv.config();
 
+
 const certOptions = {
     cert: fs.readFileSync(process.env.CERT),
     key: fs.readFileSync(process.env.CERT_KEY)
 };
 
-const nato = [
-    "Alpha", "Bravo", "Charlie", 
-    "Delta", "Echo", "Foxtrot", 
-    "Golf", "Hotel", "India", 
-    "Juliett", "Kilo", "Lima", 
-    "Mike", "November", "Oscar", 
-    "Papa", "Quebec", "Romeo", 
-    "Sierra", "Tango", "Uniform", 
-    "Victor", "Whiskey", "X-ray",
-    "Yankee", "Zulu"
-]
+const validSettings = ["autoreload", "themesync", "colourduework", "compacttimetable"]
 
 const app = express()
 
@@ -54,6 +45,54 @@ app.get("/smgsapi/themes", async function(req, res, next) {
         catch(error) { console.error(error); res.sendStatus(500); }
     })
 })
+// app.get("/smgsapi/settings", async function(req, res, next) {
+//     req.getConnection(async function(err, connection) {
+//         if (err) return next(err);
+//         const promisePool = connection.promise();
+//         try {
+//             let tokenData;
+//             try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
+//             catch { return res.sendStatus(403); }
+
+//             let [settings] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
+//             if (!settings || settings.length < 1) return res.json({})
+//             res.json({settings: JSON.parse(theme[0]["settings"])});
+//         }
+//         catch(error) { console.error(error); return res.sendStatus(500); }
+//     })
+// })
+function ValidateSettings(settings) {
+    if (Object.keys(settings).filter(setting => validSettings.includes(setting)).length !== Object.values(settings).length) return false
+    if (Object.values(settings).filter(value => value === true || value === false).length !== Object.values(settings).length) return false
+    return true
+}
+// app.post("/smgsapi/settings", async function(req, res, next) {
+//     req.getConnection(async function(err, connection) {
+//         if (err) return next(err);
+//         const promisePool = connection.promise();
+//         try { 
+//             let tokenData;
+//             try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
+//             catch { return res.sendStatus(403); }
+//             const settings = req.body["settings"]
+
+//             if (!settings) return res.sendStatus(400)
+//             if (ValidateSettings(settings) === true) {
+//                 const [existingsetting] = await promisePool.execute("SELECT * FROM users WHERE id = ?", [tokenData.id]);
+//                 if (!existingtheme || existingtheme.length < 1) { 
+//                     promisePool.execute("INSERT INTO themes (id, sbu, settings) VALUES (?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(settings)]);
+//                 } else {
+//                     await promisePool.execute("UPDATE themes SET sbu = ?, settings = ? WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(settings), tokenData.id]);
+//                 }
+//                 res.sendStatus(200)
+//             }
+//             else {
+//                 return res.sendStatus(400);
+//             }   
+//         } 
+//         catch (error) { console.error(error); return res.sendStatus(500); }
+//     })
+// })
 app.get("/smgsapi/theme", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
@@ -65,7 +104,7 @@ app.get("/smgsapi/theme", async function(req, res, next) {
 
             let [theme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!theme || theme.length < 1) return res.json({})
-            res.json({theme: JSON.parse(theme[0]["theme"])});
+            res.json({theme: JSON.parse(theme[0]["theme"]), settings: JSON.parse(theme[0]["settings"])});
         }
         catch(error) { console.error(error); return res.sendStatus(500); }
     })
@@ -81,17 +120,20 @@ app.post("/smgsapi/theme", async function(req, res, next) {
 
             const defaultTheme = req.body["defaultTheme"]
             const theme = req.body["theme"]
-
+            const settings = req.body["settings"]
+            if (!settings) return res.sendStatus(400)
             if (!theme) return res.sendStatus(400)
+            if (ValidateSettings(settings) === false) {
+                return res.sendStatus(400)
+            }
             for (const rgb of Object.values(theme)) {
-                if (ValidateRGB(rgb) === false) { return res.sendStatus(400) }
+                if (ValidateRGB(rgb) === false) return res.sendStatus(400)
             }
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
-                promisePool.execute("INSERT INTO themes (id, sbu, defaults, theme) VALUES (?, ?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme)]);
+                promisePool.execute("INSERT INTO themes (id, sbu, defaults, theme, settings) VALUES (?, ?, ?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings)]);
             } else {
-                await promisePool.execute("UPDATE themes SET sbu = ?, defaults = ?, theme = ? WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), tokenData.id]);
-                console.log("Updated theme")
+                await promisePool.execute("UPDATE themes SET sbu = ?, defaults = ?, theme = ?, WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings), tokenData.id]);
             }
             res.sendStatus(200)
         } 
