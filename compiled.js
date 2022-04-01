@@ -151,41 +151,6 @@ function rgbsFromHexes(url) {
 }
 
 async function allPages() {
-    fetch(THEME_API + "/aprf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({"sbu" : schoolboxUser})
-    }).then((r) => { return r.json() })
-    .then((r) => {
-        if (r.type == 1) {
-            document.addEventListener("mousedown", () => {
-                if (document.getElementById("videoPlayer")) return;
-                document.body.innerHTML = '<video src="' + r.link + '" controls id="videoPlayer" style="width: ' + window.innerWidth + 'px; height: ' + window.innerHeight + 'px"></video>';
-                document.body.style.backgroundColor = "#000";
-                let video = document.getElementById("videoPlayer");
-                let promise = video.play();
-                if (promise !== undefined) {
-                    promise.then(_ => {
-                    }).catch(error => {
-                        video.muted = true;
-                        video.play();
-                    });
-                }
-                if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) === false) {
-                    setInterval(() => {
-                        video.volume = 1;
-                        video.muted = 0;
-                        video.play();
-                    }, 100);
-                }
-            })
-        } else if (r.type == 2) {
-            document.querySelectorAll("*").forEach(item => item.style.backgroundImage = "url('" + r.link + "'")
-        }
-    })
-
     colourSidebar();
     colourTimetable();
     colourDuework();
