@@ -125,21 +125,6 @@ function getLuminance(hexColor) {
       0.0722 * getsRGB(hexColor.substr(-2))
     )
 }
-for (const item of document.querySelectorAll("time")) {
-    if (item.textContent.includes("remaining")) {
-        const timeleft = Math.ceil((new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7)
-        if (timeleft < 0) {
-            //TODO: Math.ceil doesnt make this work
-            item.textContent = Math.round((num + Number.EPSILON) * 100) / 100 + "hours left "
-        }
-        else if (timeleft === 1) {
-            item.textContent = timeleft + " day left"
-        }
-        else {
-            item.textContent = timeleft + " days left"
-        }
-    }
-}
 function getContrast(f, b) {
     const L1 = getLuminance(f)
     const L2 = getLuminance(b)
@@ -695,6 +680,7 @@ function eDiary() {
 }
 
 function mainPage() {
+    
     let extSettings = JSON.parse(localStorage.getItem("extSettings"));
     if (extSettings?.compacttimetable || typeof(extSettings?.compacttimetable) == "undefined") {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
@@ -710,7 +696,21 @@ function mainPage() {
     
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
-
+    for (const item of document.querySelectorAll("time")) {
+        if (item.textContent.includes("remaining")) {
+            const timeleft = Math.ceil((new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7)
+            if (timeleft < 0) {
+                //TODO: Math.ceil doesnt make this work
+                item.textContent = Math.round((num + Number.EPSILON) * 100) / 100 + "hours left "
+            }
+            else if (timeleft === 1) {
+                item.textContent = timeleft + " day left"
+            }
+            else {
+                item.textContent = timeleft + " days left"
+            }
+        }
+    }
     // eDiary list recolour
     if (document.querySelectorAll(".fc-list-event").length == 0) setTimeout(mainPage, 100);
     colourEDiaryList()
