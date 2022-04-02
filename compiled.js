@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://localhost:3000/smgsapi"
+const THEME_API = "https://rcja.app/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -124,6 +124,21 @@ function getLuminance(hexColor) {
       0.7152 * getsRGB(hexColor.substr(3, 2)) +
       0.0722 * getsRGB(hexColor.substr(-2))
     )
+}
+for (const item of document.querySelectorAll("time")) {
+    if (item.textContent.includes("remaining")) {
+        const timeleft = Math.ceil((new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7)
+        if (timeleft < 0) {
+            //TODO: Math.ceil doesnt make this work
+            item.textContent = Math.round((num + Number.EPSILON) * 100) / 100 + "hours left "
+        }
+        else if (timeleft === 1) {
+            item.textContent = timeleft + " day left"
+        }
+        else {
+            item.textContent = timeleft + " days left"
+        }
+    }
 }
 function getContrast(f, b) {
     const L1 = getLuminance(f)
