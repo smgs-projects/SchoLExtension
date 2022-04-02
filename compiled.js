@@ -149,8 +149,23 @@ function rgbsFromHexes(url) {
     }
     return rgbs
 }
-
+function deadNameRemover(node, item, replace) {
+    if (node.nodeType == 3) {
+        for (const name of item) {
+            node.data = node.data.replace(new RegExp(name, "g"), replace);
+        }
+    }
+    if (node.nodeType == 1 && node.nodeName != "SCRIPT") {
+        for (var i = 0; i < node.childNodes.length; i++) {
+            deadNameRemover(node.childNodes[i], item, replace);
+        }
+    }
+}
 async function allPages() {
+    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    if (extSettings["deadnameremover"] && extSettings["deadnameremover"]["enabled"] === true && extSettings["deadnameremover"]["deadnames"].length !== 0 && extSettings["deadnameremover"]["preferednames"] !== null) {
+        deadNameRemover(document.body, extSettings["deadnameremover"]["deadnames"], extSettings["deadnameremover"]["preferednames"])
+    }
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -360,6 +375,20 @@ async function profilePage() {
                                         </div>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td style="border: 0px">
+                                        <label for="toggle_deadnameremover">Dead Name Remover<p>Remove all instances on the page of a dead name and replaces it with the name (Only client side does not replace on others accounts)</p></label>
+                                    </td>
+                                    <td style="border: 0px">
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_deadnameremover" type="checkbox" name="toggle_deadnameremover" value="0">
+                                            <label for="toggle_deadnameremover">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -377,7 +406,9 @@ async function profilePage() {
     let toggle_themesync = document.getElementById("toggle_themesync")
     let toggle_autoreload = document.getElementById("toggle_autoreload")
     let toggle_colourduework = document.getElementById("toggle_colourduework")
-    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")        
+    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")     
+    let toggle_deadnameremover = document.getElementById("toggle_deadnameremover")        
+
     let elem_settingsreset = document.getElementById("settingsreset")
     
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", "{}"); }
@@ -393,13 +424,96 @@ async function profilePage() {
     if (extSettings?.colourduework) { toggle_colourduework.setAttribute("checked", 1) } 
     else if (typeof(extSettings?.colourduework) !== "undefined") { toggle_colourduework.removeAttribute("checked", 1) };
     
-    if (extSettings?.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1) } 
+    if (extSettings?.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1)} 
     else if (typeof(extSettings?.compacttimetable) !== "undefined") { toggle_compacttimetable.removeAttribute("checked", 1) };
+
+    if (extSettings?.deadnameremover && extSettings?.deadnameremover["enabled"]) { toggle_deadnameremover.setAttribute("checked", 1);     let deadnameinputtext = extSettings["deadnameremover"]["deadnames"].length === 0 ? "" : `value="${extSettings["deadnameremover"]["deadnames"].join(",")}"`
+    let preferedinputtext = extSettings["deadnameremover"]["preferednames"].length === 0 ? "" : `value="${extSettings["deadnameremover"]["preferednames"].join(",")}"`;toggle_deadnameremover.parentElement.parentElement.parentElement.querySelector("td").innerHTML += `
+    <div id="preferednameinputter"
+        <tr>
+            <td style="border: 0px">
+                <input id="deadnameinput" ${deadnameinputtext} placeholder="Dead names to be seperated by commas"></input>
+            </td>
+            <td style="border: 0px">
+                <input id="preferednameinput" ${preferedinputtext} placeholder="Prefered name"></input>
+            </td>
+        </tr>
+    </div>
+    `
+    let deadnameinputter = document.getElementById("deadnameinput")
+    let preferednameinputter = document.getElementById("preferednameinput")
+    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    preferednameinputter.addEventListener("keyup", function(event) {
+        extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        if (extSettings["deadnameremover"] && extSettings["deadnameremover"]["enabled"] === false) return;
+        if (event.keyCode === 13) {
+            extSettings["deadnameremover"]["preferednames"] = preferednameinputter.value
+            localStorage.setItem("extSettings", JSON.stringify(extSettings))
+        }
+    });
+    deadnameinputter.addEventListener("keyup", function(event) {
+        extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        if (extSettings["deadnameremover"] && extSettings["deadnameremover"]["enabled"] === false) return;
+        if (event.keyCode === 13) {
+            extSettings["deadnameremover"]["deadnames"] = deadnameinputter.value.split(",")
+            localStorage.setItem("extSettings", JSON.stringify( extSettings))
+        }
+
+    });
+    } 
+    else if (typeof(extSettings?.deadnameremover) !== "undefined") { toggle_deadnameremover.removeAttribute("checked", 1) };
     
     toggle_themesync.addEventListener("change", function () {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
         extSettings["themesync"] = toggle_themesync.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
+    })
+    toggle_deadnameremover.addEventListener("change", function () {
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+        const parentElement = toggle_deadnameremover.parentElement.parentElement.parentElement
+        if (toggle_deadnameremover.checked === true) {
+            parentElement.querySelector("td").innerHTML += `
+            <div id="preferednameinputter"
+                <tr>
+                    <td style="border: 0px">
+                        <input id="deadnameinput" placeholder="Dead names to be seperated by commas"></input>
+                    </td>
+                    <td style="border: 0px">
+                        <input id="preferednameinput" placeholder="Prefered name"></input>
+                    </td>
+                </tr>
+            </div>
+            `
+            extSettings["deadnameremover"] = {enabled: true, deadnames: [], preferednames: null}
+            let deadnameinputter = document.getElementById("deadnameinput")
+            let preferednameinputter = document.getElementById("preferednameinput")
+            preferednameinputter.addEventListener("keyup", function(event) {
+                extSettings = JSON.parse(localStorage.getItem("extSettings"));
+                if (extSettings["deadnameremover"] && extSettings["deadnameremover"]["enabled"] === false) return;
+                if (event.keyCode === 13) {
+                    extSettings["deadnameremover"]["preferednames"] = preferednameinputter.value
+                    localStorage.setItem("extSettings", JSON.stringify(extSettings))
+                }
+            });
+            deadnameinputter.addEventListener("keyup", function(event) {
+                extSettings = JSON.parse(localStorage.getItem("extSettings"));
+                if (extSettings["deadnameremover"] && extSettings["deadnameremover"]["enabled"] === false) return;
+                if (event.keyCode === 13) {
+                    extSettings["deadnameremover"]["deadnames"] = deadnameinputter.value.split(",")
+                    localStorage.setItem("extSettings", JSON.stringify( extSettings))
+                }
+        
+            });
+            localStorage.setItem("extSettings", JSON.stringify( extSettings))
+        }
+        else {
+            document.getElementById("preferednameinputter").remove()
+            extSettings["deadnameremover"]["enabled"] = false
+            localStorage.setItem("extSettings", JSON.stringify( extSettings))
+
+        }
+        // extSettings["themesync"] = toggle_deadnameremover.checked;
+        // localStorage.setItem("extSettings", JSON.stringify(extSettings))
     })
     toggle_autoreload.addEventListener("change", function () {
         let extSettings = JSON.parse(localStorage.getItem("extSettings"));
