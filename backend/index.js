@@ -79,12 +79,14 @@ app.post("/smgsapi/theme", async function(req, res, next) {
             const theme = req.body["theme"]
             const settings = req.body["settings"]
             if (!settings && settings !== false) return res.sendStatus(400)
-            if (!theme) return res.sendStatus(400)
+            if (!theme && theme !== false) return res.sendStatus(400)
             if (ValidateSettings(settings) === false && settings !== false) {
                 return res.sendStatus(400)
             }
-            for (const rgb of Object.values(theme)) {
-                if (ValidateRGB(rgb) === false) return res.sendStatus(400)
+            if (theme !== false) {
+                for (const rgb of Object.values(theme)) {
+                    if (ValidateRGB(rgb) === false) return res.sendStatus(400)
+                }
             }
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
