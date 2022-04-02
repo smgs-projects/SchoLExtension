@@ -427,8 +427,11 @@ async function profilePage() {
     if (extSettings?.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1)} 
     else if (typeof(extSettings?.compacttimetable) !== "undefined") { toggle_compacttimetable.removeAttribute("checked", 1) };
 
-    if (extSettings?.deadnameremover && extSettings?.deadnameremover["enabled"]) { toggle_deadnameremover.setAttribute("checked", 1);     let deadnameinputtext = extSettings["deadnameremover"]["deadnames"].length === 0 ? "" : `value="${extSettings["deadnameremover"]["deadnames"].join(",")}"`
-    let preferedinputtext = extSettings["deadnameremover"]["preferednames"].length === 0 ? "" : `value="${extSettings["deadnameremover"]["preferednames"].join(",")}"`;toggle_deadnameremover.parentElement.parentElement.parentElement.querySelector("td").innerHTML += `
+    if (extSettings?.deadnameremover && extSettings?.deadnameremover["enabled"]) 
+    { 
+    toggle_deadnameremover.setAttribute("checked", 1);     
+    let deadnameinputtext = JSON.parse(localStorage.getItem("extSettings"))["deadnameremover"]["deadnames"].length === 0 ? "" : `value="${JSON.parse(localStorage.getItem("extSettings"))["deadnameremover"]["deadnames"].join(",")}"`
+    let preferedinputtext = JSON.parse(localStorage.getItem("extSettings"))["deadnameremover"]["preferednames"].length === 0 ? "" : `value="${JSON.parse(localStorage.getItem("extSettings"))["deadnameremover"]["preferednames"]}"`;toggle_deadnameremover.parentElement.parentElement.parentElement.querySelector("td").innerHTML += `
     <div id="preferednameinputter"
         <tr>
             <td style="border: 0px">
