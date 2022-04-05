@@ -678,23 +678,26 @@ function eDiary() {
         }
     }
 }
-for (let item of document.querySelectorAll("time").filter(item => item.textContent.includes("remains"))) {
-    console.log(item)
-}
 function mainPage() {
     for (let item of document.querySelectorAll("time")) {
         if (item.textContent.includes("remaining")) {
-            const timeleft = Math.round((new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7)
-            
-            if (timeleft < 0) {
+            const timeleft = (new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7
+            if (timeleft < 1) {
                 //TODO: Math.ceil doesnt make this work
-                item.textContent = Math.round((num + Number.EPSILON) * 100) / 100 + "hours left "
+                const timething = Math.floor((Math.round((timeleft + Number.EPSILON) * 100) / 100) * 100 * 0.24)
+                if (timething === 0) {
+                    item.textContent = "1 hour remaining"
+                }
+                else {
+                    item.textContent = timething + " hours remaining"
+
+                }
             }
-            else if (timeleft === 1) {
-                item.textContent = timeleft + " day left"
+            else if (Math.round(timeleft) === 1) {
+                item.textContent = Math.round(timeleft) + " day remaining"
             }
             else {
-                item.textContent = timeleft + " days left"
+                item.textContent = Math.round(timeleft)+ " days remaining"
             }
         }
     }
