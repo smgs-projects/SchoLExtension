@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://localhost:3000/smgsapi"
+const THEME_API = "https://rcja.app/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -51,7 +51,7 @@ async function load() {
         setInterval(eDiary, 500)
     }
     if (window.location.pathname.startsWith("/learning/due")) {
-        setInterval(colourDueworkCalendar, 500)
+        setInterval(dueWork, 500)
     }
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
@@ -151,6 +151,18 @@ function rgbsFromHexes(url) {
 }
 
 async function allPages() {
+    // Fix "days remaining" on due work items to a more friendly value
+    for (let item of document.querySelectorAll("time")) {
+        if (item.textContent.includes("remaining")) {
+            const daysleft = (new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7
+            const hoursleft = (new Date(item.dateTime).getTime() - Date.now()) / 3.6e+6
+            const minutesleft = (new Date(item.dateTime).getTime() - Date.now()) / 60000
+            
+            if (daysleft >= 1) { item.textContent = Math.round(daysleft) + (daysleft == 1 ? " day left" : " days left") }
+            else if (hoursleft >= 1) { item.textContent = Math.round(hoursleft) + (hoursleft == 1 ? " hour left" : " hours left") }
+            else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
+        }
+    }
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -560,7 +572,7 @@ async function profilePage() {
     })
 }
 
-function colourDueworkCalendar() {
+function dueWork() {
     if(!document.querySelector(".event-container span.fc-event-title") !== null && document.querySelector("span[recoloured]") !== null) return;
     colourDuework()
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
