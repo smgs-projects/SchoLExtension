@@ -19,6 +19,8 @@ const THEME_API = "https://rcja.app/smgsapi"
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
+// List of settings with default values
+let extSettings = {"themesync": 1, "settingsync": 1, "autoreload": 0, "colourduework": 0, "compacttimetable": 0};
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
@@ -26,6 +28,8 @@ else { window.addEventListener('load', () => { load() }); }
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
+    extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
+
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -51,7 +55,7 @@ async function load() {
         setInterval(eDiary, 500)
     }
     if (window.location.pathname.startsWith("/learning/due")) {
-        setInterval(colourDueworkCalendar, 500)
+        setInterval(dueWork, 500)
     }
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
@@ -151,6 +155,18 @@ function rgbsFromHexes(url) {
 }
 
 async function allPages() {
+    // Fix "days remaining" on due work items to a more friendly value
+    for (let item of document.querySelectorAll("time")) {
+        if (item.textContent.includes("remaining")) {
+            const daysleft = (new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7
+            const hoursleft = (new Date(item.dateTime).getTime() - Date.now()) / 3.6e+6
+            const minutesleft = (new Date(item.dateTime).getTime() - Date.now()) / 60000
+            
+            if (daysleft >= 1) { item.textContent = Math.round(daysleft) + (daysleft == 1 ? " day left" : " days left") }
+            else if (hoursleft >= 1) { item.textContent = Math.round(hoursleft) + (hoursleft == 1 ? " hour left" : " hours left") }
+            else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
+        }
+    }
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -168,8 +184,7 @@ function colourSidebar() {
 }
 
 function colourDuework() {
-    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-    if (extSettings?.colourduework || typeof(extSettings?.colourduework) == "undefined") {
+    if (extSettings.colourduework) {
         let dueworkitems = document.querySelectorAll(".Schoolbox_Learning_Component_Dashboard_UpcomingWorkController li")
         if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
         
@@ -320,6 +335,20 @@ async function profilePage() {
                                 </tr>
                                 <tr>
                                     <td>
+                                        <label for="toggle_settingsync">Setting Syncronisation<p>Sync settings between devices</p></label>
+                                    </td>
+                                    <td>
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_settingsync" type="checkbox" name="toggle_settingsync" value="1" checked>
+                                            <label for="toggle_settingsync">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
                                         <label for="toggle_autoreload">Auto Reload<p>Automatically reload the page when your theme changes on another device</p></label>
                                     </td>
                                     <td>
@@ -377,48 +406,57 @@ async function profilePage() {
     let toggle_themesync = document.getElementById("toggle_themesync")
     let toggle_autoreload = document.getElementById("toggle_autoreload")
     let toggle_colourduework = document.getElementById("toggle_colourduework")
-    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")        
+    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")       
+    let toggle_settingsync = document.getElementById("toggle_settingsync")        
+
     let elem_settingsreset = document.getElementById("settingsreset")
     
-    if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", "{}"); }
+    if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", JSON.stringify(extSettings)); }
 
-    let extSettings = JSON.parse(localStorage.getItem("extSettings"))
-    
-    if (extSettings?.themesync) { toggle_themesync.setAttribute("checked", 1) } 
-    else if (typeof(extSettings?.themesync) !== "undefined") { toggle_themesync.removeAttribute("checked", 1) };
+    if (extSettings.themesync) { toggle_themesync.setAttribute("checked", 1) } 
+    else { toggle_themesync.removeAttribute("checked", 1) };
 
-    if (extSettings?.autoreload) { toggle_autoreload.setAttribute("checked", 1) } 
-    else if (typeof(extSettings?.autoreload) !== "undefined") { toggle_autoreload.removeAttribute("checked", 1) };
+    if (extSettings.settingsync) { toggle_settingsync.setAttribute("checked", 1) } 
+    else { toggle_settingsync.removeAttribute("checked", 1) };
+
+    if (extSettings.autoreload) { toggle_autoreload.setAttribute("checked", 1) } 
+    else { toggle_autoreload.removeAttribute("checked", 1) };
     
-    if (extSettings?.colourduework) { toggle_colourduework.setAttribute("checked", 1) } 
-    else if (typeof(extSettings?.colourduework) !== "undefined") { toggle_colourduework.removeAttribute("checked", 1) };
+    if (extSettings.colourduework) { toggle_colourduework.setAttribute("checked", 1) } 
+    else { toggle_colourduework.removeAttribute("checked", 1) };
     
-    if (extSettings?.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1) } 
-    else if (typeof(extSettings?.compacttimetable) !== "undefined") { toggle_compacttimetable.removeAttribute("checked", 1) };
+    if (extSettings.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1) } 
+    else { toggle_compacttimetable.removeAttribute("checked", 1) };
     
-    toggle_themesync.addEventListener("change", function () {
-        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    toggle_themesync.addEventListener("change", async function () {
         extSettings["themesync"] = toggle_themesync.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
+        await postTheme();
     })
-    toggle_autoreload.addEventListener("change", function () {
-        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    toggle_autoreload.addEventListener("change", async function () {
         extSettings["autoreload"] = toggle_autoreload.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
+        await postTheme();
     })
-    toggle_colourduework.addEventListener("change", function () {
-        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    toggle_colourduework.addEventListener("change", async function () {
         extSettings["colourduework"] = toggle_colourduework.checked;
         localStorage.setItem("extSettings",JSON.stringify( extSettings))
+        await postTheme();
     })
-    toggle_compacttimetable.addEventListener("change", function () {
-        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
+    toggle_compacttimetable.addEventListener("change", async function () {
         extSettings["compacttimetable"] = toggle_compacttimetable.checked;
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
+        await postTheme();
+    })
+    toggle_settingsync.addEventListener("change", async function () {
+        extSettings["settingsync"] = toggle_settingsync.checked;
+        localStorage.setItem("extSettings", JSON.stringify(extSettings))
+        await postTheme();
     })
 
-    elem_settingsreset.addEventListener("click", function () {
+    elem_settingsreset.addEventListener("click", async function () {
         localStorage.setItem("extSettings", "{}");
+        await postTheme();
         window.location.reload()
     })
 
@@ -530,7 +568,7 @@ async function profilePage() {
     })
 }
 
-function colourDueworkCalendar() {
+function dueWork() {
     if(!document.querySelector(".event-container span.fc-event-title") !== null && document.querySelector("span[recoloured]") !== null) return;
     colourDuework()
     for (const duework of document.querySelectorAll(".event-container span.fc-event-title")) {
@@ -648,10 +686,8 @@ function eDiary() {
         }
     }
 }
-
 function mainPage() {
-    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-    if (extSettings?.compacttimetable || typeof(extSettings?.compacttimetable) == "undefined") {
+    if (extSettings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
         const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
@@ -672,8 +708,7 @@ function mainPage() {
 }
 
 function timetable() {
-    let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-    if (extSettings?.compacttimetable || typeof(extSettings?.compacttimetable) == "undefined") {
+    if (extSettings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
         // Removing timetable blank periods
         // ~ Desktop
@@ -781,42 +816,63 @@ async function getTheme() {
 async function postTheme() {
     return new Promise (async ( resolve ) => {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
+        let extSettings = JSON.parse(localStorage.getItem("extSettings"))
+        const body = {"settings": false,"defaultTheme": false, "theme" : false, "sbu" : schoolboxUser}
+        if (extSettings?.themesync === true || typeof(extSettings?.themesync) == "undefined") {
+            body["theme"] = JSON.parse(localStorage.getItem("timetableColours"))
+            body["defaultTheme"] = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        }
+        if (extSettings?.settingsync === true || typeof(extSettings?.settingsync) == "undefined") {
+            body["settings"] = JSON.parse(localStorage.getItem("extSettings"))
+        }
         fetch(THEME_API + "/theme", {
             method: "POST",
             headers: new Headers({
                 "Authorization": "Basic " + localStorage.getItem("userToken"),
                 "Content-Type": "application/json"
             }),
-            body: JSON.stringify({"defaultTheme": JSON.parse(localStorage.getItem("timetableColoursDefault")), "theme" : JSON.parse(localStorage.getItem("timetableColours")), "sbu" : schoolboxUser})
+            body: JSON.stringify(body)
         }).then(r => { resolve() })
     });
 }
 async function themeSync() {
     return new Promise (async ( resolve ) => {
-        let extSettings = JSON.parse(localStorage.getItem("extSettings"));
-        if (extSettings?.themesync || typeof(extSettings?.themesync) == "undefined") {
-            const newtheme = await getTheme();
+        let change = false
+
+        if (extSettings.settingsync) {
+            let newtheme = await getTheme();
+            if (newtheme.settings && JSON.stringify(newtheme.settings) != localStorage.getItem("extSettings")) {
+                localStorage.setItem("extSettings", JSON.stringify(newtheme["settings"]))
+                if (extSettings.autoreload) { change = true }
+                else {
+                    document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Settings have changed on another device. Reload to update</div>`);
+                    setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
+                }
+            }
+        } 
+        if (extSettings.themesync) {
+            let newtheme = await getTheme();
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
-                if (extSettings?.autoreload) {
-                    window.location.reload()
-                    return resolve();
+                if (extSettings.autoreload) { change = true }
+                else {
+                    document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
+                    setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
                 }
-                document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
-                setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
             }
-        }
-
-        let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-        let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
-
-        for (const subject of Object.keys(defaultTheme)) {
-            if (!currentTheme[subject]) {
-                currentTheme[subject] = defaultTheme[subject]
-                localStorage.setItem("timetableColours", currentTheme)
+            let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+            let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
+            for (const subject of Object.keys(defaultTheme)) {
+                if (!currentTheme[subject]) {
+                    currentTheme[subject] = defaultTheme[subject]
+                    localStorage.setItem("timetableColours", JSON.stringify(currentTheme))
+                }
             }
         }
         await postTheme();
+        if (extSettings.autoreload && change) {
+            window.location.reload()
+        }
         resolve()
     });
 }

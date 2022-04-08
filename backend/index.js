@@ -15,18 +15,6 @@ const certOptions = {
     key: fs.readFileSync(process.env.CERT_KEY)
 };
 
-const nato = [
-    "Alpha", "Bravo", "Charlie", 
-    "Delta", "Echo", "Foxtrot", 
-    "Golf", "Hotel", "India", 
-    "Juliett", "Kilo", "Lima", 
-    "Mike", "November", "Oscar", 
-    "Papa", "Quebec", "Romeo", 
-    "Sierra", "Tango", "Uniform", 
-    "Victor", "Whiskey", "X-ray",
-    "Yankee", "Zulu"
-]
-
 const app = express()
 
 app.use(connection(mysql, {
@@ -65,7 +53,7 @@ app.get("/smgsapi/theme", async function(req, res, next) {
 
             let [theme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!theme || theme.length < 1) return res.json({})
-            res.json({theme: JSON.parse(theme[0]["theme"])});
+            res.json({theme: JSON.parse(theme[0]["theme"]), settings: JSON.parse(theme[0]["settings"])});
         }
         catch(error) { console.error(error); return res.sendStatus(500); }
     })
@@ -81,16 +69,18 @@ app.post("/smgsapi/theme", async function(req, res, next) {
 
             const defaultTheme = req.body["defaultTheme"]
             const theme = req.body["theme"]
-
-            if (!theme) return res.sendStatus(400)
+            const settings = req.body["settings"]
+            if (!settings && settings !== false) return res.sendStatus(400)
+            if (!theme && theme !== false) return res.sendStatus(400)
+            
             for (const rgb of Object.values(theme)) {
-                if (ValidateRGB(rgb) === false) { return res.sendStatus(400) }
+                if (ValidateRGB(rgb) === false) return res.sendStatus(400)
             }
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
-                promisePool.execute("INSERT INTO themes (id, sbu, defaults, theme) VALUES (?, ?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme)]);
+                promisePool.execute("INSERT INTO themes (id, sbu, defaults, theme, settings) VALUES (?, ?, ?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings)]);
             } else {
-                await promisePool.execute("UPDATE themes SET sbu = ?, defaults = ?, theme = ? WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), tokenData.id]);
+                await promisePool.execute("UPDATE themes SET sbu = ?, defaults = ?, theme = ?, settings = ? WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings), tokenData.id]);
             }
             res.sendStatus(200)
         } 
