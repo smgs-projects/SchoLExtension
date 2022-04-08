@@ -10,13 +10,10 @@ import sha1 from "sha1";
 import jwt from "jsonwebtoken";
 dotenv.config();
 
-
 const certOptions = {
     cert: fs.readFileSync(process.env.CERT),
     key: fs.readFileSync(process.env.CERT_KEY)
 };
-
-const validSettings = ["autoreload", "settingsync", "themesync", "colourduework", "compacttimetable"]
 
 const app = express()
 
@@ -45,11 +42,6 @@ app.get("/smgsapi/themes", async function(req, res, next) {
         catch(error) { console.error(error); res.sendStatus(500); }
     })
 })
-function ValidateSettings(settings) {
-    if (Object.keys(settings).filter(setting => validSettings.includes(setting)).length !== Object.values(settings).length) return false
-    if (Object.values(settings).filter(value => value === true || value === false).length !== Object.values(settings).length) return false
-    return true
-}
 app.get("/smgsapi/theme", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
@@ -80,13 +72,9 @@ app.post("/smgsapi/theme", async function(req, res, next) {
             const settings = req.body["settings"]
             if (!settings && settings !== false) return res.sendStatus(400)
             if (!theme && theme !== false) return res.sendStatus(400)
-            if (ValidateSettings(settings) === false && settings !== false) {
-                return res.sendStatus(400)
-            }
-            if (theme !== false) {
-                for (const rgb of Object.values(theme)) {
-                    if (ValidateRGB(rgb) === false) return res.sendStatus(400)
-                }
+            
+            for (const rgb of Object.values(theme)) {
+                if (ValidateRGB(rgb) === false) return res.sendStatus(400)
             }
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
