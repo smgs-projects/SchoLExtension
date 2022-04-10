@@ -20,7 +20,7 @@ const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + 
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 // List of settings with default values
-let extSettings = {"themesync": 1, "settingsync": 1, "autoreload": 0, "colourduework": 0, "compacttimetable": 0};
+let extSettings = {"themesync": 1, "settingsync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "deadnameremover": {"enabled": 1, "names": []}};
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
@@ -67,9 +67,10 @@ async function load() {
         timetable()
     }
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) {
-        profilePage()
+        await profilePage()
     }
 
+    if (extSettings.deadnameremover.enabled) deadNameRemover();
     await themeSync();
 }
 
@@ -153,7 +154,6 @@ function rgbsFromHexes(url) {
     }
     return rgbs
 }
-
 async function allPages() {
     // Fix "days remaining" on due work items to a more friendly value
     for (let item of document.querySelectorAll("time")) {
@@ -171,6 +171,30 @@ async function allPages() {
     colourTimetable();
     colourDuework();
     setTimeout(colourDuework, 1000) // Some pages require extra loading time
+}
+
+function replaceDeadNames(element, dead, preferred) {
+    for (let node of element.childNodes) {
+        if (["SCRIPT", "STYLE"].includes(node.nodeName)) continue;
+        switch (node.nodeType) {
+            case Node.ELEMENT_NODE:
+                replaceDeadNames(node, dead, preferred);
+                break;
+            case Node.TEXT_NODE:
+                for (let i=0; i<dead.length; i++) {
+                    node.textContent = node.textContent.replace(new RegExp(dead[i], "g"), preferred[i]);
+                }
+                break;
+            case Node.DOCUMENT_NODE:
+                replaceDeadNames(node, dead, preferred);
+        }
+    }
+}
+
+function deadNameRemover() {
+    let deadnames = extSettings.deadnameremover.names.map(e => { return e[0] })
+    let preferrednames = extSettings.deadnameremover.names.map(e => { return e[1] })
+    replaceDeadNames(document.body, deadnames, preferrednames)
 }
 
 function colourSidebar() {
@@ -376,10 +400,10 @@ async function profilePage() {
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="border: 0px">
+                                    <td>
                                         <label for="toggle_compacttimetable">Compact Timetable<p>Remove empty items/rows from the timetable on the dashboard and timetable page</p></label>
                                     </td>
-                                    <td style="border: 0px">
+                                    <td>
                                         <div class="long switch no-margin" style="float: right">
                                             <input id="toggle_compacttimetable" type="checkbox" name="toggle_compacttimetable" value="1" checked>
                                             <label for="toggle_compacttimetable">
@@ -389,8 +413,32 @@ async function profilePage() {
                                         </div>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td style="border: 0px">
+                                        <label for="toggle_deadnameremover">Dead Name Remover<p>Allows replacement all instances of dead names across the site (Client side per account only)</p></label>
+                                    </td>
+                                    <td style="border: 0px">
+                                        <div class="long switch no-margin" style="float: right">
+                                            <input id="toggle_deadnameremover" type="checkbox" name="toggle_deadnameremover" value="0">
+                                            <label for="toggle_deadnameremover">
+                                                <span>Enabled</span>
+                                                <span>Disabled</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+                </fieldset>
+                <fieldset class="content" id="deadnameremover" style="display: none">
+                    <legend><strong>Dead Name Remover</strong></legend>
+                    <div class="small-12 columns">
+                        <ul class="information-list unsortable" id="deadnamelist"></ul>
+                    </div>
+                    <div class="small-12 columns">
+                        <p class="meta"><strong>Note: </strong>Only you will see changes made here, it will not show for other students/staff</p>
+                        <p class="meta">This is not guranteed to work everywhere, <a href="mailto:zmcwilliam@stmichaels.vic.edu.au, staylor@stmichaels.vic.edu.au">contact us</a> if you find any problems.</p>
                     </div>
                 </fieldset>
                 <div class="component-action">
@@ -406,10 +454,12 @@ async function profilePage() {
     let toggle_themesync = document.getElementById("toggle_themesync")
     let toggle_autoreload = document.getElementById("toggle_autoreload")
     let toggle_colourduework = document.getElementById("toggle_colourduework")
-    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")       
-    let toggle_settingsync = document.getElementById("toggle_settingsync")        
+    let toggle_compacttimetable = document.getElementById("toggle_compacttimetable")
+    let toggle_settingsync = document.getElementById("toggle_settingsync")
+    let toggle_deadnameremover = document.getElementById("toggle_deadnameremover")
 
     let elem_settingsreset = document.getElementById("settingsreset")
+    let elem_deadnameremover = document.getElementById("deadnameremover")
     
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", JSON.stringify(extSettings)); }
 
@@ -427,6 +477,9 @@ async function profilePage() {
     
     if (extSettings.compacttimetable) { toggle_compacttimetable.setAttribute("checked", 1) } 
     else { toggle_compacttimetable.removeAttribute("checked", 1) };
+
+    if (extSettings.deadnameremover.enabled) { toggle_deadnameremover.setAttribute("checked", 1) } 
+    else { toggle_deadnameremover.removeAttribute("checked", 1) };
     
     toggle_themesync.addEventListener("change", async function () {
         extSettings["themesync"] = toggle_themesync.checked;
@@ -453,19 +506,105 @@ async function profilePage() {
         localStorage.setItem("extSettings", JSON.stringify(extSettings))
         await postTheme();
     })
-
+    toggle_deadnameremover.addEventListener("change", async function () {
+        elem_deadnameremover.style.display = toggle_deadnameremover.checked ? "" : "none"
+        extSettings.deadnameremover.enabled = toggle_deadnameremover.checked
+        localStorage.setItem("extSettings", JSON.stringify(extSettings))
+        await postTheme();
+    })
     elem_settingsreset.addEventListener("click", async function () {
         localStorage.setItem("extSettings", "{}");
         await postTheme();
         window.location.reload()
     })
-
+    
     let elem_themereset = document.getElementById("themereset")
     let elem_currenttheme = document.getElementById("currenttheme")
     let elem_importtext = document.getElementById("importtext")
     let elem_importbtn = document.getElementById("importbtn")
     let elem_exportbtn = document.getElementById("exportbtn")
     let elem_themeselector = document.getElementById("context-selector-themes")
+    let elem_deadnamelist = document.getElementById("deadnamelist")
+
+    let deadnames = [];
+    elem_deadnameremover.style.display = toggle_deadnameremover.checked ? "" : "none"
+    function addDeadname() {
+        let id = deadnames.length
+        elem_deadnamelist.insertAdjacentHTML("beforeend", `<li id="deadname_${id}">
+            <div class="actions-small-1">
+                <div class="list-item">
+                    <div class="small-12 medium-6 column">
+                        <label><span class="hide-for-medium-up">Name to replace</span>
+                        <input type="text" placeholder="Name to replace (Old)" id="deadnameold_${id}"></label>
+                    </div>
+                    <div class="small-12 medium-6 column">
+                        <label><span class="hide-for-medium-up">Preferred name</span>
+                        <input type="text" placeholder="Preferred name (New)" id="deadnamenew_${id}"></label>
+                    </div>
+                </div>
+                <nav><a id="deadnamedel_${id}" class="icon-delete" title="Delete" style="vertical-align: middle; line-height: 63px; display: none"></a></nav>
+            </div>
+        </li>`)
+        let elem_li = document.getElementById("deadname_" + id)
+        let elem_old = document.getElementById("deadnameold_" + id)
+        let elem_new = document.getElementById("deadnamenew_" + id)
+        let elem_del = document.getElementById("deadnamedel_" + id)
+        deadnames.push({deleted: 0, li: elem_li, old: elem_old, new: elem_new, del: elem_del})
+
+        function getValidDeadnames() {
+            let amt_deadnames = 0;
+            let valid_deadnames = [];
+            for (deadname of deadnames) {
+                deadname.del.style.display = (deadname.old.value || deadname.new.value) ? "" : "none"
+                if (!deadname.deleted) amt_deadnames += 1
+                if (!deadname.old.value || !deadname.new.value || deadname.deleted) continue
+                valid_deadnames.push([deadname.old.value, deadname.new.value])
+            }
+            extSettings.deadnameremover.names = valid_deadnames;
+            localStorage.setItem("extSettings", JSON.stringify(extSettings))
+            return [valid_deadnames, amt_deadnames]
+        }
+        let inputs = [elem_new, elem_old];
+        inputs.forEach(item => { item.addEventListener("keyup", async function(evt) {
+            const last = deadnames[deadnames.length - 1]
+            let [valid_deadnames, total_deadnames] = getValidDeadnames();
+            
+            if (valid_deadnames.length == total_deadnames) {
+                addDeadname()
+            } else if (!last.old.value && !last.new.value && valid_deadnames.length != total_deadnames - 1) {
+                last.li.style.display = "none"
+                deadnames[deadnames.length - 1].deleted = 1
+            }
+        })})
+        inputs.forEach(item => { item.addEventListener("change", async function(evt) {
+            getValidDeadnames();
+            await postTheme();
+        })})
+        elem_del.addEventListener("click", async function () {
+            elem_li.style.display = "none"
+            deadnames[id].deleted = 1
+            
+            let amt_deadnames = 0;
+            for (deadname of deadnames) { if (!deadname.deleted) amt_deadnames += 1 }
+            if (amt_deadnames == 0) addDeadname()
+            
+            getValidDeadnames();
+            await postTheme();
+        })
+        return deadnames[id]
+    }
+    
+    for (const deadname of extSettings.deadnameremover.names) {
+        newitem = addDeadname()
+        newitem.old.value = deadname[0]
+        newitem.new.value = deadname[1]
+        newitem.del.style.display = ""
+    }
+    if (deadnames.length == 0) {
+        newitem = addDeadname()
+        newitem.old.value = schoolboxUser.fullName;
+        newitem.del.style.display = ""
+    } else addDeadname()
 
     function updateThemeExport() {
         elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableColours"])).map((e) => { 
@@ -838,9 +977,10 @@ async function postTheme() {
 async function themeSync() {
     return new Promise (async ( resolve ) => {
         let change = false
+        let newtheme;
+        if (extSettings.settingsync || extSettings.themesync) { newtheme = await getTheme(); }
 
         if (extSettings.settingsync) {
-            let newtheme = await getTheme();
             if (newtheme.settings && JSON.stringify(newtheme.settings) != localStorage.getItem("extSettings")) {
                 localStorage.setItem("extSettings", JSON.stringify(newtheme["settings"]))
                 if (extSettings.autoreload) { change = true }
@@ -851,7 +991,6 @@ async function themeSync() {
             }
         } 
         if (extSettings.themesync) {
-            let newtheme = await getTheme();
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
                 if (extSettings.autoreload) { change = true }
