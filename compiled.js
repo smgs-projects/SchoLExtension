@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://localhost:3000/smgsapi"
+const THEME_API = "https://rcja.app/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -172,17 +172,6 @@ async function allPages() {
     colourDuework();
     setTimeout(colourDuework, 1000) // Some pages require extra loading time
 }
-
-// if (node.nodeType == 3) {
-//     for (let i=0; i<dead.length; i++) {
-//         node.data = node.data.replace(new RegExp(dead[i], "g"), preferred[i]);
-//     }
-// }
-// if (node.nodeType == 1 && node.nodeName != "SCRIPT") {
-//     for (var i = 0; i < node.childNodes.length; i++) {
-//         replaceNames(node.childNodes[i], dead, preferred);
-//     }
-// }
 
 function replaceDeadNames(element, dead, preferred) {
     for (let node of element.childNodes) {
