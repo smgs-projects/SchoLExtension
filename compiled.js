@@ -28,7 +28,19 @@ else { window.addEventListener('load', () => { load() }); }
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
-    extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
+    try {
+        extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
+        JSON.parse(localStorage.getItem("timetableColours"))
+        JSON.parse(localStorage.getItem("timetableColoursDefault"))
+    } catch {
+        // Clear localStorage items if JSON.parse fails (prevents errors if someone breaks localStorage)
+        localStorage.removeItem("timetableColours");
+        localStorage.removeItem("lastTimetableCache");
+        localStorage.removeItem("extSettings");
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("lastUser");
+        window.location.reload()
+    }
 
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
@@ -645,7 +657,6 @@ async function profilePage() {
         })
     }
     elem_themeselector.addEventListener("change", async function(evt){
-        localStorage.removeItem("themeCode")
         let newtheme = evt.target.value.split("-")
         let currenttheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
         let i = 0
@@ -689,7 +700,6 @@ async function profilePage() {
     })
     elem_themereset.addEventListener("click", async function () {
         if (!confirm("Theme Reset: This will reset all your theme colours back to original, are you sure you want to do this?")) return;
-        localStorage.removeItem("themeCode") 
         localStorage.removeItem("timetableColours")
         localStorage.removeItem("defaultTimetableColours")
         localStorage.removeItem("lastTimetableCache")
@@ -955,14 +965,13 @@ async function getTheme() {
 async function postTheme() {
     return new Promise (async ( resolve ) => {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
-        let extSettings = JSON.parse(localStorage.getItem("extSettings"))
         const body = {"settings": false,"defaultTheme": false, "theme" : false, "sbu" : schoolboxUser}
-        if (extSettings?.themesync === true || typeof(extSettings?.themesync) == "undefined") {
-            body["theme"] = JSON.parse(localStorage.getItem("timetableColours"))
-            body["defaultTheme"] = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+        if (extSettings.themesync) {
+            body["theme"] = JSON.parse(localStorage.getItem("timetableColours")) || false
+            body["defaultTheme"] = JSON.parse(localStorage.getItem("timetableColoursDefault")) || false
         }
-        if (extSettings?.settingsync === true || typeof(extSettings?.settingsync) == "undefined") {
-            body["settings"] = JSON.parse(localStorage.getItem("extSettings"))
+        if (extSettings.settingsync) {
+            body["settings"] = JSON.parse(localStorage.getItem("extSettings")) || false
         }
         fetch(THEME_API + "/theme", {
             method: "POST",
@@ -989,7 +998,7 @@ async function themeSync() {
                     setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
                 }
             }
-        } 
+        }
         if (extSettings.themesync) {
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
                 localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
