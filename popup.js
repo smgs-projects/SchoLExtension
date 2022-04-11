@@ -4,6 +4,7 @@ function updateButton() {
     chrome.storage.local.get(['onOrOff'], result => {
         theButton.innerHTML = result.onOrOff ? "enabled" : "disabled";
         theButton.className = result.onOrOff ? "buttonON" : "buttonOFF";
+        chrome.browserAction.setIcon({path: result.onOrOff ? "Enabled.png" : "Disabled.png"});
     })
 }
 
