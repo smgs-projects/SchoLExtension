@@ -1,5 +1,5 @@
 {
-    "name": "SchoL Debug Seb App",
+    "name": "SchoL Extension",
     "description": "Random schol changes that make it better maybe?",
     "version": "1.0",
     "manifest_version": 2,
@@ -18,5 +18,8 @@
             "js": ["extension.js"],
             "run_at": "document_idle"
         }
-      ]
+    ],
+    "browser_action" : {
+        "default_popup": "popup.html"
+    }
   }
