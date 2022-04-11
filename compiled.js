@@ -55,7 +55,8 @@ async function load() {
         localStorage.removeItem("lastTimetableCache")
     }
     await writeCache()
-
+    easter()
+    setInterval(easter, 2000)
     allPages()
     if (window.location.pathname == "/") {
         mainPage()
@@ -165,6 +166,30 @@ function rgbsFromHexes(url) {
         rgbs.push(`rgb(${rgbcode})`);
     }
     return rgbs
+}
+function easter() {
+    let cnvs = document.createElement("canvas")
+    cnvs.style.display = "none"
+    let c = cnvs.getContext("2d")
+    var bunnyNose = new Image();
+    bunnyNose.src = "https://learning.stmichaels.vic.edu.au/send.php?id=181231";
+    bunnyNose.onload=function() {
+        var bunnyEars = new Image();
+        bunnyEars.src = "https://learning.stmichaels.vic.edu.au/send.php?id=181236";
+        bunnyEars.onload=function() {
+            for (const image of document.querySelectorAll("img[src]")) {
+                if (image.src.startsWith("https://learning.stmichaels.vic.edu.au/portrait.php") || image.src.includes("square64")) {
+                    cnvs.width = image.width
+                    cnvs.height = image.height
+                    c.clearRect(0, 0, cnvs.width, cnvs.height);
+                    c.drawImage(image, 0, 0, image.width, image.height);
+                    c.drawImage(bunnyNose, image.width/2-image.width/8, image.height/2.5, image.width/4, image.height/8);
+                    c.drawImage(bunnyEars, image.width/2-image.width/4, 0, image.width/2, image.height/4);
+                    image.src = cnvs.toDataURL();
+                }
+            }
+        }
+    }
 }
 async function allPages() {
     // Fix "days remaining" on due work items to a more friendly value
