@@ -450,7 +450,7 @@ async function profilePage() {
                     </div>
                     <div class="small-12 columns">
                         <p class="meta"><strong>Note: </strong>Only you will see changes made here, it will not show for other students/staff</p>
-                        <p class="meta">This is not guranteed to work everywhere, <a href="mailto:zmcwilliams@stmichaels.vic.edu.au, staylor@stmichaels.vic.edu.au">contact us</a> if you find any problems.</p>
+                        <p class="meta">This is not guranteed to work everywhere, <a href="mailto:zmcwilliam@stmichaels.vic.edu.au, staylor@stmichaels.vic.edu.au">contact us</a> if you find any problems.</p>
                     </div>
                 </fieldset>
                 <div class="component-action">
