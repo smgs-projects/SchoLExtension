@@ -178,6 +178,14 @@ async function allPages() {
             else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
         }
     }
+    // Add Timetable link to profile dropdown (only if timetable exists in navbar already)
+    let tt_links = document.querySelectorAll(".icon-timetable")
+    for (e of tt_links) {
+        if (e.innerText.includes("Timetable")) {
+            document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
+            break
+        }
+    }
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -813,6 +821,7 @@ function assessments() {
                 </section>
             </div>`)
         }
+        break
     }
 }
 function eDiary() {
@@ -866,6 +875,12 @@ function mainPage() {
 }
 
 function timetable() {
+    document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
+    document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
+        <a href="/search/user/${schoolboxUser.id}" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
+        <a href="/search/user/${schoolboxUser.id}" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+    `)
+
     if (extSettings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
         // Removing timetable blank periods
