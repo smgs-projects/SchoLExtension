@@ -71,7 +71,7 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
-    if (window.location.pathname.startsWith("/learning/assessments/") && !window.location.pathname.endsWith("/modify")) {
+    if (window.location.pathname.startsWith("/learning/assessments/")) {
         assessments()
     }
     if (window.location.pathname.startsWith("/timetable")) {
@@ -445,6 +445,11 @@ async function profilePage() {
                 <fieldset class="content" id="deadnameremover" style="display: none">
                     <legend><strong>Dead Name Remover</strong></legend>
                     <div class="small-12 columns">
+                        <p>Enter a dead name to replace across SchoL, the input boxes are CAse-sENSitiVE
+                            <br>Use full names to prevent renaming other students <i style="color: #888">(eg. "Zac McWilliam" instead of "Zac" prevents all Zac's getting renamed)</i>
+                        </p>
+                    </div>
+                    <div class="small-12 columns">
                         <ul class="information-list unsortable" id="deadnamelist"></ul>
                     </div>
                     <div class="small-12 columns">
@@ -792,17 +797,22 @@ function feedback() {
     }
 }
 function assessments() {
-    let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
-    let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
-    let match = matches ? matches[0] : matches2[0];
+    let subheaders = document.querySelectorAll(".subheader");
+    for (e of subheaders) {
+        if (!["SUBMIT RESPONSE", "SUBMISSION HISTORY"].includes(e.innerText)) continue
 
-    if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
-        const rows = document.querySelectorAll(".row");
-        rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
-            <section style="text-align: center;">
-                <img src="${ACHIEVEMENT_IMG}">
-            </section>
-        </div>`)
+        let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
+        let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
+        let match = matches ? matches[0] : matches2[0];
+    
+        if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
+            const rows = document.querySelectorAll(".row");
+            rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
+                <section style="text-align: center; padding-bottom: 10px">
+                    <img src="${ACHIEVEMENT_IMG}">
+                </section>
+            </div>`)
+        }
     }
 }
 function eDiary() {
