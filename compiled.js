@@ -78,9 +78,11 @@ async function load() {
         timetable()
     }
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) {
-        await profilePage()
+        await loadSettings()
     }
-
+    if (window.location.pathname.startsWith("/settings/messages")) {
+        await loadSettings()
+    }
     if (extSettings.deadnameremover.enabled) deadNameRemover();
     await themeSync();
 }
@@ -274,7 +276,7 @@ function classPage() {
         }
     }
 }
-async function profilePage() {
+async function loadSettings() {
     let tablerows = "";
     let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
     for (const subject in usercolors) {
@@ -301,12 +303,21 @@ async function profilePage() {
         }
     }
 
-    let contentrow = document.querySelectorAll("#content .row")
-    if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
-    
-    contentrow.querySelector("div").classList = "medium-12 large-6 island"
-    contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
-    contentrow.insertAdjacentHTML("beforeend", `<div class="medium-12 large-6 island">
+    const is_profile = window.location.pathname.startsWith("/search/user")
+    let contentrow;
+    if (is_profile) {
+        contentrow = document.querySelectorAll("#content .row");
+        if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
+        
+        contentrow.querySelector("div").classList = "medium-12 large-6 island"
+        contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
+    } else {
+        contentrow = document.querySelector("#msg-settings");
+        contentrow.insertAdjacentHTML("beforebegin", `<div class="row"><div class="medium-12 large-6 island" id="msg-settings-wrapper"></div></div>`)
+        document.getElementById("msg-settings-wrapper").appendChild(contentrow)
+        contentrow = contentrow.parentNode
+    }
+    contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", `<div class="medium-12 large-6 island">
             <h2 class="subheader">Timetable Colours</h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
@@ -877,8 +888,8 @@ function mainPage() {
 function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
-        <a href="/search/user/${schoolboxUser.id}" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
-        <a href="/search/user/${schoolboxUser.id}" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+        <a href="/settings/messages" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
+        <a href="/settings/messages" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
     `)
 
     if (extSettings.compacttimetable) {
