@@ -14,7 +14,8 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "https://rcja.app:3000/smgsapi"
+
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -30,18 +31,17 @@ async function load() {
     if (typeof schoolboxUser == "undefined") return;
     try {
         extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
-        JSON.parse(localStorage.getItem("timetableColours"))
+        JSON.parse(localStorage.getItem("timetableThemes"))
         JSON.parse(localStorage.getItem("timetableColoursDefault"))
     } catch {
         // Clear localStorage items if JSON.parse fails (prevents errors if someone breaks localStorage)
-        localStorage.removeItem("timetableColours");
+        localStorage.removeItem("timetableThemes");
         localStorage.removeItem("lastTimetableCache");
         localStorage.removeItem("extSettings");
         localStorage.removeItem("userToken");
         localStorage.removeItem("lastUser");
         window.location.reload()
     }
-
     //Check for when the searchbar is there
     if (document.getElementById("message-list").children[1]) {
         const searchbar = document.createElement('input')
@@ -212,10 +212,16 @@ function deadNameRemover() {
 function colourSidebar() {
     for (const subjectlink of document.querySelectorAll("#side-menu-mysubjects li a")) {
         //Uses the link that it leads to, since that is the only way to get it out of the text
-        let colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectlink.href.split("/")[subjectlink.href.split("/").length - 1]]
-        if (!colour) continue
-        subjectlink.style.borderLeft = "7px solid " + colour
-        subjectlink.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+        let theme = JSON.parse(localStorage.getItem("timetableThemes"))[subjectlink.href.split("/")[subjectlink.href.split("/").length - 1]]
+        if (!theme) continue
+        if (theme["current"] === "colour") {
+            subjectlink.style.backgroundColor = theme["color"].replace("rgb", "rgba").replace(")", ", 10%)")
+        }
+        else {
+            subjectlink.style.backgroundImage = "url(" + theme["image"] + ")"
+            subjectlink.style.backgroundSize = "100% 100%"
+        }
+        subjectlink.style.borderLeft = "7px solid " + theme["color"]
     }
 }
 
@@ -227,11 +233,17 @@ function colourDuework() {
         for (const duework of dueworkitems) {
             const subjects = REGEXP.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
             for (const subject of subjects) {
-                const colour = JSON.parse(localStorage.getItem("timetableColours"))[subject]
-                if (!colour) continue;
-                duework.style.borderLeft = "10px solid " + colour
+                const theme = JSON.parse(localStorage.getItem("timetableColours"))[subject]
+                if (!theme) continue
+                if (theme["current"] === "colour") {
+                    duework.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
+                }
+                else {
+                    duework.style.backgroundImage = "url(" + theme["image"] + ")"
+                    subjectlink.style.backgroundSize = "100% 100%"
+                }
+                duework.style.borderLeft = "10px solid " + theme["colour"]
                 //RGBA for transperency to be added (too noisy otherwise)
-                duework.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
             }
         }
     }
@@ -243,15 +255,21 @@ function colourTimetable() {
         if (!REGEXP.exec(subject.textContent)) continue;
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[subjectcode]
-            if (!colour) { continue; }
-            const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
-            subject.parentNode.style.backgroundColor = colour
-            subject.parentNode.style.color = textcol
-            subject.parentNode.querySelectorAll("*:not(a)").forEach(e => { e.style.color = textcol })
+            const theme = JSON.parse(localStorage.getItem("timetableThemes"))[subjectcode]
+            if (!theme) continue
+            if (theme["current"] === "colour") {
+                const textcol = getTextColor(rgbToHex(...theme["color"].replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
+                subject.parentNode.style.backgroundColor = theme["color"]
+                subject.parentNode.style.color = textcol
+                subject.parentNode.querySelectorAll("*:not(a)").forEach(e => { e.style.color = textcol })
 
-            if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
-
+                if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
+            }
+            else {
+                subject.parentNode.style.backgroundImage = "url(" + theme["image"] + ")"
+                subject.parentNode.style.backgroundSize = `100% 100%`
+            }
+        
         }
     }
 }
@@ -259,9 +277,9 @@ function classPage() {
     const cards = document.querySelectorAll("div.v-card")
     for (const card of cards) {
         for (const name of card.querySelector("p.meta").innerText.split("\n")[0].split(",")) {
-            const colour = JSON.parse(localStorage.getItem("timetableColours"))[name]
-            if (colour) {
-                card.querySelector("div.card-class-image").style.borderBottom = `10px solid ${colour}`
+            const theme = JSON.parse(localStorage.getItem("timetableThemes"))[name]
+            if (theme && theme["current"] === "color") {
+                card.querySelector("div.card-class-image").style.borderBottom = `10px solid ${theme["color"]}`
             }
             else continue;
         }
@@ -269,17 +287,27 @@ function classPage() {
 }
 async function profilePage() {
     let tablerows = "";
-    let usercolors = JSON.parse(localStorage.getItem("timetableColours"))
-    for (const subject in usercolors) {
-        const rgbvalue = usercolors[subject]
+    let userthemes = JSON.parse(localStorage.getItem("timetableThemes"))
+    for (const subject in userthemes) {
+        const rgbvalue = userthemes[subject]["color"]
         const hexvalue = rgbToHex(...rgbvalue.replace(/[^\d\s]/g, '').split(' ').map(Number))
-        tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; border-left: 7px solid ${rgbvalue}">
+        tablerows += `<tr role="row" class="subject-color-row" style=" ${userthemes[subject]["current"] === "colour" ? "background-color: " + rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)") : "background-image: url(" + userthemes[subject]["image"] +"); background-size: 100% 100%"}; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
-            <td><input type="color" value="${hexvalue}"></td>
-            <td style="text-align: center"><a id="colReset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a></td>
+            <td>
+                <input type="color" style="display: ${userthemes[subject]["current"] === "image" ? "none" : ""}" value="${hexvalue}">
+                <input type="url" style="display: ${userthemes[subject]["current"] === "image" ? "" : "none"}" value="${userthemes[subject]["image"] === null ? "" : userthemes[subject]["image"]}">
+                <p style="display: none; color: red">Not a valid URL</p>
+            </td>
+            <td style="text-align: center">
+                <a id="settingsresset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a>
+            </td>
+            <td style="text-align: center">
+                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${userthemes[subject]["current"] === "image" ? "none" : ""}" data-state="closed" class="icon-image" title="Image">
+                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${userthemes[subject]["current"] === "image" ? "" : "none"}" data-state="closed" class="icon-drag-drop" title="Colour">
+            </td>
         </tr>`
     }
-    if (Object.keys(usercolors).length < 1) {
+    if (Object.keys(userthemes).length < 1) {
         tablerows += `<tr role="row" class="subject-color-row">
             <td colspan="3">There are no timetable subjects associated with your account</td>
         </tr>`
@@ -300,12 +328,13 @@ async function profilePage() {
     contentrow.querySelector("div").classList = "medium-12 large-6 island"
     contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
     contentrow.insertAdjacentHTML("beforeend", `<div class="medium-12 large-6 island">
-            <h2 class="subheader">Timetable Colours</h2>
+            <h2 class="subheader">Timetable Theme</h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
                     <tr role="row">
                         <th style="width: 1000px">Subject</th>
-                        <th style="width: 200px">Pick Colour</th>
+                        <th style="width: 200px">Pick Theme</th>
+                        <th></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -314,7 +343,7 @@ async function profilePage() {
             <div class="component-action">
                 <section>
                     <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
-                        Feature made by Zac McWilliam (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
+                        Feature made by Zac McWilliams (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
                     </span>
                 </section>
             </div>
@@ -426,10 +455,10 @@ async function profilePage() {
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="border: 0px">
+                                    <td>
                                         <label for="toggle_deadnameremover">Dead Name Remover<p>Allows replacement all instances of dead names across the site (Client side per account only)</p></label>
                                     </td>
-                                    <td style="border: 0px">
+                                    <td>
                                         <div class="long switch no-margin" style="float: right">
                                             <input id="toggle_deadnameremover" type="checkbox" name="toggle_deadnameremover" value="0">
                                             <label for="toggle_deadnameremover">
@@ -619,8 +648,11 @@ async function profilePage() {
     } else addDeadname()
 
     function updateThemeExport() {
-        elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableColours"])).map((e) => { 
-            return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) }
+        elem_currenttheme.value = Object.values(JSON.parse(localStorage["timetableThemes"])).map(e => {if (e["current"] === "colour") {return e["color"]}})
+        .filter(e => e !== undefined)
+        .map((e) => { 
+            return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) 
+        }
         ).join("-").replaceAll("#", "").toUpperCase()
     }
     updateThemeExport();
@@ -633,27 +665,89 @@ async function profilePage() {
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
 
-            let usercols = JSON.parse(localStorage.getItem("timetableColours"))
-            usercols[row.children[0].innerText] = rgbval
-            localStorage.setItem("timetableColours", JSON.stringify(usercols))
+            let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
+            usercols[row.children[0].innerText]["color"] = rgbval
+            usercols[row.children[0].innerText]["current"] = "colour"
+            localStorage.setItem("timetableThemes", JSON.stringify(usercols))
             colourSidebar();
             updateThemeExport();
             await postTheme();
         })
+        row.children[1].children[1].addEventListener("change", async function(e) {
+            const url = e.target.value
+            if (url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g) === null) {
+                e.target.style.border = "solid red 1px"
+                e.target.parentElement.querySelector("p").style.display = ""
+            }
+            else {
+                e.target.style.border = "solid green 2px"
+                let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
+                usercols[row.children[0].innerText]["image"] = url
+                usercols[row.children[0].innerText]["current"] = "image"
+                row.style.backgroundImage = "url(" + url + ")"
+                row.style.backgroundSize = "100% 100%"
+                localStorage.setItem("timetableThemes", JSON.stringify(usercols))
+                colourSidebar();
+                await postTheme();
+                setTimeout(function() {
+                    e.target.style.border = ""
+                }, 5000)
+            }
+        })
         // Reset button
         row.children[2].children[0].addEventListener("click", async function () {
-            let defaultColours = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-            const rgbval = defaultColours[row.children[0].innerText]
-            row.style.borderLeft = "7px solid " + rgbval
-            row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
-            row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
-            
-            let usercols = JSON.parse(localStorage.getItem("timetableColours"))
-            usercols[row.children[0].innerText] = rgbval
-            localStorage.setItem("timetableColours", JSON.stringify(usercols))
-            colourSidebar();
-            updateThemeExport();
-            await postTheme();
+            let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
+            if (usercols[row.children[0].innerText]["current"] === "colour") {
+                let defaultColours = JSON.parse(localStorage.getItem("timetableColoursDefault"))
+                const rgbval = defaultColours[row.children[0].innerText]
+                row.style.borderLeft = "7px solid " + rgbval
+                row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
+                row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
+                
+                usercols[row.children[0].innerText]["color"] = rgbval
+                usercols[row.children[0].innerText]["current"] = "colour"
+                localStorage.setItem("timetableThemes", JSON.stringify(usercols))
+                colourSidebar();
+                updateThemeExport();
+                await postTheme();
+            }
+            else {
+                row.style.backgroundImage = "url())"
+                row.style.backgroundSize = "100% 100%"
+                row.children[1].children[1].value = ""
+                
+                let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
+                usercols[row.children[0].innerText]["image"] = ""
+                usercols[row.children[0].innerText]["current"] = "image"
+                localStorage.setItem("timetableThemes", JSON.stringify(usercols))
+                colourSidebar();
+                updateThemeExport();
+                await postTheme();
+            }
+        })
+        //Image
+        row.children[3].children[0].addEventListener("click", async function () {
+            let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
+            usercols[row.children[0].innerText]["current"] = "image"
+            localStorage.setItem("timetableThemes", JSON.stringify(usercols))
+            row.children[1].children[0].style.display = "none"
+            row.children[1].children[1].style.display = ""
+            row.style.backgroundImage = "url(" + usercols[row.children[0].innerText]["image"] + ")"
+            row.style.backgroundSize = "100% 100%"
+            row.children[3].children[0].style.display = "none"
+            row.children[3].children[1].style.display = ""
+        })
+        //Colour
+        row.children[3].children[1].addEventListener("click", async function () {
+            let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
+            usercols[row.children[0].innerText]["current"] = "colour"
+            row.children[1].children[0].style.display = ""
+            row.children[1].children[1].style.display = "none"
+            row.style.backgroundColor = usercols[row.children[0].innerText]["color"].replace("rgb", "rgba").replace(")", ", 10%)")
+            row.style.backgroundImage = ""
+            localStorage.setItem("timetableThemes", JSON.stringify(usercols))
+            row.children[3].children[0].style.display = ""
+            row.children[3].children[1].style.display = "none"
         })
     }
     elem_themeselector.addEventListener("change", async function(evt){
@@ -859,8 +953,6 @@ function mainPage() {
 function timetable() {
     if (extSettings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
-        // Removing timetable blank periods
-        // ~ Desktop
         for (const row of rows) {
             if (!TIMETABLE_WHITELIST.includes(row.querySelector("th").childNodes[0].textContent.trim())) {
                 hassubject = false
@@ -906,19 +998,20 @@ function SearchItem() {
 async function writeCache() {
     return new Promise (( resolve ) => {
         //Needed since the fetch returns string
+        
         if (schoolboxUser.id != localStorage.getItem("lastUser")) {
-            localStorage.removeItem("timetableColours");
+            localStorage.removeItem("timetableThemes");
             localStorage.removeItem("lastTimetableCache");
             localStorage.removeItem("extSettings");
             localStorage.removeItem("userToken");
             localStorage.removeItem("lastUser");
         }
         var parser = new DOMParser();
-        let timetablecolours = JSON.parse(localStorage.getItem("timetableColours"))
-        if (!localStorage.getItem("lastTimetableCache") || !timetablecolours) {
+        let timetablethemes= JSON.parse(localStorage.getItem("timetableThemes"))
+        if (!localStorage.getItem("lastTimetableCache") || !timetablethemes) {
             remoteAuth();
             fetch('/timetable').then(r => r.text()).then(result => {
-                if (!timetablecolours) { timetablecolours = {}; }
+                if (!timetablethemes) { timetablethemes = {}; }
                 let defaulttimetablecolours = {}
                 const timetable = parser.parseFromString(result, 'text/html')
                 for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
@@ -927,11 +1020,11 @@ async function writeCache() {
                 }
                 localStorage.setItem("timetableColoursDefault", JSON.stringify(defaulttimetablecolours))
                 for (const subject in defaulttimetablecolours) {
-                    if (!timetablecolours[subject]) {
-                        timetablecolours[subject] = defaulttimetablecolours[subject]
+                    if (!timetablethemes[subject]) {
+                        timetablethemes[subject] = {color: defaulttimetablecolours[subject], image: null, current: "colour"}
                     }
                 }
-                localStorage.setItem("timetableColours", JSON.stringify(timetablecolours))
+                localStorage.setItem("timetableThemes", JSON.stringify(timetablethemes))
                 localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
                 localStorage.setItem("lastUser", schoolboxUser.id) // For recaching if user switch
                 resolve()
@@ -967,7 +1060,7 @@ async function postTheme() {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
         const body = {"settings": false,"defaultTheme": false, "theme" : false, "sbu" : schoolboxUser}
         if (extSettings.themesync) {
-            body["theme"] = JSON.parse(localStorage.getItem("timetableColours")) || false
+            body["theme"] = JSON.parse(localStorage.getItem("timetableThemes")) || false
             body["defaultTheme"] = JSON.parse(localStorage.getItem("timetableColoursDefault")) || false
         }
         if (extSettings.settingsync) {
@@ -1000,8 +1093,8 @@ async function themeSync() {
             }
         }
         if (extSettings.themesync) {
-            if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableColours")) {
-                localStorage.setItem("timetableColours", JSON.stringify(newtheme.theme))
+            if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableThemes")) {
+                localStorage.setItem("timetableThemes", JSON.stringify(newtheme.theme))
                 if (extSettings.autoreload) { change = true }
                 else {
                     document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
@@ -1009,11 +1102,11 @@ async function themeSync() {
                 }
             }
             let defaultTheme = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-            let currentTheme = JSON.parse(localStorage.getItem("timetableColours"))
+            let currentTheme = JSON.parse(localStorage.getItem("timetableThemes"))
             for (const subject of Object.keys(defaultTheme)) {
                 if (!currentTheme[subject]) {
-                    currentTheme[subject] = defaultTheme[subject]
-                    localStorage.setItem("timetableColours", JSON.stringify(currentTheme))
+                    currentTheme[subject]["color"] = defaultTheme[subject]
+                    localStorage.setItem("timetableThemes", JSON.stringify(currentTheme))
                 }
             }
         }
