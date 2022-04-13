@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app:3000/smgsapi"
+const THEME_API = " :3000/smgsapi"
 
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
@@ -240,7 +240,7 @@ function colourDuework() {
                 }
                 else {
                     duework.style.backgroundImage = "url(" + theme["image"] + ")"
-                    subjectlink.style.backgroundSize = "100% 100%"
+                    duework.style.backgroundSize = "100% 100%"
                 }
                 duework.style.borderLeft = "10px solid " + theme["colour"]
                 //RGBA for transperency to be added (too noisy otherwise)
@@ -699,7 +699,7 @@ async function profilePage() {
             let usercols = JSON.parse(localStorage.getItem("timetableThemes"))
             if (usercols[row.children[0].innerText]["current"] === "colour") {
                 let defaultColours = JSON.parse(localStorage.getItem("timetableColoursDefault"))
-                const rgbval = defaultColours[row.children[0].innerText]
+                const rgbval = defaultColours[row.children[0].innerText] 
                 row.style.borderLeft = "7px solid " + rgbval
                 row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
                 row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
