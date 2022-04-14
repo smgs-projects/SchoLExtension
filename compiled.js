@@ -55,7 +55,6 @@ async function load() {
         localStorage.removeItem("lastTimetableCache")
     }
     await writeCache()
-
     allPages()
     if (window.location.pathname == "/") {
         mainPage()
@@ -72,16 +71,18 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/grades")) {
         feedback()
     }
-    if (window.location.pathname.startsWith("/learning/assessments/") && !window.location.pathname.endsWith("/modify")) {
+    if (window.location.pathname.startsWith("/learning/assessments/")) {
         assessments()
     }
     if (window.location.pathname.startsWith("/timetable")) {
         timetable()
     }
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) {
-        await profilePage()
+        await loadSettings()
     }
-
+    if (window.location.pathname.startsWith("/settings/messages")) {
+        await loadSettings()
+    }
     if (extSettings.deadnameremover.enabled) deadNameRemover();
     await themeSync();
 }
@@ -177,6 +178,14 @@ async function allPages() {
             if (daysleft >= 1) { item.textContent = Math.round(daysleft) + (daysleft == 1 ? " day left" : " days left") }
             else if (hoursleft >= 1) { item.textContent = Math.round(hoursleft) + (hoursleft == 1 ? " hour left" : " hours left") }
             else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
+        }
+    }
+    // Add Timetable link to profile dropdown (only if timetable exists in navbar already)
+    let tt_links = document.querySelectorAll(".icon-timetable")
+    for (e of tt_links) {
+        if (e.innerText.includes("Timetable")) {
+            document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
+            break
         }
     }
     colourSidebar();
@@ -285,7 +294,7 @@ function classPage() {
         }
     }
 }
-async function profilePage() {
+async function loadSettings() {
     let tablerows = "";
     let userthemes = JSON.parse(localStorage.getItem("timetableThemes"))
     for (const subject in userthemes) {
@@ -322,12 +331,21 @@ async function profilePage() {
         }
     }
 
-    let contentrow = document.querySelectorAll("#content .row")
-    if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
-    
-    contentrow.querySelector("div").classList = "medium-12 large-6 island"
-    contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
-    contentrow.insertAdjacentHTML("beforeend", `<div class="medium-12 large-6 island">
+    const is_profile = window.location.pathname.startsWith("/search/user")
+    let contentrow;
+    if (is_profile) {
+        contentrow = document.querySelectorAll("#content .row");
+        if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
+        
+        contentrow.querySelector("div").classList = "medium-12 large-6 island"
+        contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
+    } else {
+        contentrow = document.querySelector("#msg-settings");
+        contentrow.insertAdjacentHTML("beforebegin", `<div class="row"><div class="medium-12 large-6 island" id="msg-settings-wrapper"></div></div>`)
+        document.getElementById("msg-settings-wrapper").appendChild(contentrow)
+        contentrow = contentrow.parentNode
+    }
+    contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", `<div class="medium-12 large-6 island">
             <h2 class="subheader">Timetable Theme</h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
@@ -474,6 +492,11 @@ async function profilePage() {
                 </fieldset>
                 <fieldset class="content" id="deadnameremover" style="display: none">
                     <legend><strong>Dead Name Remover</strong></legend>
+                    <div class="small-12 columns">
+                        <p>Enter a dead name to replace across SchoL, the input boxes are CAse-sENSitiVE
+                            <br>Use full names to prevent renaming other students <i style="color: #888">(eg. "Zac McWilliam" instead of "Zac" prevents all Zac's getting renamed)</i>
+                        </p>
+                    </div>
                     <div class="small-12 columns">
                         <ul class="information-list unsortable" id="deadnamelist"></ul>
                     </div>
@@ -887,17 +910,23 @@ function feedback() {
     }
 }
 function assessments() {
-    let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
-    let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
-    let match = matches ? matches[0] : matches2[0];
+    let subheaders = document.querySelectorAll(".subheader");
+    for (e of subheaders) {
+        if (!["SUBMIT RESPONSE", "SUBMISSION HISTORY"].includes(e.innerText)) continue
 
-    if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
-        const rows = document.querySelectorAll(".row");
-        rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
-            <section style="text-align: center;">
-                <img src="${ACHIEVEMENT_IMG}">
-            </section>
-        </div>`)
+        let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
+        let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
+        let match = matches ? matches[0] : matches2[0];
+    
+        if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
+            const rows = document.querySelectorAll(".row");
+            rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
+                <section style="text-align: center; padding-bottom: 10px">
+                    <img src="${ACHIEVEMENT_IMG}">
+                </section>
+            </div>`)
+        }
+        break
     }
 }
 function eDiary() {
@@ -951,6 +980,12 @@ function mainPage() {
 }
 
 function timetable() {
+    document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
+    document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
+        <a href="/settings/messages" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
+        <a href="/settings/messages" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+    `)
+
     if (extSettings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
         for (const row of rows) {
