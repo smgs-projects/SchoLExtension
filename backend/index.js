@@ -8,7 +8,10 @@ import https from "https";
 import fs from "fs";
 import sha1 from "sha1";
 import jwt from "jsonwebtoken";
+import path from "path";
 dotenv.config();
+
+const __dirname = path.resolve();
 
 const certOptions = {
     cert: fs.readFileSync(process.env.CERT),
@@ -30,7 +33,7 @@ app.use(cors());
 app.use(express.json())
 
 app.get("/smgsapi/compiled.js", async function (req, res, next) {
-    res.sendFile("compiled.js", { root: "." });
+    res.sendFile(path.resolve(__dirname, '..', 'compiled.js'));
 })
 app.get("/smgsapi/themes", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
@@ -73,8 +76,8 @@ app.post("/smgsapi/theme", async function(req, res, next) {
             if (!settings && settings !== false) return res.sendStatus(400)
             if (!theme && theme !== false) return res.sendStatus(400)
             
-            for (const rgb of Object.values(theme)) {
-                if (ValidateRGB(rgb) === false) return res.sendStatus(400)
+            for (const subject of Object.values(theme)) {
+                if (ValidateRGB(subject.color) === false) return res.sendStatus(400)
             }
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
@@ -110,5 +113,10 @@ app.get("/smgsapi/auth", async function (req, res, next) {
     }
     res.json({token: jwt.sign({id: req.query.id, user: req.query.user}, process.env.SECRET)});
 })
+
+// Tools Redirect
+app.all("*", function(req, res) {
+    res.redirect(301, "https://tools.robocupjunior.org.au"  + req.url);
+})    
 
 https.createServer(certOptions, app).listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) });
