@@ -50,7 +50,6 @@ async function load() {
         }
         localStorage.removeItem("timetableColours")
         localStorage.removeItem("timetableColoursDefault")
-        console.log(timetableTheme)
     }
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("defaultTheme");
