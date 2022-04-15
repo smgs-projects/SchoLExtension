@@ -48,8 +48,13 @@ async function load() {
         for (subject in timetableColours) {
             timetableTheme[subject] = {color: timetableColours[subject], image: null, current: "color"}
         }
+        localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
         localStorage.removeItem("timetableColours")
         localStorage.removeItem("timetableColoursDefault")
+        await postTheme()
+    }
+    for (const subject of Object.values(JSON.parse(localStorage.getItem("timetableTheme") || {}))) {
+        if (!subject.color || !subject.current) localStorage.removeItem("timetableTheme") 
     }
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("defaultTheme");
@@ -63,30 +68,7 @@ async function load() {
         localStorage.removeItem("lastTimetableCache")
     }
     
-    let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-    if (!localStorage.getItem("lastTimetableCache") || !localStorage.getItem("defaultTheme") || !timetableTheme) {
-        if (!timetableTheme) timetableTheme = {}
-        remoteAuth();
-        fetch('/timetable').then(r => r.text()).then(result => {
-            let defaultTheme = {}
-            let parser = new DOMParser();
-            const timetable = parser.parseFromString(result, 'text/html')
-            for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
-                if (!REGEXP.exec(subject.innerText)) continue
-                defaultTheme[REGEXP.exec(subject.innerText)[1]] = {color: subject.parentNode.style.backgroundColor, image: null, current: "color"}
-            }
-            localStorage.setItem("defaultTheme", JSON.stringify(defaultTheme))
-            for (const subject in defaultTheme) {
-                if (!timetableTheme[subject]) {
-                    timetableTheme[subject] = defaultTheme[subject]
-                }
-            }
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-            localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
-            localStorage.setItem("lastUser", schoolboxUser.id) // For recaching if user switch
-        })
-    }
-
+    await timetableCache();
     allPages()
     if (window.location.pathname == "/") mainPage();
     if (window.location.pathname == "/learning/classes") classesPage();
@@ -99,6 +81,37 @@ async function load() {
     if (window.location.pathname.startsWith("/settings/messages")) await loadSettings();
     if (extSettings.deadnameremover.enabled) deadNameRemover();
     await themeSync();
+}
+
+async function timetableCache() {
+    return new Promise (async ( resolve ) => {
+        let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
+        if (!localStorage.getItem("lastTimetableCache") || !localStorage.getItem("defaultTheme") || !timetableTheme) {
+            if (!timetableTheme) timetableTheme = {}
+            remoteAuth();
+            fetch('/timetable').then(r => r.text()).then(result => {
+                let defaultTheme = {}
+                let parser = new DOMParser();
+                const timetable = parser.parseFromString(result, 'text/html')
+                for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
+                    if (!REGEXP.exec(subject.innerText)) continue
+                    defaultTheme[REGEXP.exec(subject.innerText)[1]] = {color: subject.parentNode.style.backgroundColor, image: null, current: "color"}
+                }
+                localStorage.setItem("defaultTheme", JSON.stringify(defaultTheme))
+                for (const subject in defaultTheme) {
+                    if (!timetableTheme[subject]) {
+                        timetableTheme[subject] = defaultTheme[subject]
+                    }
+                }
+                localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+                localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
+                localStorage.setItem("lastUser", schoolboxUser.id) // For recaching if user switch
+                resolve()
+            })
+        } else {
+            resolve()
+        }
+    })
 }
 
 window.Clipboard = (function(window, document, navigator) {
@@ -248,7 +261,7 @@ function colourSidebar() {
     for (const subjectlink of document.querySelectorAll("#side-menu-mysubjects li a")) {
         //Uses the link that it leads to, since that is the only way to get it out of the text
         let theme = JSON.parse(localStorage.getItem("timetableTheme"))[subjectlink.href.split("/")[subjectlink.href.split("/").length - 1]]
-        if (!theme) continue
+        if (!theme?.color) continue
         subjectlink.style.backgroundColor = theme.color.replace("rgb", "rgba").replace(")", ", 10%)")
         subjectlink.style.borderLeft = "7px solid " + theme.color
     }
@@ -278,7 +291,7 @@ function colourTimetable() {
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
             const theme = JSON.parse(localStorage.getItem("timetableTheme"))[subjectcode]
-            if (!theme) continue
+            if (!theme?.color) continue
             const textcol = getTextColor(rgbToHex(...theme["color"].replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             subject.parentNode.style.backgroundColor = theme["color"]
             subject.parentNode.style.color = textcol
@@ -305,27 +318,27 @@ function classesPage() {
 }
 async function loadSettings() {
     let tablerows = "";
-    let userthemes = JSON.parse(localStorage.getItem("timetableTheme"))
-    for (const subject in userthemes) {
-        const rgbvalue = userthemes[subject]["color"]
+    let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
+    for (const subject in timetableTheme) {
+        const rgbvalue = timetableTheme[subject].color
         const hexvalue = rgbToHex(...rgbvalue.replace(/[^\d\s]/g, '').split(' ').map(Number))
-        tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${userthemes[subject].current === "image" ? "background-image: url(" + userthemes[subject]["image"] +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
+        tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${timetableTheme[subject].current === "image" ? "background-image: url(" + timetableTheme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td>
-                <input type="color" style="display: ${userthemes[subject]["current"] === "image" ? "none" : ""}" value="${hexvalue}">
-                <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${userthemes[subject]["current"] === "image" ? "" : "none"}" value="${userthemes[subject]["image"] === null ? "" : userthemes[subject]["image"]}">
+                <input type="color" style="display: ${timetableTheme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
+                <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${timetableTheme[subject].current === "image" ? "" : "none"}" value="${timetableTheme[subject]["image"] === null ? "" : timetableTheme[subject].image}">
                 <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
             </td>
             <td style="text-align: center">
                 <a id="settingsresset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a>
             </td>
             <td style="text-align: center">
-                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${userthemes[subject]["current"] === "image" ? "none" : ""}" data-state="closed" class="icon-image" title="Image">
-                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${userthemes[subject]["current"] === "image" ? "" : "none"}" data-state="closed" class="icon-drag-drop" title="Colour">
+                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${timetableTheme[subject].current === "image" ? "none" : ""}" data-state="closed" class="icon-image" title="Image">
+                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${timetableTheme[subject].current === "image" ? "" : "none"}" data-state="closed" class="icon-drag-drop" title="Colour">
             </td>
         </tr>`
     }
-    if (Object.keys(userthemes).length < 1) {
+    if (Object.keys(timetableTheme).length < 1) {
         tablerows += `<tr role="row" class="subject-color-row">
             <td colspan="3">There are no timetable subjects associated with your account</td>
         </tr>`
