@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://localhost:3000/smgsapi"
+const THEME_API = "https://rcja.app/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -746,6 +746,8 @@ function dueWork() {
 }
 
 function colourEDiaryList() {
+    if (document.querySelector("div[id='calender']") && document.querySelector("div[id='calender']").querySelector("div.empty-state > p").textContent === "There are no upcoming calendar events") return;
+    if (document.querySelectorAll(".fc-list-event").length === 0) {setTimeout(colourEDiaryList, 500); return}
     document.querySelectorAll(".fc-list-event").forEach(event => {
         const eventDot = event.querySelector(".fc-list-event-dot");
         eventDot.style.backgroundColor = eventDot.style.borderColor
@@ -852,7 +854,7 @@ function eDiary() {
         }
     }
 }
-function mainPage() {
+async function mainPage() {
     if (extSettings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -864,12 +866,39 @@ function mainPage() {
             }
         }
     }
-    // console.log(await fetch(THEME_API+"/ptv/getdata"))
+    let departureHTML = ""
+    const departures = await (await fetch(`${THEME_API}/ptv/getdata`)).json()
+    for (const departurename of Object.keys(departures)) {
+        const departure = departures[departurename]
+        departureHTML += `
+            <li>
+                <h2 class="subheader">${departurename.replaceAll("_", " ")}</h2>
+                <div class="list-item">
+                    ${Array(departure.length).fill('<div class="row">').map((item, i) => item + `<div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["direction_name"]}</p></div><div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["time"]} minute${departure[i]["time"] === 1 ? "" : "s"}</p></div><div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["delayed"] === true ? "is delayed" : "is not delayed"}</p></div><div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["disruption"] === true ? "has disruption" : "is not disrupted"}</p></div></div>`).join("")}
+                </div>
+            </li>
+        `
+    }
+    document.querySelector("div[class='small-12 large-4 columns column-right'").innerHTML += `
+    <div class="component-container">
+        <div class="row {CONFIG_COLLAPSED_CLASS}" data-collapsable="true" data-collapse-state="{CONFIG_COLLAPSED_STATE}">
+            <div class="small-12 island">
+                <h2 class="subheader">Transport in Melbourne</h2>
+                <section>
+                    <ul class="weather-list">
+                    ${departureHTML}
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+    `
+
+   
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
 
     // eDiary list recolour
-    if (document.querySelectorAll(".fc-list-event").length == 0) setTimeout(mainPage, 100);
     colourEDiaryList()
 }
 
