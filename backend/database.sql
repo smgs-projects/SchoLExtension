@@ -34,6 +34,7 @@ INSERT INTO `serverthemes` (`name`, `theme`) VALUES
 
 CREATE TABLE `themes` (
   `id` varchar(64) NOT NULL,
+  `sbid` varchar(64) NOT NULL,
   `sbu` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`sbu`)),
   `defaults` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`defaults`)),
   `theme` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`theme`)),
