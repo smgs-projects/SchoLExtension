@@ -7,7 +7,7 @@
         "https://learning.stmichaels.vic.edu.au/*",
         "https://learning-dev.stmichaels.vic.edu.au/*"
     ],
-    "background": { "scripts": ["hot-reload.js"] },
+    "background": { "scripts": ["chrome_ext/hot-reload.js"] },
     "permissions": ["storage"],
     "web_accessible_resources": [
         "compiled.js"
@@ -15,11 +15,16 @@
     "content_scripts": [
         {
             "matches": ["https://learning.stmichaels.vic.edu.au/*"],
-            "js": ["extension.js"],
-            "run_at": "document_idle"
+            "js": ["chrome_ext/preload.js"],
+            "run_at": "document_start"
+        }, 
+        {
+            "matches": ["https://learning.stmichaels.vic.edu.au/*"],
+            "js": ["chrome_ext/extension.js"],
+            "run_at": "document_start"
         }
     ],
     "browser_action" : {
-        "default_popup": "popup.html"
+        "default_popup": "chrome_ext/popup.html"
     }
   }
