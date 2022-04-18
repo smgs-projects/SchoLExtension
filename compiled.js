@@ -19,8 +19,10 @@ const THEME_API = "https://rcja.app/smgsapi"
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
+// List of valid pronouns
+const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of settings with default values
-let extSettings = {"themesync": 1, "settingsync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "deadnameremover": {"enabled": 1, "names": []}};
+let extSettings = {"themesync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "pronouns": {"enabled": 1, "selected": [], "show": [1, 1, 1]}, "deadnameremover": {"enabled": 1, "names": []}};
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
@@ -30,6 +32,10 @@ async function load() {
     if (typeof schoolboxUser == "undefined") return;
     try {
         extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
+        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings")) {
+            localStorage.setItem("extSettings", JSON.stringify(extSettings))
+            await postTheme();
+        }
         JSON.parse(localStorage.getItem("timetableTheme"))
         JSON.parse(localStorage.getItem("defaultTheme"))
     } catch {
@@ -54,7 +60,10 @@ async function load() {
         await postTheme()
     }
     for (const subject of Object.values(JSON.parse(localStorage.getItem("timetableTheme")) || {})) {
-        if (!subject.color || !subject.current) localStorage.removeItem("timetableTheme") 
+        if (!subject.color || !subject.current || typeof(subject.color) !== "string") {
+            localStorage.removeItem("timetableTheme")
+            window.location.reload()
+        }
     }
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("defaultTheme");
@@ -77,10 +86,11 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/grades")) feedback();
     if (window.location.pathname.startsWith("/learning/assessments/")) assessments();
     if (window.location.pathname.startsWith("/timetable")) timetable();
+    if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
     if (window.location.pathname.startsWith("/settings/messages")) await loadSettings();
     if (extSettings.deadnameremover.enabled) deadNameRemover();
-    await themeSync();
+    themeSync();
 }
 
 async function timetableCache() {
@@ -316,6 +326,20 @@ function classesPage() {
         }
     }
 }
+
+function profilePage() {
+    fetch(THEME_API + "/pronouns/" + window.location.pathname.split("/")[window.location.pathname.split("/").length - 1], 
+        { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
+    .then(r => r.json())
+    .then(r => { 
+        let pronouns = r.join(", ")
+        const profileRow = document.querySelector(".main .profile.content .row");
+        profileRow.style.position = "relative";
+        profileRow.insertAdjacentHTML("beforeend", `<span class="neutral label hide-for-small-down" style="position: absolute; top: 0; right: 0; margin: 0${!pronouns.length ? "; display: none !important" : ""}" id="pronounslabel">Pronouns: ${pronouns}</span>`)
+        profileRow.children[1].insertAdjacentHTML("beforeend", `<dl class="hide-for-medium-up" ${!pronouns.length ? "style='display: none'" : ""}><dt class="small-4 medium-3 columns">Pronouns:</dt><dd class="small-8 medium-9 columns" id="pronounsrow">${pronouns}</dd></dl>`)
+    })
+}
+
 async function loadSettings() {
     let tablerows = "";
     let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
@@ -355,7 +379,6 @@ async function loadSettings() {
 
     const settings = {
         "themesync": ["Theme Syncronisation", "Sync timetable themes between devices"],
-        "settingsync": ["Setting Syncronisation", "Sync settings between devices"],
         "autoreload": ["Auto Reload", "Automatically reload the page when your theme changes on another device"],
         "colourduework": ["Coloured Due Work", "Add colours to due work items based on the timetable"],
         "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"],
@@ -392,6 +415,38 @@ async function loadSettings() {
         contentrow = contentrow.parentNode
     }
     contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", `<div class="medium-12 large-6 island">
+            <h2 class="subheader">Preferred Pronouns</h2>
+            <section>
+                <fieldset class="content">
+                    <legend><strong>Preferred Pronouns</strong></legend>
+                    <div class="small-12 columns">
+                        <p>Select your preferred pronouns, these will be shown to other people when they visit your profile page!</p>
+                    </div>
+                    <div class="small-12 medium-6 columns">
+                        <fieldset class="content">
+                            <label>Select Pronouns
+                                <div class="checklist checklist-container" id="pronoun-list">
+                                    <input id="checkbox-pronoun1" type="checkbox" name="theythem"><label for="checkbox-pronoun1">They/Them</label>
+                                    <input id="checkbox-pronoun2" type="checkbox" name="hehim"><label for="checkbox-pronoun2">He/Him</label>
+                                    <input id="checkbox-pronoun3" type="checkbox" name="sheher"><label for="checkbox-pronoun3">She/Her</label>
+                                    <input id="checkbox-pronoun4" type="checkbox" name="other"><label for="checkbox-pronoun4">Other (Ask Me)</label>
+                                </div>
+                            </label>
+                        </fieldset>
+                    </div>
+                    <div class="small-12 medium-6 columns">
+                        <fieldset class="content">
+                            <label>Select roles to show your pronouns to
+                                <div class="checklist checklist-container" id="pronoun-roles">
+                                    <input id="checkbox-roles1" type="checkbox" name="0"><label for="checkbox-roles1">Students</label>
+                                    <input id="checkbox-roles2" type="checkbox" name="1"><label for="checkbox-roles2">Staff/Teachers</label>
+                                    <input id="checkbox-roles3" type="checkbox" name="2"><label for="checkbox-roles3">Parents</label>
+                                </div>
+                            </label>
+                        </fieldset>
+                    </div>
+                </fieldset>
+            </section>
             <h2 class="subheader">Timetable Theme</h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
@@ -490,6 +545,37 @@ async function loadSettings() {
     let elem_exportbtn = document.getElementById("exportbtn")
     let elem_themeselector = document.getElementById("context-selector-themes")
     let elem_deadnamelist = document.getElementById("deadnamelist")
+    for (const pronoun of document.querySelectorAll("#pronoun-list input")) {
+        if (extSettings.pronouns.selected.includes(pronoun.name)) {
+            pronoun.checked = true
+        }
+        pronoun.addEventListener("change", async function() {
+            if (!pronoun.checked) extSettings.pronouns.selected = extSettings.pronouns.selected.filter(e => e != pronoun.name)
+            else if (!extSettings.pronouns.selected.includes(pronoun.name)) extSettings.pronouns.selected.push(pronoun.name)
+            localStorage.setItem("extSettings", JSON.stringify(extSettings))
+            document.getElementById("pronounslabel").innerText = "Pronouns: " + extSettings.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
+            document.getElementById("pronounsrow").innerText = extSettings.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
+            console.log(extSettings.pronouns.selected.length)
+            if (!extSettings.pronouns.selected.length) {
+                document.getElementById("pronounslabel").style.setProperty("display", "none", "important")
+                document.getElementById("pronounsrow").parentNode.style.display = "none"
+            } else {
+                document.getElementById("pronounslabel").style.display = ""
+                document.getElementById("pronounsrow").parentNode.style.display = ""
+            }
+            await postTheme();
+        })
+    }
+    for (const role of document.querySelectorAll("#pronoun-roles input")) {
+        if (extSettings.pronouns.show[parseInt(role.name)]) {
+            role.checked = true
+        }
+        role.addEventListener("change", async function() {
+            extSettings.pronouns.show[parseInt(role.name)] = role.checked
+            localStorage.setItem("extSettings", JSON.stringify(extSettings))
+            await postTheme();
+        })
+    }
 
     let deadnames = [];
     document.getElementById("deadnameremover").style.display = extSettings.deadnameremover.enabled ? "" : "none"
@@ -933,12 +1019,11 @@ async function postTheme() {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
         const body = {"settings": false,"defaultTheme": false, "theme" : false, "sbu" : schoolboxUser}
         if (extSettings.themesync) {
+            if (!localStorage.getItem("defaultTheme")) await timetableCache()
             body["theme"] = JSON.parse(localStorage.getItem("timetableTheme")) || false
             body["defaultTheme"] = JSON.parse(localStorage.getItem("defaultTheme")) || false
         }
-        if (extSettings.settingsync) {
-            body["settings"] = JSON.parse(localStorage.getItem("extSettings")) || false
-        }
+        body["settings"] = JSON.parse(localStorage.getItem("extSettings"))
         fetch(THEME_API + "/theme", {
             method: "POST",
             headers: new Headers({
@@ -953,17 +1038,11 @@ async function themeSync() {
     return new Promise (async ( resolve ) => {
         let change = false
         let newtheme;
-        if (extSettings.settingsync || extSettings.themesync) { newtheme = await getTheme(); }
+        newtheme = await getTheme();
 
-        if (extSettings.settingsync) {
-            if (newtheme.settings && JSON.stringify(newtheme.settings) != localStorage.getItem("extSettings")) {
-                localStorage.setItem("extSettings", JSON.stringify(newtheme["settings"]))
-                if (extSettings.autoreload) { change = true }
-                else {
-                    document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Settings have changed on another device. Reload to update</div>`);
-                    setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
-                }
-            }
+        if (newtheme.settings && JSON.stringify(newtheme.settings) != localStorage.getItem("extSettings")) {
+            localStorage.setItem("extSettings", JSON.stringify(newtheme["settings"]))
+            if (extSettings.autoreload) { change = true }
         }
         if (extSettings.themesync) {
             if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableTheme")) {
