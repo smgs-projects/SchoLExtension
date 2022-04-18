@@ -53,7 +53,7 @@ async function load() {
         localStorage.removeItem("timetableColoursDefault")
         await postTheme()
     }
-    for (const subject of Object.values(JSON.parse(localStorage.getItem("timetableTheme") || {}))) {
+    for (const subject of Object.values(JSON.parse(localStorage.getItem("timetableTheme")) || {})) {
         if (!subject.color || !subject.current) localStorage.removeItem("timetableTheme") 
     }
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
