@@ -82,14 +82,10 @@ app.post("/smgsapi/theme", async function(req, res, next) {
             const settings = req.body["settings"]
             if (!settings && settings !== false) return res.sendStatus(400)
             if (!theme && theme !== false) return res.sendStatus(400)
-            
             for (const subject of Object.values(theme)) {
                 if (ValidateRGB(subject.color) === false) return res.sendStatus(400)
             }
-            let pronouns = []
-            for (const pronoun of settings.pronouns.selected) {
-                if (valid_pronouns[pronoun]) pronouns.push(pronoun) 
-            }
+            settings.pronouns.selected = settings.pronouns.selected.filter(e => valid_pronouns[e])
             if (settings.pronouns.show.length != 3) settings.pronouns.show = [1, 1, 1]
 
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
@@ -119,7 +115,7 @@ app.get("/smgsapi/pronouns/:userid", async function(req, res, next) {
 
             let sbu = JSON.parse(reqTheme[0]["sbu"])
             let userSettings = JSON.parse(userTheme[0]["settings"])
-            if (userSettings.pronouns.show[sbu.role.student ? 0 : sbu.role.staff ? 1 : 2] || req.params.userid == sbu) {
+            if (userSettings.pronouns.show[sbu.role.student ? 0 : sbu.role.staff ? 1 : 2] || req.params.userid == sbu.id) {
                 return res.send(userSettings.pronouns.selected.map(e => valid_pronouns[e]))
             }
             return res.send("[]")
