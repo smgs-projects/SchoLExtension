@@ -27,8 +27,6 @@ const certOptions = {
 
 const app = express()
 
-//Routes
-
 import {router as ptv} from "./routes/widgets/PTVWidget.js"
 
 app.use(connection(mysql, {

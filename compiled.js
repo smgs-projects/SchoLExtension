@@ -952,34 +952,129 @@ async function mainPage() {
             }
         }
     }
-    let departureHTML = ""
-    const departures = await (await fetch(`${THEME_API}/ptv/getdata`)).json()
-    for (const departurename of Object.keys(departures)) {
-        const departure = departures[departurename]
-        departureHTML += `
-            <li>
-                <h2 class="subheader">${departurename.replaceAll("_", " ")}</h2>
-                <div class="list-item">
-                    ${Array(departure.length).fill('<div class="row">').map((item, i) => item + `<div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["direction_name"]}</p></div><div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["time"]} minute${departure[i]["time"] === 1 ? "" : "s"}</p></div><div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["delayed"] === true ? "is delayed" : "is not delayed"}</p></div><div class="small-12 medium-3 columns"><p class='text-center current-value'>${departure[i]["disruption"] === true ? "has disruption" : "is not disrupted"}</p></div></div>`).join("")}
-                </div>
-            </li>
-        `
-    }
-    document.querySelector("div[class='small-12 large-4 columns column-right'").innerHTML += `
+    document.querySelector(".awardsComponent").insertAdjacentHTML("afterend", `
+    <style>
+        .PTVIcon .line-pill .route-lock-up {
+            display: inline-block;
+            padding-right: 5px;
+            padding-left: 2px;
+            height: 28px;
+            border: 2px solid;
+            border-radius: 100px;
+            display: -webkit-inline-box; display: -webkit-inline-flex; display: -ms-inline-flexbox; display: inline-flex;
+            -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center;
+            box-sizing: border-box;
+        }
+        .PTVIcon .line-pill .route-lock-up span {
+            -webkit-box-flex: 1; -webkit-flex: 1 0 auto; -ms-flex: 1 0 auto; flex: 1 0 auto;
+            padding-right: 3px;
+            display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex;
+            -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center;
+            height: 100%;
+        }
+        .PTVIcon .line-pill .route-lock-up .icon {
+            width: 21px;
+            height: 21px;
+        }
+        .PTVIcon .direction-title {
+            font-weight: 700;
+            font-size: 13px;
+            padding-left: 3px;
+            margin: 0;
+        }
+        .PTVIcon.time .line-pill .route-lock-up {
+            border: 0;
+            padding: 0 9px 0 5px;
+            border-radius: 100px;
+            -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center;
+            font-weight: 600;
+            -webkit-box-sizing: content-box; box-sizing: content-box;
+            text-align: left;
+        }
+
+        .PTVIcon.tram .route-lock-up {
+            border-color: #78be20 !important;
+        }
+        .PTVIcon.tram .icon {
+            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/tram.png");
+            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/tram.svg");
+        }
+
+        .PTVIcon.train .route-lock-up {
+            border-color: #0072ce !important;
+        }
+        .PTVIcon.train .icon {
+            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/train.png");
+            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/train.svg");
+        }
+    </style>
     <div class="component-container">
-        <div class="row {CONFIG_COLLAPSED_CLASS}" data-collapsable="true" data-collapse-state="{CONFIG_COLLAPSED_STATE}">
+        <div class="row">
             <div class="small-12 island">
-                <h2 class="subheader">Transport in Melbourne</h2>
-                <section>
-                    <ul class="weather-list">
-                    ${departureHTML}
-                    </ul>
-                </section>
+                <h2 class="subheader">Public Transport Nearby</h2>
+                <section id="ptvDepartures"></section>
             </div>
         </div>
-    </div>
-    `
+    </div>`)
 
+    let ptvUpdating;
+    let ptvExpires;
+    async function updateDepartures() {
+        let departureHTML = ""; ptvUpdating = true;
+        const ptvinfo = await (await fetch(`${THEME_API}/ptv/schedule`)).json();
+        ptvExpires = ptvinfo.expires
+        for (const schedule of ptvinfo.schedule.sort((a, b) => { return a.route == b.route ? 0 : a.route < b.route ? 1 : -1})) {
+            const scheduled_time = new Date(schedule.departures[0]?.scheduled_time);
+            const seconds_diff = Math.ceil((schedule.departures[0]?.scheduled_time - new Date().getTime())/1000)
+
+            departureHTML += `
+                <li style="border-left: 15px solid ${schedule.colour};">
+                    <div class="card small-12" data-equalizer style="position: relative; padding-bottom: 8px;">
+                        <div>
+                            <div style="display: inline; float: left" class="PTVIcon ${schedule.type == 0 ? "train" : "tram"}">
+                                <span class="line-pill">
+                                    <div class="route-lock-up">
+                                        <i class="icon"></i>
+                                        <p class="direction-title">${schedule.route}</p>
+                                    </div>
+                                </span>
+                            </div>
+                            <div style="display: inline"><h3 style="padding-left: 10px"><a class="title">${schedule.prefix}to ${schedule.name}</a></h3></div>
+                        </div>
+                        ${schedule.departures.length == 0 ? `<p style="margin-top: 10px">No more scheduled departures today</p>` : `
+                            <p style="margin-top: 10px">
+                                Scheduled <strong>${scheduled_time.toLocaleString("en-AU", { hour: "numeric", minute: "2-digit" })}</strong>${schedule.departures.length > 1 ? ", " : ""}
+                                ${schedule.departures.slice(1, 4).map(e => new Date(e.scheduled_time).toLocaleString("en-AU", { hour: "numeric", minute: "2-digit" })).join(", ")}
+                                <span class="meta" style="margin-left: 10px">${schedule.departures[0].platform !== null ? "Platform " + schedule.departures[0].platform : "&nbsp"}
+                            </p>
+                            <div style="position: absolute; top: 50%; right: 15px; transform: translate(0, -50%);" class="PTVIcon time">
+                                <span class="line-pill">
+                                    <div class="route-lock-up" style="background: rgba(${seconds_diff < 20 ? "0, 206, 37, 0.25" : "0, 114, 206, " + (0.35 - (seconds_diff/900 > 1 ? 1 : seconds_diff/900)*0.30)});">
+                                        <p class="direction-title" time="${scheduled_time}">${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? Math.ceil(seconds_diff/60) + " mins" : Math.ceil(seconds_diff/3600) + " hours")}</p>
+                                    </div>
+                                </span>
+                            </div>
+                        `} 
+                    </div>
+                </li>
+            `
+        }
+        document.getElementById("ptvDepartures").innerHTML = `<ul class="information-list">${departureHTML}</ul>`
+        ptvUpdating = false;
+    }
+    function updateDepartureTimes() {
+        if (ptvUpdating) return
+        if (ptvExpires < new Date().getTime()) return updateDepartures();
+        for (const timeElem of document.querySelectorAll(".direction-title[time]")) {
+            seconds_diff = Math.ceil((new Date(timeElem.getAttribute("time")) - new Date().getTime())/1000)
+            if (seconds_diff < 0) return updateDepartures()
+            timeElem.innerText = `${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? Math.ceil(seconds_diff/60) + " mins" : Math.ceil(seconds_diff/3600) + " hours")}`
+            timeElem.parentNode.style.background = `rgba(${seconds_diff < 20 ? "0, 206, 37, 0.25" : "0, 114, 206, " + (0.35 - (seconds_diff/900 > 1 ? 1 : seconds_diff/900)*0.30)})`
+        }
+    }
+    updateDepartures();
+    setInterval(updateDepartures, 60000)
+    setInterval(updateDepartureTimes, 1000)
    
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
