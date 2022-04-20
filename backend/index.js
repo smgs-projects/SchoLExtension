@@ -13,6 +13,13 @@ dotenv.config();
 
 const __dirname = path.resolve();
 
+const valid_pronouns = {
+    "hehim" : "He/Him",
+    "sheher": "She/Her",
+    "theythem": "They/Them",
+    "other": "Ask Me"
+}
+
 const certOptions = {
     cert: fs.readFileSync(process.env.CERT),
     key: fs.readFileSync(process.env.CERT_KEY)
@@ -80,35 +87,65 @@ app.post("/smgsapi/theme", async function(req, res, next) {
             const settings = req.body["settings"]
             if (!settings && settings !== false) return res.sendStatus(400)
             if (!theme && theme !== false) return res.sendStatus(400)
-            
             for (const subject of Object.values(theme)) {
                 if (ValidateRGB(subject.color) === false) return res.sendStatus(400)
             }
+            settings.pronouns.selected = settings.pronouns.selected.filter(e => valid_pronouns[e])
+            if (settings.pronouns.show.length != 3) settings.pronouns.show = [1, 1, 1]
+
             const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
-                promisePool.execute("INSERT INTO themes (id, sbu, defaults, theme, settings) VALUES (?, ?, ?, ?, ?);", [tokenData.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings)]);
+                promisePool.execute("INSERT INTO themes (id, sbid, sbu, defaults, theme, settings) VALUES (?, ?, ?, ?, ?, ?);", [tokenData.id, req.body.sbu.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings)]);
             } else {
-                await promisePool.execute("UPDATE themes SET sbu = ?, defaults = ?, theme = ?, settings = ? WHERE id = ?", [JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings), tokenData.id]);
+                await promisePool.execute("UPDATE themes SET sbu = ?, sbid = ?, defaults = ?, theme = ?, settings = ? WHERE id = ?", [JSON.stringify(req.body.sbu), req.body.sbu.id, JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings), tokenData.id]);
             }
             res.sendStatus(200)
         } 
         catch (error) { console.error(error); return res.sendStatus(500); }
     })
 })
-function ValidateRGB(rgb) {
-    if (!rgb.startsWith('rgb(')) return false;
-    if (!rgb.endsWith(')')) return false;
-    const colours = (rgb.substring(4, rgb.length-1)).split(", ")
-    if (colours.length === 3) {
-        for (const colour of colours) {
-            if (parseInt(colour) > 255 || parseInt(colour) < 0) return false
-            for (const char of colour) {
-                if (!Number.isInteger(parseInt(char))) return false
+app.get("/smgsapi/pronouns/:userid", async function(req, res, next) {
+    req.getConnection(async function(err, connection) {
+        if (err) return next(err);
+        const promisePool = connection.promise();
+        try { 
+            let tokenData;
+            try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
+            catch { return res.sendStatus(403); }
+
+            const [reqTheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
+            const [userTheme] = await promisePool.execute("SELECT * FROM themes WHERE sbid = ?", [req.params.userid]);
+            if (!reqTheme || reqTheme.length < 1) return res.send("[]")
+            if (!userTheme || userTheme.length < 1) return res.send("[]")
+
+            let sbu = JSON.parse(reqTheme[0]["sbu"])
+            let userSettings = JSON.parse(userTheme[0]["settings"])
+            if (userSettings.pronouns.show[sbu.role.student ? 0 : sbu.role.staff ? 1 : 2] || req.params.userid == sbu.id) {
+                return res.send(userSettings.pronouns.selected.map(e => valid_pronouns[e]))
             }
+            return res.send("[]")
+        } 
+        catch (error) { console.error(error); return res.sendStatus(500); }
+    })
+})
+function ValidateRGB(rgb) {
+    try {
+        if (!rgb.startsWith('rgb(')) return false;
+        if (!rgb.endsWith(')')) return false;
+        const colours = (rgb.substring(4, rgb.length-1)).split(", ")
+        if (colours.length === 3) {
+            for (const colour of colours) {
+                if (parseInt(colour) > 255 || parseInt(colour) < 0) return false
+                for (const char of colour) {
+                    if (!Number.isInteger(parseInt(char))) return false
+                }
+            }
+            return true
         }
-        return true
+        else {return false}
+    } catch {
+        return false
     }
-    else {return false}
 }
 
 // SchoolBox 3rd Party Integration
