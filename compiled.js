@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "https://rcja.app:3000/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -1050,7 +1050,7 @@ async function mainPage() {
                             <div style="position: absolute; top: 50%; right: 15px; transform: translate(0, -50%);" class="PTVIcon time">
                                 <span class="line-pill">
                                     <div class="route-lock-up" style="background: rgba(${seconds_diff < 20 ? "0, 206, 37, 0.25" : "0, 114, 206, " + (0.35 - (seconds_diff/900 > 1 ? 1 : seconds_diff/900)*0.30)});">
-                                        <p class="direction-title" time="${scheduled_time}">${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? Math.ceil(seconds_diff/60) + (Math.ceil(seconds_diff/60) == 1 ? + " min" : " mins") : Math.ceil(seconds_diff/3600) + (Math.ceil(seconds_diff/3600) == 1 ? " hour" : " hours"))}</p>
+                                        <p class="direction-title" time="${scheduled_time}">${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? `${Math.ceil(seconds_diff/60)} ${Math.ceil(seconds_diff/60) == 1 ? "min" : "mins"}` : `${Math.ceil(seconds_diff/3600)} ${Math.ceil(seconds_diff/3600) == 1 ? "hour" : "hours"}`)}</p>
                                     </div>
                                 </span>
                             </div>
@@ -1068,7 +1068,7 @@ async function mainPage() {
         for (const timeElem of document.querySelectorAll(".direction-title[time]")) {
             seconds_diff = Math.ceil((new Date(timeElem.getAttribute("time")) - new Date().getTime())/1000)
             if (seconds_diff < 0) return updateDepartures()
-            timeElem.innerText = `${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? Math.ceil(seconds_diff/60) + " mins" : Math.ceil(seconds_diff/3600) + " hours")}`
+            timeElem.innerText = `${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? `${Math.ceil(seconds_diff/60)} ${Math.ceil(seconds_diff/60) == 1 ? "min" : "mins"}` : `${Math.ceil(seconds_diff/3600)} ${Math.ceil(seconds_diff/3600) == 1 ? "hour" : "hours"}`)}`
             timeElem.parentNode.style.background = `rgba(${seconds_diff < 20 ? "0, 206, 37, 0.25" : "0, 114, 206, " + (0.35 - (seconds_diff/900 > 1 ? 1 : seconds_diff/900)*0.30)})`
         }
     }
