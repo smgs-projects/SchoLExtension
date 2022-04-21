@@ -1050,7 +1050,7 @@ async function mainPage() {
                             <div style="position: absolute; top: 50%; right: 15px; transform: translate(0, -50%);" class="PTVIcon time">
                                 <span class="line-pill">
                                     <div class="route-lock-up" style="background: rgba(${seconds_diff < 20 ? "0, 206, 37, 0.25" : "0, 114, 206, " + (0.35 - (seconds_diff/900 > 1 ? 1 : seconds_diff/900)*0.30)});">
-                                        <p class="direction-title" time="${scheduled_time}">${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? Math.ceil(seconds_diff/60) + " mins" : Math.ceil(seconds_diff/3600) + " hours")}</p>
+                                        <p class="direction-title" time="${scheduled_time}">${seconds_diff < 20 ? "Now" : (seconds_diff < 3600 ? Math.ceil(seconds_diff/60) + (Math.ceil(seconds_diff/60) == 1 ? + " min" : " mins") : Math.ceil(seconds_diff/3600) + (Math.ceil(seconds_diff/3600) == 1 ? " hour" : " hours"))}</p>
                                     </div>
                                 </span>
                             </div>
