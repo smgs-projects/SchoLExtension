@@ -27,6 +27,8 @@ const certOptions = {
 
 const app = express()
 
+import {router as ptv} from "./routes/widgets/PTVWidget.js"
+
 app.use(connection(mysql, {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -38,6 +40,7 @@ app.use(connection(mysql, {
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :remote-addr'));
 app.use(cors());
 app.use(express.json())
+app.use('/smgsapi/ptv', ptv)
 
 app.get("/smgsapi/compiled.js", async function (req, res, next) {
     res.sendFile(path.resolve(__dirname, '..', 'compiled.js'));
@@ -152,6 +155,7 @@ app.get("/smgsapi/auth", async function (req, res, next) {
 })
 
 // Tools Redirect
+
 app.all("*", function(req, res) {
     res.redirect(301, "https://tools.robocupjunior.org.au"  + req.url);
 })    
