@@ -65,6 +65,11 @@ async function load() {
             window.location.reload()
         }
     }
+    if (!extSettings.deadnameremover?.names) {
+        extSettings.deadnameremover = {"enabled": 1, "names": []}
+        localStorage.setItem("extSettings", "")
+        await postTheme();
+    }
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("defaultTheme");
         localStorage.removeItem("timetableTheme");
@@ -522,7 +527,7 @@ async function loadSettings() {
         else { toggle_setting.removeAttribute("checked", 1) }
 
         toggle_setting.addEventListener("change", async function () {
-            if (toggle_setting == "deadnameremover") {
+            if (setting == "deadnameremover") {
                 document.getElementById("deadnameremover").style.display = toggle_setting.checked ? "" : "none"
                 extSettings.deadnameremover.enabled = toggle_setting.checked;
             } else { extSettings[setting] = toggle_setting.checked; }
