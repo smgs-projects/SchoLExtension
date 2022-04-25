@@ -24,6 +24,9 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 // List of settings with default values
 let extSettings = {"themesync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "pronouns": {"enabled": 1, "selected": [], "show": [1, 1, 1]}, "deadnameremover": {"enabled": 1, "names": []}};
 
+const imageTypes = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
+
+
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
 
@@ -349,9 +352,11 @@ async function loadSettings() {
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${timetableTheme[subject].current === "image" ? "background-image: url(" + timetableTheme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td>
-                <input type="color" style="display: ${timetableTheme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
-                <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${timetableTheme[subject].current === "image" ? "" : "none"}" value="${timetableTheme[subject]["image"] === null ? "" : timetableTheme[subject].image}">
-                <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
+                <div id="image-uploader">
+                    <input type="color" style="display: ${timetableTheme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
+                    <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${timetableTheme[subject].current === "image" ? "" : "none"}" value="${timetableTheme[subject]["image"] === null ? "" : timetableTheme[subject].image}">
+                    <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
+                </div>
             </td>
             <td style="text-align: center">
                 <a id="settingsresset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a>
@@ -399,7 +404,7 @@ async function loadSettings() {
             </td>
         </tr>`
     }
-
+    
     const is_profile = window.location.pathname.startsWith("/search/user")
     let contentrow;
     if (is_profile) {
@@ -460,7 +465,7 @@ async function loadSettings() {
                 <tbody>${tablerows}</tbody>
             </table>
             <div class="component-action">
-                <section>
+                <section>   
                     <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
                         Feature made by Zac McWilliam (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
                     </span>
@@ -513,7 +518,7 @@ async function loadSettings() {
                 </div>
             </section>
         </div>`)
-
+    
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", JSON.stringify(extSettings)); }
 
     for (setting in settings) {
@@ -537,7 +542,7 @@ async function loadSettings() {
         await postTheme();
         window.location.reload()
     })
-    
+    let elem_imageupload = document.getElementById("image-uploader")
     let elem_themereset = document.getElementById("themereset")
     let elem_currenttheme = document.getElementById("currenttheme")
     let elem_importtext = document.getElementById("importtext")
@@ -545,6 +550,22 @@ async function loadSettings() {
     let elem_exportbtn = document.getElementById("exportbtn")
     let elem_themeselector = document.getElementById("context-selector-themes")
     let elem_deadnamelist = document.getElementById("deadnamelist")
+    console.log(elem_imageupload)
+    document.addEventListener("drop", async function(event) {
+        event.preventDefault()
+        if (event.dataTransfer && event.dataTransfer.files) {
+            var fileType = event.dataTransfer.files[0].type;
+            console.log(fileType)
+            if (imageTypes.includes(fileType)) {
+                event.target.parentElement.style.border = "5px solid green"
+                let formData = new FormData();
+                formData.append(Date.now().toString(), event.dataTransfer.files[0]);
+                console.log(await postImage(formData))
+            } else {
+                event.target.parentElement.style.border = "5px solid red"
+            }
+        }
+    }, true)
     for (const pronoun of document.querySelectorAll("#pronoun-list input")) {
         if (extSettings.pronouns.selected.includes(pronoun.name)) {
             pronoun.checked = true
@@ -671,7 +692,7 @@ async function loadSettings() {
         const subject = row.children[0].innerText;
         // Colour picker input
         if (!row.children[1]) continue;
-        row.children[1].children[0].addEventListener("change", async function(e) {
+        row.children[1].children[0].children[0].addEventListener("change", async function(e) {
             const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -685,7 +706,7 @@ async function loadSettings() {
             await postTheme();
         })
         // Image picker input
-        row.children[1].children[1].addEventListener("change", async function(e) {
+        row.children[1].children[0].children[1].addEventListener("change", async function(e) {
             const url = e.target.value
             let valid_url = url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g) !== null && e.target.reportValidity()
 
@@ -713,8 +734,8 @@ async function loadSettings() {
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
             row.style.backgroundSize = "100% 100%"
-            row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
-            row.children[1].children[1].value = ""
+            row.children[1].children[0].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
+            row.children[1].children[0].children[1].value = ""
             
             timetableTheme[subject] = {color: rgbval, image: null, current: "color"}
             localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
@@ -727,8 +748,8 @@ async function loadSettings() {
             let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
             timetableTheme[subject]["current"] = "image"
             localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-            row.children[1].children[0].style.display = "none"
-            row.children[1].children[1].style.display = ""
+            row.children[1].children[0].children[0].style.display = "none"
+            row.children[1].children[0].children[1].style.display = ""
             row.style.backgroundImage = "url(" + timetableTheme[subject]["image"] + ")"
             row.style.backgroundSize = "100% 100%"
             row.children[3].children[0].style.display = "none"
@@ -740,8 +761,8 @@ async function loadSettings() {
             let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
             timetableTheme[subject]["current"] = "color"
             localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-            row.children[1].children[0].style.display = ""
-            row.children[1].children[1].style.display = "none"
+            row.children[1].children[0].children[0].style.display = ""
+            row.children[1].children[0].children[1].style.display = "none"
             row.style.backgroundColor = timetableTheme[subject]["color"].replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
             localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
@@ -1083,6 +1104,8 @@ async function mainPage() {
     colourEDiaryList()
 }
 
+
+
 function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
@@ -1123,6 +1146,17 @@ async function remoteAuth() {
         })
     });
 }
+
+async function postImage(binary) {
+    console.log(binary)
+    return new Promise(async (resolve) => {
+        fetch("https://learning.stmichaels.vic.edu.au/storage/asyncUpload.php", {
+            method: "POST",
+            body: {"upload": binary}
+        }).then(async r => { resolve(await r.json()) })
+    });
+}
+
 async function getThemes() {
     return new Promise (( resolve ) => {
         fetch(THEME_API + "/themes").then(r => {
@@ -1158,6 +1192,7 @@ async function postTheme() {
         }).then(r => { resolve() })
     });
 }
+
 async function themeSync() {
     return new Promise (async ( resolve ) => {
         let change = false
