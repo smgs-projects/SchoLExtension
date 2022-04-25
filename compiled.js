@@ -64,6 +64,10 @@ async function load() {
             localStorage.removeItem("timetableTheme")
             window.location.reload()
         }
+        if (subject.current == "colour") {
+            extSettings[subject].current = "color"
+            await postTheme()
+        }
     }
     if (!extSettings.deadnameremover?.names) {
         extSettings.deadnameremover = {"enabled": 1, "names": []}
@@ -761,7 +765,7 @@ async function loadSettings() {
         let currenttheme = JSON.parse(localStorage.getItem("defaultTheme"))
         let i = 0
         for (subjectcode in currenttheme) {
-            currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "colour"}
+            currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "color"}
             i++; if (i >= newtheme.length) { i = 0; }
         }
         localStorage.setItem("timetableTheme", JSON.stringify(currenttheme))
@@ -791,7 +795,7 @@ async function loadSettings() {
         }
         let i = 0
         for (subjectcode in currenttheme) {
-            currenttheme[subjectcode] = {color: newtheme[i], image: null, current: "colour"}
+            currenttheme[subjectcode] = {color: newtheme[i], image: null, current: "color"}
             i++; if (i >= newtheme.length) { i = 0; }
         }
         localStorage.setItem("timetableTheme", JSON.stringify(currenttheme))
