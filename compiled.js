@@ -46,7 +46,6 @@ async function load() {
         localStorage.removeItem("extSettings");
         localStorage.removeItem("userToken");
         localStorage.removeItem("lastUser");
-        window.location.reload()
     }
     // Update outdated localStorage colours
     if (localStorage.getItem("timetableColours")) {
@@ -64,7 +63,8 @@ async function load() {
     for (const subject of Object.keys(timetableTheme || {})) {
         if (!timetableTheme[subject].color || !timetableTheme[subject].current || typeof(timetableTheme[subject].color) !== "string") {
             localStorage.removeItem("timetableTheme")
-            window.location.reload()
+            await timetableCache()
+            await postTheme()
         }
         if (timetableTheme[subject].current == "colour") {
             timetableTheme[subject].current = "color"
@@ -125,9 +125,12 @@ async function timetableCache() {
                         timetableTheme[subject] = defaultTheme[subject]
                     }
                 }
-                localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-                localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
-                localStorage.setItem("lastUser", schoolboxUser.id) // For recaching if user switch
+                localStorage.setItem("lastTimetableCache", Date.now())
+                localStorage.setItem("lastUser", schoolboxUser.id)
+                if (localStorage.getItem("timetableTheme") != JSON.stringify(timetableTheme)) {
+                    localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+                    postTheme().then(r => { return resolve() });
+                }
                 resolve()
             })
         } else {
@@ -528,8 +531,8 @@ async function loadSettings() {
 
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", JSON.stringify(extSettings)); }
 
-    for (setting in settings) {
-        toggle_setting = document.getElementById("toggle_" + setting)
+    for (const setting in settings) {
+        const toggle_setting = document.getElementById("toggle_" + setting)
         if (extSettings[setting]) { toggle_setting.setAttribute("checked", 1) }
         else { toggle_setting.removeAttribute("checked", 1) }
 
@@ -756,7 +759,6 @@ async function loadSettings() {
             row.children[1].children[1].style.display = "none"
             row.style.backgroundColor = timetableTheme[subject]["color"].replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
             row.children[3].children[0].style.display = ""
             row.children[3].children[1].style.display = "none"
             row.querySelector(".invalidurl").style.display = "none"
