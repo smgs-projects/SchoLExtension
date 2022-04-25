@@ -4,6 +4,7 @@
 //   _,.-'`_ o `;__,
 //    _.-'` '---'  '
 //
+// Latest available code: https://rcja.app/smgsapi/compiled.js
 
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
@@ -59,13 +60,15 @@ async function load() {
         localStorage.removeItem("timetableColoursDefault")
         await postTheme()
     }
-    for (const subject of Object.values(JSON.parse(localStorage.getItem("timetableTheme")) || {})) {
-        if (!subject.color || !subject.current || typeof(subject.color) !== "string") {
+    let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"));
+    for (const subject of Object.keys(timetableTheme || {})) {
+        if (!timetableTheme[subject].color || !timetableTheme[subject].current || typeof(timetableTheme[subject].color) !== "string") {
             localStorage.removeItem("timetableTheme")
             window.location.reload()
         }
-        if (subject.current == "colour") {
-            extSettings[subject].current = "color"
+        if (timetableTheme[subject].current == "colour") {
+            timetableTheme[subject].current = "color"
+            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
             await postTheme()
         }
     }
