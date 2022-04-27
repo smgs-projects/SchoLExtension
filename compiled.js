@@ -14,7 +14,7 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app:3000/smgsapi"
+const THEME_API = "https://rcja.app/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -354,7 +354,7 @@ async function loadSettings() {
             <td>
                 <div id="image-uploader">
                     <input type="color" style="display: ${timetableTheme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
-                    <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${timetableTheme[subject].current === "image" ? "" : "none"}" value="${timetableTheme[subject]["image"] === null ? "" : timetableTheme[subject].image}">
+                    <input type="url" class="image-drop-zone"pattern="https://.*" required placeholder="Enter Image URL" style="display: ${timetableTheme[subject].current === "image" ? "" : "none"}" value="${timetableTheme[subject]["image"] === null ? "" : timetableTheme[subject].image}">
                     <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
                 </div>
             </td>
@@ -374,14 +374,17 @@ async function loadSettings() {
     }
 
     let themeoptions = ""
+    console.log(1)
+
     const themes = await getThemes()
+    console.log(3)
     if (themes) {
         themeoptions += `<option disabled selected>Click to select a theme</option>`
         for (const theme of themes) {
             themeoptions += `<option value='${theme.theme}'>${theme.name}</option>`
         }
     }
-
+    console.log(1)
     const settings = {
         "themesync": ["Theme Syncronisation", "Sync timetable themes between devices"],
         "autoreload": ["Auto Reload", "Automatically reload the page when your theme changes on another device"],
@@ -404,7 +407,6 @@ async function loadSettings() {
             </td>
         </tr>`
     }
-    
     const is_profile = window.location.pathname.startsWith("/search/user")
     let contentrow;
     if (is_profile) {
@@ -550,17 +552,25 @@ async function loadSettings() {
     let elem_exportbtn = document.getElementById("exportbtn")
     let elem_themeselector = document.getElementById("context-selector-themes")
     let elem_deadnamelist = document.getElementById("deadnamelist")
-    console.log(elem_imageupload)
     document.addEventListener("drop", async function(event) {
+        if (!event.target.classList.contains("image-drop-zone")) return;
         event.preventDefault()
         if (event.dataTransfer && event.dataTransfer.files) {
             var fileType = event.dataTransfer.files[0].type;
-            console.log(fileType)
             if (imageTypes.includes(fileType)) {
                 event.target.parentElement.style.border = "5px solid green"
                 let formData = new FormData();
-                formData.append(Date.now().toString(), event.dataTransfer.files[0]);
-                console.log(await postImage(formData))
+                formData.append("upload", event.dataTransfer.files[0]);
+                const url = (await postImage(formData)).meta.file._links.image
+                let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
+                const row = event.target.parentElement.parentElement.parentElement
+                const subject = row.querySelector("td").innerText
+                timetableTheme[subject].image = url
+                row.style.backgroundImage = "url(" + url + ")"
+                row.style.backgroundSize = "100% 100%"
+                localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+                await postTheme()
+
             } else {
                 event.target.parentElement.style.border = "5px solid red"
             }
@@ -1147,20 +1157,20 @@ async function remoteAuth() {
     });
 }
 
-async function postImage(binary) {
-    console.log(binary)
-    return new Promise(async (resolve) => {
+function postImage(image) {
+    return new Promise( (resolve) => {
         fetch("https://learning.stmichaels.vic.edu.au/storage/asyncUpload.php", {
             method: "POST",
-            body: {"upload": binary}
+            body: image
         }).then(async r => { resolve(await r.json()) })
     });
 }
 
 async function getThemes() {
     return new Promise (( resolve ) => {
-        fetch(THEME_API + "/themes").then(r => {
-            resolve(r.json())
+        console.log(2)
+        fetch(THEME_API + "/themes").then(async r => {
+            resolve(await r.json())
         })
     });
 }
