@@ -10,7 +10,8 @@
     "background": { "scripts": ["chrome_ext/hot-reload.js"] },
     "permissions": ["storage"],
     "web_accessible_resources": [
-        "compiled.js"
+        "compiled.js",
+        "darkmode.css"
     ],
     "content_scripts": [
         {
