@@ -638,6 +638,7 @@ div.sub-nav>li>a {
 }
 ul[id="tileList-2427"] {
     background-color: black !important;
+    border: 5Px solid rgb(51, 51, 51) !important;
 }
 div[class="content"] {
     background-color: rgb(31, 30, 30) !important;
