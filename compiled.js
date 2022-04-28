@@ -374,17 +374,20 @@ async function loadSettings() {
     }
 
     let themeoptions = ""
-    console.log(1)
 
     const themes = await getThemes()
-    console.log(3)
     if (themes) {
         themeoptions += `<option disabled selected>Click to select a theme</option>`
         for (const theme of themes) {
-            themeoptions += `<option value='${theme.theme}'>${theme.name}</option>`
+            console.log(localStorage.getItem("currentTheme"))
+            if (localStorage.getItem("currentTheme") && localStorage.getItem("currentTheme") === theme.name) {
+                themeoptions += `<option selected value='${theme.theme}'>${theme.name}</option>`
+            }
+            else {
+                themeoptions += `<option value='${theme.theme}'>${theme.name}</option>`
+            }
         }
     }
-    console.log(1)
     const settings = {
         "themesync": ["Theme Syncronisation", "Sync timetable themes between devices"],
         "autoreload": ["Auto Reload", "Automatically reload the page when your theme changes on another device"],
@@ -565,7 +568,7 @@ async function loadSettings() {
                 event.target.parentElement.style.border = "5px solid green"
                 let formData = new FormData();
                 formData.append("upload", event.dataTransfer.files[0]);
-                const url = (await postImage(formData)).meta.file._links.image
+                const url = "https://learning.stmichaels.vic.edu.au" + ((await postImage(formData)).meta.file._links.image)
                 let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
                 const row = event.target.parentElement.parentElement.parentElement
                 const subject = row.querySelector("td").innerText
@@ -590,7 +593,6 @@ async function loadSettings() {
             localStorage.setItem("extSettings", JSON.stringify(extSettings))
             document.getElementById("pronounslabel").innerText = "Pronouns: " + extSettings.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
             document.getElementById("pronounsrow").innerText = extSettings.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
-            console.log(extSettings.pronouns.selected.length)
             if (!extSettings.pronouns.selected.length) {
                 document.getElementById("pronounslabel").style.setProperty("display", "none", "important")
                 document.getElementById("pronounsrow").parentNode.style.display = "none"
@@ -693,7 +695,7 @@ async function loadSettings() {
     } else addDeadname()
 
     function updateThemeExport() {
-        elem_currenttheme.value = Object.values(JSON.parse(localStorage.getItem("timetableTheme"))).map(e => {if (e["current"] === "color") {return e["color"]}})
+        elem_currenttheme.value = Object.values(JSON.parse(localStorage.getItem("timetableTheme"))).map(e => { if (e["current"] === "color" || e["current"] === "colour") {return e["color"]}})
         .filter(e => e !== undefined)
         .map((e) => { 
             return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) 
@@ -789,9 +791,10 @@ async function loadSettings() {
     elem_themeselector.addEventListener("change", async function(evt){
         let newtheme = evt.target.value.split("-")
         let currenttheme = JSON.parse(localStorage.getItem("defaultTheme"))
+        localStorage.setItem("currentTheme", elem_themeselector.options[elem_themeselector.selectedIndex].text)
         let i = 0
         for (subjectcode in currenttheme) {
-            currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "colour"}
+            currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "color"}
             i++; if (i >= newtheme.length) { i = 0; }
         }
         localStorage.setItem("timetableTheme", JSON.stringify(currenttheme))
@@ -821,7 +824,7 @@ async function loadSettings() {
         }
         let i = 0
         for (subjectcode in currenttheme) {
-            currenttheme[subjectcode] = {color: newtheme[i], image: null, current: "colour"}
+            currenttheme[subjectcode] = {color: newtheme[i], image: null, current: "color"}
             i++; if (i >= newtheme.length) { i = 0; }
         }
         localStorage.setItem("timetableTheme", JSON.stringify(currenttheme))
@@ -1172,7 +1175,6 @@ function postImage(image) {
 
 async function getThemes() {
     return new Promise (( resolve ) => {
-        console.log(2)
         fetch(THEME_API + "/themes").then(async r => {
             resolve(await r.json())
         })
