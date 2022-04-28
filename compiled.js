@@ -558,6 +558,10 @@ async function loadSettings() {
         if (event.dataTransfer && event.dataTransfer.files) {
             var fileType = event.dataTransfer.files[0].type;
             if (imageTypes.includes(fileType)) {
+                if (!localStorage.getItem("hasUploaded") && !window.confirm("This image is stored on privatley school servers under your account, are you sure you want to continue")) {
+                    event.target.parentElement.style.border = "5px solid red"
+                    return
+                }
                 event.target.parentElement.style.border = "5px solid green"
                 let formData = new FormData();
                 formData.append("upload", event.dataTransfer.files[0]);
@@ -570,7 +574,7 @@ async function loadSettings() {
                 row.style.backgroundSize = "100% 100%"
                 localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
                 await postTheme()
-
+                localStorage.setItem("hasUploaded", 1)
             } else {
                 event.target.parentElement.style.border = "5px solid red"
             }
