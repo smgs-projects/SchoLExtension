@@ -33,7 +33,7 @@ async function load() {
     if (typeof schoolboxUser == "undefined") return;
     try {
         extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
-        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings")) {
+        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings") && localStorage.getItem("extSettings")?.themesync) {
             localStorage.setItem("extSettings", JSON.stringify(extSettings))
             await postTheme();
         }
