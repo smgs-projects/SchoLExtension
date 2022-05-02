@@ -23,7 +23,7 @@ const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c709
 // List of valid pronouns
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of settings with default values
-let extSettings = {"themesync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "pronouns": {"enabled": 1, "selected": [], "show": [1, 1, 1]}, "deadnameremover": {"enabled": 1, "names": []}};
+let extSettings = {"themesync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "pronouns": {"selected": [], "show": [1, 1, 1]}, "deadnameremover": {"enabled": 1, "names": []}};
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
@@ -31,9 +31,22 @@ else { window.addEventListener('load', () => { load() }); }
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
+
+    if (schoolboxUser.id != localStorage.getItem("lastUser")) {
+        localStorage.removeItem("defaultTheme");
+        localStorage.removeItem("timetableTheme");
+        localStorage.removeItem("lastTimetableCache");
+        localStorage.removeItem("extSettings");
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("lastUser");
+    }
+    if (localStorage.getItem("lastTimetableCache") && Date.now() - localStorage.getItem("lastTimetableCache") > 8.64e+7) {
+        localStorage.removeItem("lastTimetableCache")
+    }
+
     try {
         extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
-        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings") && localStorage.getItem("extSettings")?.themesync) {
+        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings") && localStorage.getItem("extSettings") !== null) {
             localStorage.setItem("extSettings", JSON.stringify(extSettings))
             await postTheme();
         }
@@ -76,17 +89,6 @@ async function load() {
         extSettings.deadnameremover = {"enabled": 1, "names": []}
         localStorage.setItem("extSettings", "")
         await postTheme();
-    }
-    if (schoolboxUser.id != localStorage.getItem("lastUser")) {
-        localStorage.removeItem("defaultTheme");
-        localStorage.removeItem("timetableTheme");
-        localStorage.removeItem("lastTimetableCache");
-        localStorage.removeItem("extSettings");
-        localStorage.removeItem("userToken");
-        localStorage.removeItem("lastUser");
-    }
-    if (localStorage.getItem("lastTimetableCache") && localStorage.getItem("lastTimetableCache") < 8.64e+7) {
-        localStorage.removeItem("lastTimetableCache")
     }
     
     await timetableCache();
