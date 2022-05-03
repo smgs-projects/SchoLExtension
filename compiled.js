@@ -26,6 +26,7 @@ let extSettings = {"themesync": 1, "autoreload": 0, "colourduework": 1, "compact
 
 const imageTypes = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 
+let PTVDepatureUpdate = true
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
@@ -379,7 +380,6 @@ async function loadSettings() {
     if (themes) {
         themeoptions += `<option disabled selected>Click to select a theme</option>`
         for (const theme of themes) {
-            console.log(localStorage.getItem("currentTheme"))
             if (localStorage.getItem("currentTheme") && localStorage.getItem("currentTheme") === theme.name) {
                 themeoptions += `<option selected value='${theme.theme}'>${theme.name}</option>`
             }
@@ -1058,6 +1058,7 @@ async function mainPage() {
     let ptvUpdating;
     let ptvExpires;
     async function updateDepartures() {
+        if (PTVDepatureUpdate === false) return;
         let departureHTML = ""; ptvUpdating = true;
         const ptvinfo = await (await fetch(`${THEME_API}/ptv/schedule`)).json();
         ptvExpires = ptvinfo.expires
@@ -1100,6 +1101,8 @@ async function mainPage() {
         document.getElementById("ptvDepartures").innerHTML = `<ul class="information-list">${departureHTML}</ul>`
         ptvUpdating = false;
     }
+    window.addEventListener("focus", function (event) { PTVDepatureUpdate = true}, false);
+    window.addEventListener("blur", function (event) { PTVDepatureUpdate = false }, false);
     function updateDepartureTimes() {
         if (ptvUpdating) return
         if (ptvExpires < new Date().getTime()) return updateDepartures();
@@ -1111,7 +1114,7 @@ async function mainPage() {
         }
     }
     updateDepartures();
-    setInterval(updateDepartures, 60000)
+    setInterval(updateDepartures, 3000)
     setInterval(updateDepartureTimes, 1000)
    
     // Timetable (mobile) - Make background white
