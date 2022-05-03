@@ -15,15 +15,26 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "https://rcja.app:3000/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 // List of valid pronouns
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
-// List of settings with default values
-let extSettings = {"themesync": 1, "autoreload": 0, "colourduework": 1, "compacttimetable": 1, "pronouns": {"selected": [], "show": [1, 1, 1]}, "deadnameremover": {"enabled": 1, "names": []}};
+
+const DEFAULT_CONFIG = {
+    "theme" : {},
+    "themedefault" : {},
+    "settings" : {"colourduework":1,"compacttimetable":1},
+    "pronouns" : {"selected":[],"show":[1,1,1]},
+    "deadnames" : [],
+    "updated" : 0,
+    "version" : 1
+}
+
+let extConfigSvr;
+let extConfig;
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('load', () => { load() }); }
@@ -33,65 +44,35 @@ async function load() {
     if (typeof schoolboxUser == "undefined") return;
 
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
-        localStorage.removeItem("defaultTheme");
-        localStorage.removeItem("timetableTheme");
-        localStorage.removeItem("lastTimetableCache");
-        localStorage.removeItem("extSettings");
+        localStorage.removeItem("extConfig");
+        localStorage.removeItem("lastThemeCache");
         localStorage.removeItem("userToken");
-        localStorage.removeItem("lastUser");
-    }
-    if (localStorage.getItem("lastTimetableCache") && Date.now() - localStorage.getItem("lastTimetableCache") > 8.64e+7) {
-        localStorage.removeItem("lastTimetableCache")
-    }
-
-    try {
-        extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
-        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings") && localStorage.getItem("extSettings") !== null) {
-            localStorage.setItem("extSettings", JSON.stringify(extSettings))
-            await postTheme();
-        }
-        JSON.parse(localStorage.getItem("timetableTheme"))
-        JSON.parse(localStorage.getItem("defaultTheme"))
-    } catch {
-        // Clear localStorage items if JSON.parse fails (prevents errors if someone breaks localStorage)
-        localStorage.removeItem("timetableTheme");
-        localStorage.removeItem("lastTimetableCache");
-        localStorage.removeItem("extSettings");
-        localStorage.removeItem("userToken");
-        localStorage.removeItem("lastUser");
-    }
-    // Update outdated localStorage colours
-    if (localStorage.getItem("timetableColours")) {
-        let timetableColours = JSON.parse(localStorage.getItem("timetableColours"))
-        let timetableTheme = {}
-        for (subject in timetableColours) {
-            timetableTheme[subject] = {color: timetableColours[subject], image: null, current: "color"}
-        }
-        localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-        localStorage.removeItem("timetableColours")
-        localStorage.removeItem("timetableColoursDefault")
-        await postTheme()
-    }
-    let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"));
-    for (const subject of Object.keys(timetableTheme || {})) {
-        if (!timetableTheme[subject].color || !timetableTheme[subject].current || typeof(timetableTheme[subject].color) !== "string") {
-            localStorage.removeItem("timetableTheme")
-            await timetableCache()
-            await postTheme()
-        }
-        if (timetableTheme[subject].current == "colour") {
-            timetableTheme[subject].current = "color"
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-            await postTheme()
-        }
-    }
-    if (!extSettings.deadnameremover?.names) {
-        extSettings.deadnameremover = {"enabled": 1, "names": []}
-        localStorage.setItem("extSettings", "")
-        await postTheme();
+        localStorage.setItem("lastUser", schoolboxUser.id);
     }
     
-    await timetableCache();
+    let extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
+    
+    if (DEFAULT_CONFIG.version != extConfigSvr.version) { console.log("Version Mismatch"); return; } // If local version is not the same as the server, stop loading
+    else if (localStorage.getItem("extConfig") !== null) { // We already have a config locally and versions match
+        try { extConfig = JSON.parse(localStorage.getItem("extConfig"));
+        } catch { localStorage.removeItem("extConfig"); return; } // Ensure extConfig is valid JSON
+
+        if (extConfig.updated < extConfigSvr.updated) { // External config is newer, updated on another device OR migrated to a newer version
+            extConfig = extConfigSvr;
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+        }
+    } else if (extConfigSvr.updated !== 0) { // Server config already exists but none locally, save remote
+        extConfig = extConfigSvr;
+        localStorage.setItem("extConfig", JSON.stringify(extConfig))
+    } else { // No server config or local config, make one and send to server
+        extConfig = DEFAULT_CONFIG
+        await timetableCache(true)
+    }
+
+    if (!localStorage.getItem("lastThemeCache") || (localStorage.getItem("lastThemeCache") && Date.now() - parseInt(localStorage.getItem("lastThemeCache")) > 8.64e+7) || extConfig.themedefault == {}) {
+        await timetableCache()
+    }
+
     allPages()
     if (window.location.pathname == "/") mainPage();
     if (window.location.pathname == "/learning/classes") classesPage();
@@ -103,41 +84,41 @@ async function load() {
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
     if (window.location.pathname.startsWith("/settings/messages")) await loadSettings();
-    if (extSettings.deadnameremover.enabled) deadNameRemover();
-    themeSync();
+    if (extConfig.deadnames.length > 0) deadNameRemover();
 }
 
-async function timetableCache() {
+async function timetableCache(forcePush) {
     return new Promise (async ( resolve ) => {
-        let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-        if (!localStorage.getItem("lastTimetableCache") || !localStorage.getItem("defaultTheme") || !timetableTheme) {
-            if (!timetableTheme) timetableTheme = {}
-            remoteAuth();
-            fetch('/timetable').then(r => r.text()).then(result => {
-                let defaultTheme = {}
-                let parser = new DOMParser();
-                const timetable = parser.parseFromString(result, 'text/html')
-                for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
-                    if (!REGEXP.exec(subject.innerText)) continue
-                    defaultTheme[REGEXP.exec(subject.innerText)[1]] = {color: subject.parentNode.style.backgroundColor, image: null, current: "color"}
+        await remoteAuth();
+        fetch('/timetable').then(r => r.text()).then(result => {
+            let timetableTheme = extConfig.theme || {}
+            let defaultTheme = {}
+            let parser = new DOMParser();
+            const timetable = parser.parseFromString(result, 'text/html')
+            for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
+                if (!REGEXP.exec(subject.innerText)) continue
+                defaultTheme[REGEXP.exec(subject.innerText)[1]] = {color: subject.parentNode.style.backgroundColor, image: null, current: "color"}
+            }
+            for (const subject in defaultTheme) {
+                if (timetableTheme[subject] === undefined) {
+                    timetableTheme[subject] = defaultTheme[subject]
                 }
-                localStorage.setItem("defaultTheme", JSON.stringify(defaultTheme))
-                for (const subject in defaultTheme) {
-                    if (!timetableTheme[subject]) {
-                        timetableTheme[subject] = defaultTheme[subject]
-                    }
+            }
+            for (const subject in timetableTheme) {
+                if (defaultTheme[subject] === undefined) {
+                    delete timetableTheme[subject]
                 }
-                localStorage.setItem("lastTimetableCache", Date.now())
-                localStorage.setItem("lastUser", schoolboxUser.id)
-                if (localStorage.getItem("timetableTheme") != JSON.stringify(timetableTheme)) {
-                    localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-                    postTheme().then(r => { return resolve() });
-                }
-                resolve()
-            })
-        } else {
-            resolve()
-        }
+            }
+            localStorage.setItem("lastThemeCache", Date.now())
+            
+            if (JSON.stringify(extConfig.theme) != JSON.stringify(timetableTheme) || JSON.stringify(extConfig.themedefault) != JSON.stringify(defaultTheme) || forcePush) {
+                extConfig.theme = timetableTheme;
+                extConfig.themedefault = defaultTheme;
+                extConfig.updated = Date.now();
+                localStorage.setItem("extConfig", JSON.stringify(extConfig))
+                postConfig().then(r=>resolve());
+            } else { resolve(); }
+        })
     })
 }
 
@@ -279,15 +260,15 @@ function replaceDeadNames(element, dead, preferred) {
 }
 
 function deadNameRemover() {
-    let deadnames = extSettings.deadnameremover.names.map(e => { return e[0] })
-    let preferrednames = extSettings.deadnameremover.names.map(e => { return e[1] })
+    let deadnames = extConfig.deadnames.map(e => { return e[0] })
+    let preferrednames = extConfig.deadnames.map(e => { return e[1] })
     replaceDeadNames(document.body, deadnames, preferrednames)
 }
 
 function colourSidebar() {
     for (const subjectlink of document.querySelectorAll("#side-menu-mysubjects li a")) {
         //Uses the link that it leads to, since that is the only way to get it out of the text
-        let theme = JSON.parse(localStorage.getItem("timetableTheme"))[subjectlink.href.split("/")[subjectlink.href.split("/").length - 1]]
+        let theme = extConfig.theme[subjectlink.href.split("/")[subjectlink.href.split("/").length - 1]]
         if (!theme?.color) continue
         subjectlink.style.backgroundColor = theme.color.replace("rgb", "rgba").replace(")", ", 10%)")
         subjectlink.style.borderLeft = "7px solid " + theme.color
@@ -295,14 +276,14 @@ function colourSidebar() {
 }
 
 function colourDuework() {
-    if (extSettings.colourduework) {
+    if (extConfig.settings.colourduework) {
         let dueworkitems = document.querySelectorAll(".Schoolbox_Learning_Component_Dashboard_UpcomingWorkController li")
         if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
         
         for (const duework of dueworkitems) {
             const subjects = REGEXP.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
             for (const subject of subjects) {
-                const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subject]?.color
+                const colour = extConfig.theme[subject]?.color
                 if (!colour) continue
                 duework.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
                 duework.style.borderLeft = "10px solid " + colour
@@ -317,7 +298,7 @@ function colourTimetable() {
         if (!REGEXP.exec(subject.textContent)) continue;
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
-            const theme = JSON.parse(localStorage.getItem("timetableTheme"))[subjectcode]
+            const theme = extConfig.theme[subjectcode]
             if (!theme?.color) continue
             const textcol = getTextColor(rgbToHex(...theme["color"].replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             subject.parentNode.style.backgroundColor = theme["color"]
@@ -337,7 +318,7 @@ function classesPage() {
     const cards = document.querySelectorAll("div.v-card")
     for (const card of cards) {
         for (const subject of card.querySelector("p.meta").innerText.split("\n")[0].split(",")) {
-            const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subject]?.color
+            const colour = extConfig.theme[subject]?.color
             if (!colour) continue
             card.querySelector("div.card-class-image").style.borderBottom = `10px solid ${colour}`
         }
@@ -349,6 +330,7 @@ function profilePage() {
         { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
     .then(r => r.json())
     .then(r => { 
+        console.log(r)
         let pronouns = r.join(", ")
         const profileRow = document.querySelector(".main .profile.content .row");
         profileRow.style.position = "relative";
@@ -359,27 +341,26 @@ function profilePage() {
 
 async function loadSettings() {
     let tablerows = "";
-    let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-    for (const subject in timetableTheme) {
-        const rgbvalue = timetableTheme[subject].color
+    for (const subject in extConfig.theme) {
+        const rgbvalue = extConfig.theme[subject].color
         const hexvalue = rgbToHex(...rgbvalue.replace(/[^\d\s]/g, '').split(' ').map(Number))
-        tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${timetableTheme[subject].current === "image" ? "background-image: url(" + timetableTheme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
+        tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${extConfig.theme[subject].current === "image" ? "background-image: url(" + extConfig.theme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td>
-                <input type="color" style="display: ${timetableTheme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
-                <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${timetableTheme[subject].current === "image" ? "" : "none"}" value="${timetableTheme[subject]["image"] === null ? "" : timetableTheme[subject].image}">
+                <input type="color" style="display: ${extConfig.theme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
+                <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${extConfig.theme[subject].current === "image" ? "" : "none"}" value="${extConfig.theme[subject].image === null ? "" : extConfig.theme[subject].image}">
                 <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
             </td>
             <td style="text-align: center">
                 <a id="settingsresset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a>
             </td>
             <td style="text-align: center">
-                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${timetableTheme[subject].current === "image" ? "none" : ""}" data-state="closed" class="icon-image" title="Image">
-                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${timetableTheme[subject].current === "image" ? "" : "none"}" data-state="closed" class="icon-drag-drop" title="Colour">
+                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${extConfig.theme[subject].current === "image" ? "none" : ""}" data-state="closed" class="icon-image" title="Image">
+                <a data-target="delete" style="vertical-align: middle; line-height: 39px; display: ${extConfig.theme[subject].current === "image" ? "" : "none"}" data-state="closed" class="icon-drag-drop" title="Colour">
             </td>
         </tr>`
     }
-    if (Object.keys(timetableTheme).length < 1) {
+    if (Object.keys(extConfig.theme).length < 1) {
         tablerows += `<tr role="row" class="subject-color-row">
             <td colspan="3">There are no timetable subjects associated with your account</td>
         </tr>`
@@ -395,17 +376,14 @@ async function loadSettings() {
     }
 
     const settings = {
-        "themesync": ["Theme Syncronisation", "Sync timetable themes between devices"],
-        "autoreload": ["Auto Reload", "Automatically reload the page when your theme changes on another device"],
         "colourduework": ["Coloured Due Work", "Add colours to due work items based on the timetable"],
-        "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"],
-        "deadnameremover": ["Dead Name Remover", "Allows replacement all instances of dead names across the site (Client side per account only)"]
+        "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"]
     }
     let settingselems = ""
-    for (setting in settings) {
+    for (const setting in settings) {
         settingselems += `<tr>
-            <td><label for="toggle_${setting}">${settings[setting][0]}<p>${settings[setting][1]}</p></label></td>
-            <td>
+            <td style="border-bottom: 0px !important"><label for="toggle_${setting}">${settings[setting][0]}<p>${settings[setting][1]}</p></label></td>
+            <td style="border-bottom: 0px !important">
                 <div class="long switch no-margin" style="float: right">
                     <input id="toggle_${setting}" type="checkbox" name="toggle_${setting}" value="1" checked>
                     <label for="toggle_${setting}">
@@ -507,7 +485,7 @@ async function loadSettings() {
                         <table class="no-margin"><tbody>${settingselems}</tbody></table>
                     </div>
                 </fieldset>
-                <fieldset class="content" id="deadnameremover" style="display: none">
+                <fieldset class="content" id="deadnameremover">
                     <legend><strong>Dead Name Remover</strong></legend>
                     <div class="small-12 columns">
                         <p>Enter a dead name to replace across SchoL, the input boxes are CAse-sENSitiVE
@@ -524,38 +502,26 @@ async function loadSettings() {
                 </fieldset>
                 <div class="component-action">
                     <section>
-                        <a class="button" id="settingsreset">Reset Settings</a>
-                        <a class="button" style="color: #ff5555;" id="themereset">Reset Theme</a>
+                        <a class="button" style="color: #ff5555;" id="resetbtn">Reset</a>
                     </section>
                 </div>
             </section>
         </div>`)
 
-    if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", JSON.stringify(extSettings)); }
-
     for (const setting in settings) {
         const toggle_setting = document.getElementById("toggle_" + setting)
-        if (extSettings[setting]) { toggle_setting.setAttribute("checked", 1) }
+        if (extConfig.settings[setting]) { toggle_setting.setAttribute("checked", 1) }
         else { toggle_setting.removeAttribute("checked", 1) }
 
         toggle_setting.addEventListener("change", async function () {
-            if (setting == "deadnameremover") {
-                document.getElementById("deadnameremover").style.display = toggle_setting.checked ? "" : "none"
-                extSettings.deadnameremover.enabled = toggle_setting.checked;
-            } else { extSettings[setting] = toggle_setting.checked; }
-            
-            localStorage.setItem("extSettings", JSON.stringify(extSettings))
-            await postTheme();
+            extConfig.settings[setting] = toggle_setting.checked;
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+            await postConfig();
         })
     }
-
-    document.getElementById("settingsreset").addEventListener("click", async function () {
-        localStorage.setItem("extSettings", "{}");
-        await postTheme();
-        window.location.reload()
-    })
     
-    let elem_themereset = document.getElementById("themereset")
+    let elem_resetbtn = document.getElementById("resetbtn")
     let elem_currenttheme = document.getElementById("currenttheme")
     let elem_importtext = document.getElementById("importtext")
     let elem_importbtn = document.getElementById("importbtn")
@@ -563,39 +529,40 @@ async function loadSettings() {
     let elem_themeselector = document.getElementById("context-selector-themes")
     let elem_deadnamelist = document.getElementById("deadnamelist")
     for (const pronoun of document.querySelectorAll("#pronoun-list input")) {
-        if (extSettings.pronouns.selected.includes(pronoun.name)) {
+        if (extConfig.pronouns.selected.includes(pronoun.name)) {
             pronoun.checked = true
         }
         pronoun.addEventListener("change", async function() {
-            if (!pronoun.checked) extSettings.pronouns.selected = extSettings.pronouns.selected.filter(e => e != pronoun.name)
-            else if (!extSettings.pronouns.selected.includes(pronoun.name)) extSettings.pronouns.selected.push(pronoun.name)
-            localStorage.setItem("extSettings", JSON.stringify(extSettings))
-            document.getElementById("pronounslabel").innerText = "Pronouns: " + extSettings.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
-            document.getElementById("pronounsrow").innerText = extSettings.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
-            console.log(extSettings.pronouns.selected.length)
-            if (!extSettings.pronouns.selected.length) {
+            if (!pronoun.checked) extConfig.pronouns.selected = extConfig.pronouns.selected.filter(e => e != pronoun.name)
+            else if (!extConfig.pronouns.selected.includes(pronoun.name)) extConfig.pronouns.selected.push(pronoun.name)
+            
+            document.getElementById("pronounslabel").innerText = "Pronouns: " + extConfig.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
+            document.getElementById("pronounsrow").innerText = extConfig.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
+            if (!extConfig.pronouns.selected.length) {
                 document.getElementById("pronounslabel").style.setProperty("display", "none", "important")
                 document.getElementById("pronounsrow").parentNode.style.display = "none"
             } else {
                 document.getElementById("pronounslabel").style.display = ""
                 document.getElementById("pronounsrow").parentNode.style.display = ""
             }
-            await postTheme();
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+            await postConfig();
         })
     }
     for (const role of document.querySelectorAll("#pronoun-roles input")) {
-        if (extSettings.pronouns.show[parseInt(role.name)]) {
+        if (extConfig.pronouns.show[parseInt(role.name)]) {
             role.checked = true
         }
         role.addEventListener("change", async function() {
-            extSettings.pronouns.show[parseInt(role.name)] = role.checked
-            localStorage.setItem("extSettings", JSON.stringify(extSettings))
-            await postTheme();
+            extConfig.pronouns.show[parseInt(role.name)] = role.checked
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+            await postConfig();
         })
     }
 
     let deadnames = [];
-    document.getElementById("deadnameremover").style.display = extSettings.deadnameremover.enabled ? "" : "none"
     function addDeadname() {
         let id = deadnames.length
         elem_deadnamelist.insertAdjacentHTML("beforeend", `<li id="deadname_${id}">
@@ -628,8 +595,6 @@ async function loadSettings() {
                 if (!deadname.old.value || !deadname.new.value || deadname.deleted) continue
                 valid_deadnames.push([deadname.old.value, deadname.new.value])
             }
-            extSettings.deadnameremover.names = valid_deadnames;
-            localStorage.setItem("extSettings", JSON.stringify(extSettings))
             return [valid_deadnames, amt_deadnames]
         }
         let inputs = [elem_new, elem_old];
@@ -645,8 +610,11 @@ async function loadSettings() {
             }
         })})
         inputs.forEach(item => { item.addEventListener("change", async function(evt) {
-            getValidDeadnames();
-            await postTheme();
+            let [valid_deadnames, total_deadnames] = getValidDeadnames();
+            extConfig.deadnames = valid_deadnames;
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+            await postConfig();
         })})
         elem_del.addEventListener("click", async function () {
             elem_li.style.display = "none"
@@ -656,13 +624,16 @@ async function loadSettings() {
             for (deadname of deadnames) { if (!deadname.deleted) amt_deadnames += 1 }
             if (amt_deadnames == 0) addDeadname()
             
-            getValidDeadnames();
-            await postTheme();
+            let [valid_deadnames, total_deadnames] = getValidDeadnames();
+            extConfig.deadnames = valid_deadnames;
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+            await postConfig();
         })
         return deadnames[id]
     }
     
-    for (const deadname of extSettings.deadnameremover.names) {
+    for (const deadname of extConfig.deadnames) {
         newitem = addDeadname()
         newitem.old.value = deadname[0]
         newitem.new.value = deadname[1]
@@ -675,7 +646,7 @@ async function loadSettings() {
     } else addDeadname()
 
     function updateThemeExport() {
-        elem_currenttheme.value = Object.values(JSON.parse(localStorage.getItem("timetableTheme"))).map(e => {if (e["current"] === "color") {return e["color"]}})
+        elem_currenttheme.value = Object.values(extConfig.theme).map(e => {if (e["current"] === "color") {return e["color"]}})
         .filter(e => e !== undefined)
         .map((e) => { 
             return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) 
@@ -693,13 +664,13 @@ async function loadSettings() {
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
 
-            let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-            timetableTheme[subject].color = rgbval
-            timetableTheme[subject].current = "color"
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+            extConfig.theme[subject].color = rgbval
+            extConfig.theme[subject].current = "color"
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
             colourSidebar();
             updateThemeExport();
-            await postTheme();
+            await postConfig();
         })
         // Image picker input
         row.children[1].children[1].addEventListener("change", async function(e) {
@@ -708,13 +679,14 @@ async function loadSettings() {
 
             e.target.style.border = valid_url ? "solid green 2px" : "solid red 1px"
             row.querySelector(".invalidurl").style.display = valid_url ? "none" : ""
-            let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-            timetableTheme[subject].image = valid_url ? url : null
-            timetableTheme[subject].current = valid_url ? "image" : "color"
+
+            extConfig.theme[subject].image = valid_url ? url : null
+            extConfig.theme[subject].current = valid_url ? "image" : "color"
             row.style.backgroundImage = valid_url ? "url(" + url + ")" : ""
             row.style.backgroundSize = "100% 100%"
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-            await postTheme();
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
+            await postConfig();
             
             setTimeout(function() {
                 e.target.style.border = ""
@@ -722,9 +694,7 @@ async function loadSettings() {
         })
         // Reset button
         row.children[2].children[0].addEventListener("click", async function () {
-            let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-            let defaultColours = JSON.parse(localStorage.getItem("defaultTheme"))
-            const rgbval = defaultColours[subject].color
+            const rgbval = extConfig.themedefault[subject].color
 
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -733,50 +703,53 @@ async function loadSettings() {
             row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
             row.children[1].children[1].value = ""
             
-            timetableTheme[subject] = {color: rgbval, image: null, current: "color"}
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+            extConfig.theme[subject] = {color: rgbval, image: null, current: "color"}
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
             colourSidebar();
             updateThemeExport();
-            await postTheme();
+            await postConfig();
         })
         // Image button
         row.children[3].children[0].addEventListener("click", async function () {
-            let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-            timetableTheme[subject]["current"] = "image"
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+            extConfig.theme[subject]["current"] = "image"
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
             row.children[1].children[0].style.display = "none"
             row.children[1].children[1].style.display = ""
-            row.style.backgroundImage = "url(" + timetableTheme[subject]["image"] + ")"
+            row.style.backgroundImage = "url(" + extConfig.theme[subject]["image"] + ")"
             row.style.backgroundSize = "100% 100%"
             row.children[3].children[0].style.display = "none"
             row.children[3].children[1].style.display = ""
-            await postTheme();
+            await postConfig();
         })
         // Colour button
         row.children[3].children[1].addEventListener("click", async function () {
-            let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-            timetableTheme[subject]["current"] = "color"
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+            extConfig.theme[subject]["current"] = "color"
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig))
             row.children[1].children[0].style.display = ""
             row.children[1].children[1].style.display = "none"
-            row.style.backgroundColor = timetableTheme[subject]["color"].replace("rgb", "rgba").replace(")", ", 10%)")
+            row.style.backgroundColor = extConfig.theme[subject].color.replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
             row.children[3].children[0].style.display = ""
             row.children[3].children[1].style.display = "none"
             row.querySelector(".invalidurl").style.display = "none"
-            await postTheme();
+            await postConfig();
         })
     }
     elem_themeselector.addEventListener("change", async function(evt){
         let newtheme = evt.target.value.split("-")
-        let currenttheme = JSON.parse(localStorage.getItem("defaultTheme"))
+        let currenttheme = extConfig.themedefault
         let i = 0
         for (subjectcode in currenttheme) {
             currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "color"}
             i++; if (i >= newtheme.length) { i = 0; }
         }
-        localStorage.setItem("timetableTheme", JSON.stringify(currenttheme))
-        await postTheme()
+        extConfig.theme = currenttheme;
+        extConfig.updated = Date.now();
+        localStorage.setItem("extConfig", JSON.stringify(extConfig))
+        await postConfig()
         window.location.reload()
     })
     elem_exportbtn.addEventListener("click", function () {
@@ -791,7 +764,7 @@ async function loadSettings() {
     })
     elem_importbtn.addEventListener("click", async function () {
         if (!elem_importtext.value) { return }
-        let currenttheme = JSON.parse(localStorage.getItem("defaultTheme"))
+        let currenttheme = extConfig.themedefault
         const newtheme = rgbsFromHexes(elem_importtext.value)
         if (newtheme.length == 0) { 
             elem_importbtn.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Input:</strong> Ensure the text you enter is a list of hex codes seperated by dashes or a coolors.co link.<br><br>For example: "d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4"</div>`)
@@ -805,18 +778,16 @@ async function loadSettings() {
             currenttheme[subjectcode] = {color: newtheme[i], image: null, current: "color"}
             i++; if (i >= newtheme.length) { i = 0; }
         }
-        localStorage.setItem("timetableTheme", JSON.stringify(currenttheme))
-        await postTheme();
+        extConfig.theme = currenttheme;
+        extConfig.updated = Date.now();
+        localStorage.setItem("extConfig", JSON.stringify(extConfig))
+        await postConfig();
         window.location.reload()
     })
-    elem_themereset.addEventListener("click", async function () {
-        if (!confirm("Theme Reset: This will reset all your theme colours back to original, are you sure you want to do this?")) return;
-        localStorage.removeItem("timetableTheme")
-        localStorage.removeItem("defaultTheme")
-        localStorage.removeItem("lastTimetableCache")
-        elem_updatesynccode.classList = "button disabled"
-        elem_syncstatus.innerText = "OFF"
-        elem_syncstatus.style.color = "#ff7d7d"
+    elem_resetbtn.addEventListener("click", async function () {
+        if (!confirm("Reset: This will reset all your theme colours and settings back to default, are you sure you want to do this?")) return;
+        extConfig = DEFAULT_CONFIG;
+        await timetableCache(true)
         window.location.reload()
     })
     elem_importtext.addEventListener("keyup", function () {
@@ -836,7 +807,7 @@ function dueWork() {
         const subjects = REGEXP.exec(duework.innerText)[1]?.split(",")
         if (!subjects) continue
         for (const subject of subjects) {
-            const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subject]?.color
+            const colour = extConfig.theme[subject]?.color
             if (!colour) { continue }
             const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             duework.parentNode.style.backgroundColor = colour
@@ -855,7 +826,7 @@ function colourEDiaryList() {
         eventDot.style.backgroundColor = eventDot.style.borderColor
         const subjectcode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
         if (!subjectcode) return; 
-        const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subjectcode[1]]?.color
+        const colour = extConfig.theme[subjectcode[1]]?.color
         if (!colour) return; 
         eventDot.style.borderColor = colour
         eventDot.style.backgroundColor = colour
@@ -897,7 +868,7 @@ function feedback() {
         if (REGEXP.exec(subjectrawcodes)[1]) {
             const subjectcodes = REGEXP.exec(subjectrawcodes)[1]?.split(",")
             for (const subjectcode of subjectcodes) {
-                const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subjectcode]?.color
+                const colour = extConfig.theme[subjectcode]?.color
                 if (!colour) { continue; }
                 subject.style.borderLeft = "7px solid " + colour
                 subject.style.backgroundColor = colour.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -936,7 +907,7 @@ function eDiary() {
         document.querySelectorAll(".fc-timegrid-event, .fc-daygrid-event").forEach(event => {
             const subjectcode = REGEXP.exec(event.innerText)
             if (!subjectcode) return; 
-            const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subjectcode[1]]?.color
+            const colour = extConfig.theme[subjectcode[1]]?.color
             if (!colour) return; 
             const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             event.style.backgroundColor = colour
@@ -947,7 +918,7 @@ function eDiary() {
         for (const event of document.querySelectorAll("div.fc-popover-body .fc-daygrid-event:not([recoloured])")) {
             const subjectcode = REGEXP.exec(event.innerText)
             if (!subjectcode) continue;
-            const colour = JSON.parse(localStorage.getItem("timetableTheme"))[subjectcode[1]]?.color
+            const colour = extConfig.theme[subjectcode[1]]?.color
             if (!colour) continue;
             const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             event.style.backgroundColor = colour
@@ -957,7 +928,7 @@ function eDiary() {
     }
 }
 async function mainPage() {
-    if (extSettings.compacttimetable) {
+    if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
         const body = document.querySelectorAll(".timetable td, .show-for-small-only td")
@@ -1106,7 +1077,7 @@ function timetable() {
         <a href="/settings/messages" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
     `)
 
-    if (extSettings.compacttimetable) {
+    if (extConfig.settings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
         for (const row of rows) {
             if (!TIMETABLE_WHITELIST.includes(row.querySelector("th").childNodes[0].textContent.trim())) {
@@ -1146,66 +1117,24 @@ async function getThemes() {
         })
     });
 }
-async function getTheme() {
+async function getConfig() {
     return new Promise (async ( resolve ) => {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
-        fetch(THEME_API + "/theme", { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
+        fetch(THEME_API + "/config", { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
         .then(r => r.json())
         .then(r => { resolve(r) })
     });
 }
-async function postTheme() {
+async function postConfig() {
     return new Promise (async ( resolve ) => {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
-        const body = {"settings": false,"defaultTheme": false, "theme" : false, "sbu" : schoolboxUser}
-        if (extSettings.themesync) {
-            if (!localStorage.getItem("defaultTheme")) await timetableCache()
-            body["theme"] = JSON.parse(localStorage.getItem("timetableTheme")) || false
-            body["defaultTheme"] = JSON.parse(localStorage.getItem("defaultTheme")) || false
-        }
-        body["settings"] = JSON.parse(localStorage.getItem("extSettings"))
-        fetch(THEME_API + "/theme", {
+        fetch(THEME_API + "/config", {
             method: "POST",
             headers: new Headers({
                 "Authorization": "Basic " + localStorage.getItem("userToken"),
                 "Content-Type": "application/json"
             }),
-            body: JSON.stringify(body)
+            body: JSON.stringify({"config": extConfig, "sbu": schoolboxUser})
         }).then(r => { resolve() })
-    });
-}
-async function themeSync() {
-    return new Promise (async ( resolve ) => {
-        let change = false
-        let newtheme;
-        newtheme = await getTheme();
-
-        if (newtheme.settings && JSON.stringify(newtheme.settings) != localStorage.getItem("extSettings")) {
-            localStorage.setItem("extSettings", JSON.stringify(newtheme["settings"]))
-            if (extSettings.autoreload) { change = true }
-        }
-        if (extSettings.themesync) {
-            if (newtheme.theme && JSON.stringify(newtheme.theme) != localStorage.getItem("timetableTheme")) {
-                localStorage.setItem("timetableTheme", JSON.stringify(newtheme.theme))
-                if (extSettings.autoreload) { change = true }
-                else {
-                    document.body.insertAdjacentHTML("afterend", `<div id="timetableColourToast" class="toast pop success" data-toast="">Timetable colours changed on another device. Reload to update</div>`);
-                    setTimeout(() => { document.getElementById("timetableColourToast").remove(); }, 10000)
-                }
-            }
-            let defaultTheme = JSON.parse(localStorage.getItem("defaultTheme"))
-            let currentTheme = JSON.parse(localStorage.getItem("timetableTheme"))
-            for (const subject of Object.keys(defaultTheme)) {
-                if (!currentTheme[subject]) {
-                    currentTheme[subject] = {color: defaultTheme[subject], image: null, current: "color"}
-                    localStorage.setItem("timetableTheme", JSON.stringify(currentTheme))
-                }
-            }
-        }
-        await postTheme();
-        if (extSettings.autoreload && change) {
-            window.location.reload()
-        }
-        resolve()
     });
 }
