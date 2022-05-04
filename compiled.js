@@ -22,6 +22,8 @@ const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + 
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 // List of valid pronouns
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
+// List of valid image types for timetable themes
+const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -33,6 +35,7 @@ const DEFAULT_CONFIG = {
     "version" : 1
 }
 
+let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
 
@@ -91,7 +94,7 @@ async function timetableCache(forcePush) {
     return new Promise (async ( resolve ) => {
         await remoteAuth();
         fetch('/timetable').then(r => r.text()).then(result => {
-            let timetableTheme = extConfig.theme || {}
+            let timetableTheme = Object.assign({}, extConfig.theme) || {}
             let defaultTheme = {}
             let parser = new DOMParser();
             const timetable = parser.parseFromString(result, 'text/html')
@@ -347,9 +350,11 @@ async function loadSettings() {
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${extConfig.theme[subject].current === "image" ? "background-image: url(" + extConfig.theme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td>
-                <input type="color" style="display: ${extConfig.theme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
-                <input type="url" pattern="https://.*" required placeholder="Enter Image URL" style="display: ${extConfig.theme[subject].current === "image" ? "" : "none"}" value="${extConfig.theme[subject].image === null ? "" : extConfig.theme[subject].image}">
-                <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
+                <div id="image-uploader">
+                    <input type="color" style="display: ${extConfig.theme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
+                    <input type="url" class="image-drop-zone"pattern="https://.*" required placeholder="Drag Image" style="display: ${extConfig.theme[subject].current === "image" ? "" : "none"}" value="${extConfig.theme[subject]["image"] === null ? "" : extConfig.theme[subject].image}">
+                    <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
+                </div>
             </td>
             <td style="text-align: center">
                 <a id="settingsresset" data-target="delete" data-state="closed" class="icon-refresh" title="Reset" style="vertical-align: middle; line-height: 40px"></a>
@@ -371,7 +376,7 @@ async function loadSettings() {
     if (themes) {
         themeoptions += `<option disabled selected>Click to select a theme</option>`
         for (const theme of themes) {
-            themeoptions += `<option value='${theme.theme}'>${theme.name}</option>`
+            themeoptions += `<option ${localStorage.getItem("currentTheme") === theme.name ? "selected" : ""} value='${theme.theme}'>${theme.name}</option>`
         }
     }
 
@@ -521,6 +526,7 @@ async function loadSettings() {
         })
     }
     
+    let elem_imageupload = document.getElementById("image-uploader")
     let elem_resetbtn = document.getElementById("resetbtn")
     let elem_currenttheme = document.getElementById("currenttheme")
     let elem_importtext = document.getElementById("importtext")
@@ -528,6 +534,33 @@ async function loadSettings() {
     let elem_exportbtn = document.getElementById("exportbtn")
     let elem_themeselector = document.getElementById("context-selector-themes")
     let elem_deadnamelist = document.getElementById("deadnamelist")
+    document.addEventListener("drop", async function(event) {
+        if (!event.target.classList.contains("image-drop-zone")) return;
+        event.preventDefault()
+        if (event.dataTransfer && event.dataTransfer.files) {
+            var fileType = event.dataTransfer.files[0].type;
+            if (IMAGE_TYPES.includes(fileType)) {
+                if (!localStorage.getItem("hasUploaded") && !window.confirm("This image will be stored privately on school servers under your account. Continue?")) {
+                    event.target.parentElement.style.border = "5px solid red"
+                    return
+                }
+                event.target.parentElement.style.border = "5px solid green"
+                let formData = new FormData();
+                formData.append("upload", event.dataTransfer.files[0]);
+                const url = "https://learning.stmichaels.vic.edu.au" + ((await postImage(formData)).meta.file._links.image)
+                const row = event.target.parentElement.parentElement.parentElement
+                const subject = row.querySelector("td").innerText
+                extConfig.theme[subject].image = url
+                row.style.backgroundImage = "url(" + url + ")"
+                row.style.backgroundSize = "100% 100%"
+                localStorage.setItem("extConfig", JSON.stringify(extConfig))
+                await postConfig()
+                localStorage.setItem("hasUploaded", 1)
+            } else {
+                event.target.parentElement.style.border = "5px solid red"
+            }
+        }
+    }, true)
     for (const pronoun of document.querySelectorAll("#pronoun-list input")) {
         if (extConfig.pronouns.selected.includes(pronoun.name)) {
             pronoun.checked = true
@@ -659,7 +692,7 @@ async function loadSettings() {
         const subject = row.children[0].innerText;
         // Colour picker input
         if (!row.children[1]) continue;
-        row.children[1].children[0].addEventListener("change", async function(e) {
+        row.children[1].children[0].children[0].addEventListener("change", async function(e) {
             const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
@@ -673,7 +706,7 @@ async function loadSettings() {
             await postConfig();
         })
         // Image picker input
-        row.children[1].children[1].addEventListener("change", async function(e) {
+        row.children[1].children[0].children[1].addEventListener("change", async function(e) {
             const url = e.target.value
             let valid_url = url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g) !== null && e.target.reportValidity()
 
@@ -700,8 +733,8 @@ async function loadSettings() {
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
             row.style.backgroundSize = "100% 100%"
-            row.children[1].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
-            row.children[1].children[1].value = ""
+            row.children[1].children[0].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
+            row.children[1].children[0].children[1].value = ""
             
             extConfig.theme[subject] = {color: rgbval, image: null, current: "color"}
             extConfig.updated = Date.now();
@@ -715,8 +748,8 @@ async function loadSettings() {
             extConfig.theme[subject]["current"] = "image"
             extConfig.updated = Date.now();
             localStorage.setItem("extConfig", JSON.stringify(extConfig))
-            row.children[1].children[0].style.display = "none"
-            row.children[1].children[1].style.display = ""
+            row.children[1].children[0].children[0].style.display = "none"
+            row.children[1].children[0].children[1].style.display = ""
             row.style.backgroundImage = "url(" + extConfig.theme[subject]["image"] + ")"
             row.style.backgroundSize = "100% 100%"
             row.children[3].children[0].style.display = "none"
@@ -728,8 +761,8 @@ async function loadSettings() {
             extConfig.theme[subject]["current"] = "color"
             extConfig.updated = Date.now();
             localStorage.setItem("extConfig", JSON.stringify(extConfig))
-            row.children[1].children[0].style.display = ""
-            row.children[1].children[1].style.display = "none"
+            row.children[1].children[0].children[0].style.display = ""
+            row.children[1].children[0].children[1].style.display = "none"
             row.style.backgroundColor = extConfig.theme[subject].color.replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
             row.children[3].children[0].style.display = ""
@@ -740,7 +773,8 @@ async function loadSettings() {
     }
     elem_themeselector.addEventListener("change", async function(evt){
         let newtheme = evt.target.value.split("-")
-        let currenttheme = extConfig.themedefault
+        let currenttheme = Object.assign({}, extConfig.themedefault)
+        localStorage.setItem("currentTheme", evt.target.text)
         let i = 0
         for (subjectcode in currenttheme) {
             currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "color"}
@@ -1007,6 +1041,7 @@ async function mainPage() {
     let ptvUpdating;
     let ptvExpires;
     async function updateDepartures() {
+        if (PTVDepatureUpdate === false) return;
         let departureHTML = ""; ptvUpdating = true;
         const ptvinfo = await (await fetch(`${THEME_API}/ptv/schedule`)).json();
         ptvExpires = ptvinfo.expires
@@ -1049,6 +1084,8 @@ async function mainPage() {
         document.getElementById("ptvDepartures").innerHTML = `<ul class="information-list">${departureHTML}</ul>`
         ptvUpdating = false;
     }
+    window.addEventListener("focus", function (e) { PTVDepatureUpdate = true}, false);
+    window.addEventListener("blur", function (e) { PTVDepatureUpdate = false }, false);
     function updateDepartureTimes() {
         if (ptvUpdating) return
         if (ptvExpires < new Date().getTime()) return updateDepartures();
@@ -1110,11 +1147,19 @@ async function remoteAuth() {
         })
     });
 }
+function postImage(image) {
+    return new Promise( (resolve) => {
+        fetch("https://learning.stmichaels.vic.edu.au/storage/asyncUpload.php", {
+            method: "POST",
+            body: image
+        }).then(async r => { resolve(await r.json()) })
+    });
+}
 async function getThemes() {
     return new Promise (( resolve ) => {
-        fetch(THEME_API + "/themes").then(r => {
-            resolve(r.json())
-        })
+        fetch(THEME_API + "/themes")
+        .then(r => r.json())
+        .then(r => { resolve(r) })
     });
 }
 async function getConfig() {
