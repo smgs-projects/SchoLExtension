@@ -333,7 +333,6 @@ function profilePage() {
         { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
     .then(r => r.json())
     .then(r => { 
-        console.log(r)
         let pronouns = r.join(", ")
         const profileRow = document.querySelector(".main .profile.content .row");
         profileRow.style.position = "relative";
@@ -352,7 +351,7 @@ async function loadSettings() {
             <td>
                 <div id="image-uploader">
                     <input type="color" style="display: ${extConfig.theme[subject].current === "image" ? "none" : ""}" value="${hexvalue}">
-                    <input type="url" class="image-drop-zone"pattern="https://.*" required placeholder="Drag Image" style="display: ${extConfig.theme[subject].current === "image" ? "" : "none"}" value="${extConfig.theme[subject]["image"] === null ? "" : extConfig.theme[subject].image}">
+                    <input type="url" class="image-drop-zone"pattern="https://.*" required placeholder="Drag Image Here" style="display: ${extConfig.theme[subject].current === "image" ? "" : "none"}" value="${extConfig.theme[subject]["image"] === null ? "" : extConfig.theme[subject].image}">
                     <p style="display: none; color: red" class="invalidurl">Not a valid URL</p>
                 </div>
             </td>
@@ -774,7 +773,8 @@ async function loadSettings() {
     elem_themeselector.addEventListener("change", async function(evt){
         let newtheme = evt.target.value.split("-")
         let currenttheme = Object.assign({}, extConfig.themedefault)
-        localStorage.setItem("currentTheme", evt.target.text)
+        console.log(evt.target)
+        localStorage.setItem("currentTheme", evt.target.value)
         let i = 0
         for (subjectcode in currenttheme) {
             currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "color"}
