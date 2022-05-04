@@ -774,7 +774,7 @@ async function loadSettings() {
         let newtheme = evt.target.value.split("-")
         let currenttheme = Object.assign({}, extConfig.themedefault)
         console.log(evt.target)
-        localStorage.setItem("currentTheme", evt.target.value)
+        localStorage.setItem("currentTheme", elem_themeselector.options[elem_themeselector.selectedIndex].text)
         let i = 0
         for (subjectcode in currenttheme) {
             currenttheme[subjectcode] = {color: "rgb(" + hexToRgb(newtheme[i]) + ")", image: null, current: "color"}
