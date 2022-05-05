@@ -4,6 +4,7 @@
 //   _,.-'`_ o `;__,
 //    _.-'` '---'  '
 //
+// Latest available code: https://rcja.app/smgsapi/compiled.js
 
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
@@ -36,7 +37,7 @@ async function load() {
     if (typeof schoolboxUser == "undefined") return;
     try {
         extSettings = Object.assign({}, extSettings, JSON.parse(localStorage.getItem("extSettings")))
-        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings")) {
+        if (JSON.stringify(extSettings) != localStorage.getItem("extSettings") && localStorage.getItem("extSettings")?.themesync) {
             localStorage.setItem("extSettings", JSON.stringify(extSettings))
             await postTheme();
         }
@@ -49,7 +50,6 @@ async function load() {
         localStorage.removeItem("extSettings");
         localStorage.removeItem("userToken");
         localStorage.removeItem("lastUser");
-        window.location.reload()
     }
     // Update outdated localStorage colours
     if (localStorage.getItem("timetableColours")) {
@@ -63,11 +63,23 @@ async function load() {
         localStorage.removeItem("timetableColoursDefault")
         await postTheme()
     }
-    for (const subject of Object.values(JSON.parse(localStorage.getItem("timetableTheme")) || {})) {
-        if (!subject.color || !subject.current || typeof(subject.color) !== "string") {
+    let timetableTheme = JSON.parse(localStorage.getItem("timetableTheme"));
+    for (const subject of Object.keys(timetableTheme || {})) {
+        if (!timetableTheme[subject].color || !timetableTheme[subject].current || typeof(timetableTheme[subject].color) !== "string") {
             localStorage.removeItem("timetableTheme")
-            window.location.reload()
+            await timetableCache()
+            await postTheme()
         }
+        if (timetableTheme[subject].current == "colour") {
+            timetableTheme[subject].current = "color"
+            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+            await postTheme()
+        }
+    }
+    if (!extSettings.deadnameremover?.names) {
+        extSettings.deadnameremover = {"enabled": 1, "names": []}
+        localStorage.setItem("extSettings", "")
+        await postTheme();
     }
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("defaultTheme");
@@ -117,9 +129,12 @@ async function timetableCache() {
                         timetableTheme[subject] = defaultTheme[subject]
                     }
                 }
-                localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
-                localStorage.setItem("lastTimetableCache", Date.now()) // For recaching
-                localStorage.setItem("lastUser", schoolboxUser.id) // For recaching if user switch
+                localStorage.setItem("lastTimetableCache", Date.now())
+                localStorage.setItem("lastUser", schoolboxUser.id)
+                if (localStorage.getItem("timetableTheme") != JSON.stringify(timetableTheme)) {
+                    localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
+                    postTheme().then(r => { return resolve() });
+                }
                 resolve()
             })
         } else {
@@ -526,13 +541,13 @@ async function loadSettings() {
     
     if (!localStorage.getItem("extSettings")) { localStorage.setItem("extSettings", JSON.stringify(extSettings)); }
 
-    for (setting in settings) {
-        toggle_setting = document.getElementById("toggle_" + setting)
+    for (const setting in settings) {
+        const toggle_setting = document.getElementById("toggle_" + setting)
         if (extSettings[setting]) { toggle_setting.setAttribute("checked", 1) }
         else { toggle_setting.removeAttribute("checked", 1) }
 
         toggle_setting.addEventListener("change", async function () {
-            if (toggle_setting == "deadnameremover") {
+            if (setting == "deadnameremover") {
                 document.getElementById("deadnameremover").style.display = toggle_setting.checked ? "" : "none"
                 extSettings.deadnameremover.enabled = toggle_setting.checked;
             } else { extSettings[setting] = toggle_setting.checked; }
@@ -781,7 +796,6 @@ async function loadSettings() {
             row.children[1].children[0].children[1].style.display = "none"
             row.style.backgroundColor = timetableTheme[subject]["color"].replace("rgb", "rgba").replace(")", ", 10%)")
             row.style.backgroundImage = ""
-            localStorage.setItem("timetableTheme", JSON.stringify(timetableTheme))
             row.children[3].children[0].style.display = ""
             row.children[3].children[1].style.display = "none"
             row.querySelector(".invalidurl").style.display = "none"
