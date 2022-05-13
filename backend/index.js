@@ -11,6 +11,8 @@ import jwt from "jsonwebtoken";
 import path from "path";
 dotenv.config();
 
+const SERVER_VERSION = 1;
+
 const __dirname = path.resolve();
 
 const valid_pronouns = {
@@ -55,7 +57,8 @@ app.get("/smgsapi/themes", async function(req, res, next) {
         catch(error) { console.error(error); res.sendStatus(500); }
     })
 })
-app.get("/smgsapi/theme", async function(req, res, next) {
+
+app.get("/smgsapi/config", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -64,14 +67,19 @@ app.get("/smgsapi/theme", async function(req, res, next) {
             try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
             catch { return res.sendStatus(403); }
 
-            let [theme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
-            if (!theme || theme.length < 1) return res.json({})
-            res.json({theme: JSON.parse(theme[0]["theme"]), settings: JSON.parse(theme[0]["settings"])});
+            let [config] = await promisePool.execute("SELECT * FROM configs WHERE id = ?", [tokenData.id]);
+            if (!config || config.length < 1) return res.json({updated: 0, version: SERVER_VERSION})
+
+            let userConfig = JSON.parse(config[0]["config"]);
+            // FANCY STUFF TO ENSURE USERCONFIG IS UP TO DATE GOES HERE]
+                // IF ANY UPDATES OCCUR, SET userConfig.updated = Date.now();
+            userConfig.version = SERVER_VERSION;
+            return res.json(userConfig);
         }
         catch(error) { console.error(error); return res.sendStatus(500); }
     })
 })
-app.post("/smgsapi/theme", async function(req, res, next) {
+app.post("/smgsapi/config", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -80,25 +88,23 @@ app.post("/smgsapi/theme", async function(req, res, next) {
             try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
             catch { return res.sendStatus(403); }
 
-            const defaultTheme = req.body["defaultTheme"]
-            const theme = req.body["theme"]
-            const settings = req.body["settings"]
-            if (!settings && settings !== false) return res.sendStatus(400)
-            if (!theme && theme !== false) return res.sendStatus(400)
-            for (const subject of Object.values(theme)) {
-                if (ValidateRGB(subject.color) === false) return res.sendStatus(400)
+            const userConfig = req.body["config"]
+            if (!userConfig && userConfig !== false) return res.sendStatus(400)
+            if (userConfig.version != SERVER_VERSION) return res.status(400).send("Version Mismatch")
+            for (const subject of Object.values(userConfig.theme)) {
+                if (ValidateRGB(subject.color) === false) return res.status(400).send("Invalid RGB")
             }
-            settings.pronouns.selected = settings.pronouns.selected.filter(e => valid_pronouns[e])
-            if (settings.pronouns.show.length != 3) settings.pronouns.show = [1, 1, 1]
+            userConfig.pronouns.selected = userConfig.pronouns.selected.filter(e => valid_pronouns[e])
+            if (userConfig.pronouns.show.length != 3) userConfig.pronouns.show = [1, 1, 1]
 
-            const [existingtheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
+            const [existingtheme] = await promisePool.execute("SELECT * FROM configs WHERE id = ?", [tokenData.id]);
             if (!existingtheme || existingtheme.length < 1) { 
-                promisePool.execute("INSERT INTO themes (id, sbid, sbu, defaults, theme, settings) VALUES (?, ?, ?, ?, ?, ?);", [tokenData.id, req.body.sbu.id, JSON.stringify(req.body.sbu), JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings)]);
+                promisePool.execute("INSERT INTO configs (id, sbid, role, config) VALUES (?, ?, ?, ?);", [tokenData.id, req.body.sbu.id, req.body.sbu.role.student ? 0 : req.body.sbu.role.staff ? 1 : 2, JSON.stringify(userConfig)]);
             } else {
-                await promisePool.execute("UPDATE themes SET sbu = ?, sbid = ?, defaults = ?, theme = ?, settings = ? WHERE id = ?", [JSON.stringify(req.body.sbu), req.body.sbu.id, JSON.stringify(defaultTheme), JSON.stringify(theme), JSON.stringify(settings), tokenData.id]);
+                await promisePool.execute("UPDATE configs SET sbid = ?, role = ?, config = ? WHERE id = ?", [req.body.sbu.id, req.body.sbu.role.student ? 0 : req.body.sbu.role.staff ? 1 : 2, JSON.stringify(userConfig), tokenData.id]);
             }
             res.sendStatus(200)
-        } 
+        }
         catch (error) { console.error(error); return res.sendStatus(500); }
     })
 })
@@ -111,15 +117,13 @@ app.get("/smgsapi/pronouns/:userid", async function(req, res, next) {
             try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
             catch { return res.sendStatus(403); }
 
-            const [reqTheme] = await promisePool.execute("SELECT * FROM themes WHERE id = ?", [tokenData.id]);
-            const [userTheme] = await promisePool.execute("SELECT * FROM themes WHERE sbid = ?", [req.params.userid]);
+            const [reqTheme] = await promisePool.execute("SELECT * FROM configs WHERE id = ?", [tokenData.id]);
+            const [userTheme] = await promisePool.execute("SELECT * FROM configs WHERE sbid = ?", [req.params.userid]);
             if (!reqTheme || reqTheme.length < 1) return res.send("[]")
             if (!userTheme || userTheme.length < 1) return res.send("[]")
-
-            let sbu = JSON.parse(reqTheme[0]["sbu"])
-            let userSettings = JSON.parse(userTheme[0]["settings"])
-            if (userSettings.pronouns.show[sbu.role.student ? 0 : sbu.role.staff ? 1 : 2] || req.params.userid == sbu.id) {
-                return res.send(userSettings.pronouns.selected.map(e => valid_pronouns[e]))
+            let userConfig = JSON.parse(userTheme[0].config)
+            if (userConfig.pronouns.show[parseInt(reqTheme[0].role)] || req.params.userid == reqTheme[0].sbid) {
+                return res.send(userConfig.pronouns.selected.map(e => valid_pronouns[e]))
             }
             return res.send("[]")
         } 
