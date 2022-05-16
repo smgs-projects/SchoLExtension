@@ -32,14 +32,12 @@ INSERT INTO `serverthemes` (`name`, `theme`) VALUES
 ("The (Lucy) Jones", "FCFDAC-B19276-7D84A0-D7EFFC-F5A3A2-99A77F-EAA3E8-ECBE8A-FBEEB6-CFF5F-BCB09D-ACDEF"),
 ("The Kellaway", "000000-FFFFFF-CF5C42-E76E4A-FF7F51-FF8D53-FF9B54");
 
-CREATE TABLE `themes` (
+CREATE TABLE `configs` (
   `id` varchar(64) NOT NULL,
   `sbid` varchar(64) NOT NULL,
-  `sbu` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`sbu`)),
-  `defaults` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`defaults`)),
-  `theme` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`theme`)),
-  `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`settings`))
+  `role` varchar(64) NOT NULL,
+  `config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`config`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-ALTER TABLE `themes`
+ALTER TABLE `configs`
   ADD PRIMARY KEY (`id`);
