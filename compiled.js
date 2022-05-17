@@ -40,7 +40,7 @@ let extConfigSvr;
 let extConfig;
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
-else { window.addEventListener('load', () => { load() }); }
+else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
@@ -230,14 +230,9 @@ async function allPages() {
             else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
         }
     }
-    // Add Timetable link to profile dropdown (only if timetable exists in navbar already)
-    let tt_links = document.querySelectorAll(".icon-timetable")
-    for (e of tt_links) {
-        if (e.innerText.includes("Timetable")) {
-            document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
-            break
-        }
-    }
+    // Add Timetable link to profile dropdown
+    document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
+    
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -962,6 +957,11 @@ function eDiary() {
     }
 }
 async function mainPage() {
+    if (!document.querySelector("h2[data-timetable-header]")) {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+        .then(r=>r.json())
+        .then(r=>document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`))
+    }
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -973,7 +973,7 @@ async function mainPage() {
             }
         }
     }
-    document.querySelector(".awardsComponent").insertAdjacentHTML("afterend", `
+    (document.querySelector(".awardsComponent") || document.querySelector("#component62394"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
