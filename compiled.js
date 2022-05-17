@@ -962,6 +962,11 @@ function eDiary() {
     }
 }
 async function mainPage() {
+    if (!document.querySelector("h2[data-timetable-header]")) {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+        .then(r=>r.json())
+        .then(r=>document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`))
+    }
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
