@@ -230,14 +230,9 @@ async function allPages() {
             else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
         }
     }
-    // Add Timetable link to profile dropdown (only if timetable exists in navbar already)
-    let tt_links = document.querySelectorAll(".icon-timetable")
-    for (e of tt_links) {
-        if (e.innerText.includes("Timetable")) {
-            document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
-            break
-        }
-    }
+    // Add Timetable link to profile dropdown
+    document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
+    
     colourSidebar();
     colourTimetable();
     colourDuework();
@@ -978,7 +973,7 @@ async function mainPage() {
             }
         }
     }
-    document.querySelector(".awardsComponent").insertAdjacentHTML("afterend", `
+    (document.querySelector(".awardsComponent") || document.querySelector("#component62394"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
