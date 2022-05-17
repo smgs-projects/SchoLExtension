@@ -14,12 +14,3 @@ Click on the "Load unpacked" button and select the folder extracted from the zip
 ![Developer mode](https://i.ibb.co/Sv0KKst/Chrome-Extensions.png)
 
 Select the extension folder when asked, the extension will then be enabled!
-
-## Current Features
-☑️ Colour consistency across pages<br/>
-☑️ Remove blank timetable items but keeps free periods<br/>
-☑️ Adds class colours to due work<br/>
-☑️ Adds notification search bar<br/>
-☑️ Adds the ability to change class colour<br/>
-☑️ Adds general colour to pages<br/>
-☑️ Adds option to change timetable colours<br/>
