@@ -16,6 +16,8 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
 const THEME_API = "https://rcja.app/smgsapi"
+//SOTD RSS field
+const RSS_SOTD = "https://learning.stmichaels.vic.edu.au/news/feed/2c2bf5c72b930649d2a43a203/17183"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -775,7 +777,6 @@ async function loadSettings() {
     elem_themeselector.addEventListener("change", async function(evt){
         let newtheme = evt.target.value.split("-")
         let currenttheme = Object.assign({}, extConfig.themedefault)
-        console.log(evt.target)
         localStorage.setItem("currentTheme", elem_themeselector.options[elem_themeselector.selectedIndex].text)
         let i = 0
         for (subjectcode in currenttheme) {
@@ -1101,7 +1102,24 @@ async function mainPage() {
     updateDepartures();
     setInterval(updateDepartures, 3000)
     setInterval(updateDepartureTimes, 1000)
-   
+    //SOTD UPDATE
+    const item = (await (getSTOD())).querySelector("item")
+    const articlehtml = item.querySelector("description")
+    console.log(item)
+    document.querySelector(".awardsComponent").insertAdjacentHTML("afterend", `
+    <div class="component-container">
+        <div class="row">
+            <div class="small-12 island">
+                <h2 class="subheader">SOTD🎧🔥</h2>
+                <section class="content" id="sotdWidget">
+                    <article>
+                        ${articlehtml.textContent.replace(/<img[^>]*>/g, "")}
+                        <br><strong><a href="${item.querySelector("guid").textContent}">Click here to view the SchoL post</a></strong>
+                    </article>
+                </section>
+            </div>
+        </div>
+    </div>`)
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
 
@@ -1142,7 +1160,14 @@ function timetable() {
         }
     }
 }
-
+async function getSTOD() {
+    return new Promise(async (resolve) => {
+        fetch(RSS_SOTD)
+            .then(r => r.text())
+            .then(r => new window.DOMParser().parseFromString(r, "text/xml"))
+            .then(r => resolve(r))
+    })
+}
 async function remoteAuth() {
     return new Promise (( resolve ) => {
         fetch(REMOTE_API).then(r => r.json()).then(result => {
