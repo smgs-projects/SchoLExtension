@@ -40,7 +40,7 @@ let extConfigSvr;
 let extConfig;
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
-else { window.addEventListener('load', () => { load() }); }
+else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
