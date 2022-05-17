@@ -5,7 +5,7 @@ Various quality of life upgrades for SchoL (SMGS SchoolBox)
 This also serves as a chrome extension for testing purposes
 
 ```bash
-git clone https://github.com/cowbilet/SchoLExtension
+git clone https://github.com/smgs-projects/SchoLExtension
 ```
 
 ## Installing on SchoolBox
