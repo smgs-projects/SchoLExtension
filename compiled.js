@@ -488,7 +488,7 @@ async function loadSettings() {
                     <legend><strong>Dead Name Remover</strong></legend>
                     <div class="small-12 columns">
                         <p>Enter a dead name to replace across SchoL, the input boxes are CAse-sENSitiVE
-                            <br>Use full names to prevent renaming other students <i style="color: #888">(eg. "Zac McWilliam" instead of "Zac" prevents all Zac's getting renamed)</i>
+                            <br>Use full names to prevent renaming other students <i style="color: #888">(eg. "${schoolboxUser.fullName}" instead of "${schoolboxUser.firstname}" prevents all ${schoolboxUser.firstname}'s getting renamed)</i>
                         </p>
                     </div>
                     <div class="small-12 columns">
@@ -496,7 +496,7 @@ async function loadSettings() {
                     </div>
                     <div class="small-12 columns">
                         <p class="meta"><strong>Note: </strong>Only you will see changes made here, it will not show for other students/staff</p>
-                        <p class="meta">This is not guranteed to work everywhere, <a href="mailto:zmcwilliam@stmichaels.vic.edu.au, staylor@stmichaels.vic.edu.au">contact us</a> if you find any problems.</p>
+                        <p class="meta">This is not guaranteed to work everywhere, <a href="mailto:zmcwilliam@stmichaels.vic.edu.au, staylor@stmichaels.vic.edu.au">contact us</a> if you find any problems.</p>
                     </div>
                 </fieldset>
                 <div class="component-action">
