@@ -460,7 +460,7 @@ async function loadSettings() {
                 </fieldset>
                 <fieldset class="content">
                     <div class="small-12 columns">
-                        <p style="text-align: center">The dead name remover has been removed by request from the school.</p>
+                        <p style="text-align: center">The dead name replacer functionality has been disabled by request from the school.</p>
                     </div>
                 </fieldset>
                 <div class="component-action">
