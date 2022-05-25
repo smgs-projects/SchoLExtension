@@ -11,7 +11,7 @@ import jwt from "jsonwebtoken";
 import path from "path";
 dotenv.config();
 
-const SERVER_VERSION = 1;
+const SERVER_VERSION = 2;
 
 const __dirname = path.resolve();
 
