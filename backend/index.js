@@ -158,10 +158,4 @@ app.get("/smgsapi/auth", async function (req, res, next) {
     res.json({token: jwt.sign({id: req.query.id, user: req.query.user}, process.env.SECRET)});
 })
 
-// Tools Redirect
-
-app.all("*", function(req, res) {
-    res.redirect(301, "https://tools.robocupjunior.org.au"  + req.url);
-})    
-
 https.createServer(certOptions, app).listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) });
