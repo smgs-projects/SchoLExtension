@@ -4,6 +4,7 @@ import cors from "cors";
 import mysql from "mysql2";
 import dotenv from "dotenv";
 import morgan from "morgan";
+import http from "http";
 import https from "https";
 import fs from "fs";
 import sha1 from "sha1";
@@ -158,10 +159,9 @@ app.get("/smgsapi/auth", async function (req, res, next) {
     res.json({token: jwt.sign({id: req.query.id, user: req.query.user}, process.env.SECRET)});
 })
 
-// Tools Redirect
+https.createServer(certOptions, app).listen(process.env.HTTPS_PORT, () => { console.log(`App listening on port ${process.env.HTTPS_PORT}`) });
 
-app.all("*", function(req, res) {
-    res.redirect(301, "https://tools.robocupjunior.org.au"  + req.url);
-})    
-
-https.createServer(certOptions, app).listen(process.env.PORT, () => { console.log(`App listening on port ${process.env.PORT}`) });
+http.createServer((req, res) => {
+    res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+    res.end();
+}).listen(process.env.HTTP_PORT);

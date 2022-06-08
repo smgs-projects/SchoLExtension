@@ -4,7 +4,7 @@
 //   _,.-'`_ o `;__,
 //    _.-'` '---'  '
 //
-// Latest available code: https://rcja.app/smgsapi/compiled.js
+// Latest available code: https://apps.stmichaels.vic.edu.au/scholext/compiled.js
 
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
@@ -15,9 +15,9 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "https://apps.stmichaels.vic.edu.au/scholext"
 // SchoL Remote Service API Link
-const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
+const REMOTE_API = "/modules/remote/" + btoa("https://apps.stmichaels.vic.edu.au/scholext/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 // List of valid pronouns
