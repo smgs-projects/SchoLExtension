@@ -4,7 +4,7 @@
 //   _,.-'`_ o `;__,
 //    _.-'` '---'  '
 //
-// Latest available code: https://rcja.app/smgsapi/compiled.js
+// Latest available code: https://apps.stmichaels.vic.edu.au/scholext/compiled.js
 
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
@@ -15,9 +15,9 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
-const THEME_API = "https://rcja.app/smgsapi"
+const THEME_API = "https://apps.stmichaels.vic.edu.au/scholext"
 // SchoL Remote Service API Link
-const REMOTE_API = "/modules/remote/" + btoa("https://rcja.app/smgsapi/auth") + "/window"
+const REMOTE_API = "/modules/remote/" + btoa("https://apps.stmichaels.vic.edu.au/scholext/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
 const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
 // List of valid pronouns
@@ -30,9 +30,8 @@ const DEFAULT_CONFIG = {
     "themedefault" : {},
     "settings" : {"colourduework":1,"compacttimetable":1},
     "pronouns" : {"selected":[],"show":[1,1,1]},
-    "deadnames" : [],
     "updated" : 0,
-    "version" : 1
+    "version" : 2
 }
 
 let PTVDepatureUpdate = true;
@@ -40,7 +39,7 @@ let extConfigSvr;
 let extConfig;
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
-else { window.addEventListener('load', () => { load() }); }
+else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
@@ -87,7 +86,6 @@ async function load() {
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
     if (window.location.pathname.startsWith("/settings/messages")) await loadSettings();
-    if (extConfig.deadnames.length > 0) deadNameRemover();
 }
 
 async function timetableCache(forcePush) {
@@ -230,42 +228,13 @@ async function allPages() {
             else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
         }
     }
-    // Add Timetable link to profile dropdown (only if timetable exists in navbar already)
-    let tt_links = document.querySelectorAll(".icon-timetable")
-    for (e of tt_links) {
-        if (e.innerText.includes("Timetable")) {
-            document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
-            break
-        }
-    }
+    // Add Timetable link to profile dropdown
+    document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
+    
     colourSidebar();
     colourTimetable();
     colourDuework();
     setTimeout(colourDuework, 1000) // Some pages require extra loading time
-}
-
-function replaceDeadNames(element, dead, preferred) {
-    for (let node of element.childNodes) {
-        if (["SCRIPT", "STYLE"].includes(node.nodeName)) continue;
-        switch (node.nodeType) {
-            case Node.ELEMENT_NODE:
-                replaceDeadNames(node, dead, preferred);
-                break;
-            case Node.TEXT_NODE:
-                for (let i=0; i<dead.length; i++) {
-                    node.textContent = node.textContent.replace(new RegExp(dead[i], "g"), preferred[i]);
-                }
-                break;
-            case Node.DOCUMENT_NODE:
-                replaceDeadNames(node, dead, preferred);
-        }
-    }
-}
-
-function deadNameRemover() {
-    let deadnames = extConfig.deadnames.map(e => { return e[0] })
-    let preferrednames = extConfig.deadnames.map(e => { return e[1] })
-    replaceDeadNames(document.body, deadnames, preferrednames)
 }
 
 function colourSidebar() {
@@ -489,19 +458,9 @@ async function loadSettings() {
                         <table class="no-margin"><tbody>${settingselems}</tbody></table>
                     </div>
                 </fieldset>
-                <fieldset class="content" id="deadnameremover">
-                    <legend><strong>Dead Name Remover</strong></legend>
+                <fieldset class="content">
                     <div class="small-12 columns">
-                        <p>Enter a dead name to replace across SchoL, the input boxes are CAse-sENSitiVE
-                            <br>Use full names to prevent renaming other students <i style="color: #888">(eg. "Zac McWilliam" instead of "Zac" prevents all Zac's getting renamed)</i>
-                        </p>
-                    </div>
-                    <div class="small-12 columns">
-                        <ul class="information-list unsortable" id="deadnamelist"></ul>
-                    </div>
-                    <div class="small-12 columns">
-                        <p class="meta"><strong>Note: </strong>Only you will see changes made here, it will not show for other students/staff</p>
-                        <p class="meta">This is not guranteed to work everywhere, <a href="mailto:zmcwilliam@stmichaels.vic.edu.au, staylor@stmichaels.vic.edu.au">contact us</a> if you find any problems.</p>
+                        <p style="text-align: center">The dead name replacer functionality has been disabled by request from the school.</p>
                     </div>
                 </fieldset>
                 <div class="component-action">
@@ -532,7 +491,6 @@ async function loadSettings() {
     let elem_importbtn = document.getElementById("importbtn")
     let elem_exportbtn = document.getElementById("exportbtn")
     let elem_themeselector = document.getElementById("context-selector-themes")
-    let elem_deadnamelist = document.getElementById("deadnamelist")
     document.addEventListener("drop", async function(event) {
         if (!event.target.classList.contains("image-drop-zone")) return;
         event.preventDefault()
@@ -593,89 +551,6 @@ async function loadSettings() {
             await postConfig();
         })
     }
-
-    let deadnames = [];
-    function addDeadname() {
-        let id = deadnames.length
-        elem_deadnamelist.insertAdjacentHTML("beforeend", `<li id="deadname_${id}">
-            <div class="actions-small-1">
-                <div class="list-item">
-                    <div class="small-12 medium-6 column">
-                        <label><span class="hide-for-medium-up">Name to replace</span>
-                        <input type="text" placeholder="Name to replace (Old)" id="deadnameold_${id}"></label>
-                    </div>
-                    <div class="small-12 medium-6 column">
-                        <label><span class="hide-for-medium-up">Preferred name</span>
-                        <input type="text" placeholder="Preferred name (New)" id="deadnamenew_${id}"></label>
-                    </div>
-                </div>
-                <nav><a id="deadnamedel_${id}" class="icon-delete" title="Delete" style="vertical-align: middle; line-height: 63px; display: none"></a></nav>
-            </div>
-        </li>`)
-        let elem_li = document.getElementById("deadname_" + id)
-        let elem_old = document.getElementById("deadnameold_" + id)
-        let elem_new = document.getElementById("deadnamenew_" + id)
-        let elem_del = document.getElementById("deadnamedel_" + id)
-        deadnames.push({deleted: 0, li: elem_li, old: elem_old, new: elem_new, del: elem_del})
-
-        function getValidDeadnames() {
-            let amt_deadnames = 0;
-            let valid_deadnames = [];
-            for (deadname of deadnames) {
-                deadname.del.style.display = (deadname.old.value || deadname.new.value) ? "" : "none"
-                if (!deadname.deleted) amt_deadnames += 1
-                if (!deadname.old.value || !deadname.new.value || deadname.deleted) continue
-                valid_deadnames.push([deadname.old.value, deadname.new.value])
-            }
-            return [valid_deadnames, amt_deadnames]
-        }
-        let inputs = [elem_new, elem_old];
-        inputs.forEach(item => { item.addEventListener("keyup", async function(evt) {
-            const last = deadnames[deadnames.length - 1]
-            let [valid_deadnames, total_deadnames] = getValidDeadnames();
-            
-            if (valid_deadnames.length == total_deadnames) {
-                addDeadname()
-            } else if (!last.old.value && !last.new.value && valid_deadnames.length != total_deadnames - 1) {
-                last.li.style.display = "none"
-                deadnames[deadnames.length - 1].deleted = 1
-            }
-        })})
-        inputs.forEach(item => { item.addEventListener("change", async function(evt) {
-            let [valid_deadnames, total_deadnames] = getValidDeadnames();
-            extConfig.deadnames = valid_deadnames;
-            extConfig.updated = Date.now();
-            localStorage.setItem("extConfig", JSON.stringify(extConfig))
-            await postConfig();
-        })})
-        elem_del.addEventListener("click", async function () {
-            elem_li.style.display = "none"
-            deadnames[id].deleted = 1
-            
-            let amt_deadnames = 0;
-            for (deadname of deadnames) { if (!deadname.deleted) amt_deadnames += 1 }
-            if (amt_deadnames == 0) addDeadname()
-            
-            let [valid_deadnames, total_deadnames] = getValidDeadnames();
-            extConfig.deadnames = valid_deadnames;
-            extConfig.updated = Date.now();
-            localStorage.setItem("extConfig", JSON.stringify(extConfig))
-            await postConfig();
-        })
-        return deadnames[id]
-    }
-    
-    for (const deadname of extConfig.deadnames) {
-        newitem = addDeadname()
-        newitem.old.value = deadname[0]
-        newitem.new.value = deadname[1]
-        newitem.del.style.display = ""
-    }
-    if (deadnames.length == 0) {
-        newitem = addDeadname()
-        newitem.old.value = schoolboxUser.fullName;
-        newitem.del.style.display = ""
-    } else addDeadname()
 
     function updateThemeExport() {
         elem_currenttheme.value = Object.values(extConfig.theme).map(e => {if (e["current"] === "color") {return e["color"]}})
@@ -962,6 +837,11 @@ function eDiary() {
     }
 }
 async function mainPage() {
+    if (!document.querySelector("h2[data-timetable-header]")) {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+        .then(r=>r.json())
+        .then(r=>document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`))
+    }
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -973,7 +853,7 @@ async function mainPage() {
             }
         }
     }
-    document.querySelector(".awardsComponent").insertAdjacentHTML("afterend", `
+    (document.querySelector(".awardsComponent") || document.querySelector("#component62394"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
