@@ -16,8 +16,8 @@ const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Pe
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
 //SOTD RSS field
-const RSS_SOTD = "https://learning.stmichaels.vic.edu.au/news/feed/2c2bf5c72b930649d2a43a203/17183"
-const THEME_API = "https://apps.stmichaels.vic.edu.au/scholext"
+const RSS_SOTD = "https://learning.stmichaels.vic.edu.au/news/feed/2c2bf5c72b930649d2a43a203/16586"
+const THEME_API = "https://apps.stmichaels.vic.edu.au/smgsapi"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://apps.stmichaels.vic.edu.au/scholext/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
@@ -840,6 +840,9 @@ function eDiary() {
     }
 }
 async function mainPage() {
+    if (await doesPrinterWork() === false) {
+        document.getElementById("component63192").remove()
+    }
     if (!document.querySelector("h2[data-timetable-header]")) {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
         .then(r=>r.json())
@@ -984,8 +987,8 @@ async function mainPage() {
     setInterval(updateDepartureTimes, 1000)
     //SOTD UPDATE
     const item = (await (getSTOD())).querySelector("item")
+    console.log(await (getSTOD()))
     const articlehtml = item.querySelector("description")
-    console.log(item)
     document.querySelector(".awardsComponent").insertAdjacentHTML("afterend", `
     <div class="component-container">
         <div class="row">
@@ -1090,5 +1093,13 @@ async function postConfig() {
             }),
             body: JSON.stringify({"config": extConfig, "sbu": schoolboxUser})
         }).then(r => { resolve() })
+    });
+}
+async function doesPrinterWork() {
+    return new Promise(async (resolve, reject) => {
+        fetch("https://print.stmichaels.vic.edu.au/", {
+            method: "GET",
+        }).then(r => { resolve(true) })
+        .catch(r => { resolve(false) })
     });
 }
