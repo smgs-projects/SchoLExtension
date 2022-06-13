@@ -293,6 +293,9 @@ section > article {
     background-color: black !important;
     color: #00b786 !important;
 }
+thead th:nth-child(1) {
+    background-color: red !important;
+}
 article > div {
     color: white !important;
 }
@@ -304,4 +307,13 @@ article > div {
 }
 .information-list { 
     background-color: black !important;
+}
+.read,.unread{
+    background-color: rgb(35,35,35) !important;
+}
+th:has(time) {
+    background-color: rgba(45,45,45)!important;
+}
+.tabs {
+    background-color: rgba(35,35,35) !important;
 }
