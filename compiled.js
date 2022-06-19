@@ -388,7 +388,7 @@ async function loadSettings() {
                 <fieldset class="content">
                     <legend><strong>Preferred Pronouns</strong></legend>
                     <div class="small-12 columns">
-                        <p>Select your preferred pronouns, these will be shown to other people when they visit your profile page!</p>
+                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - nothing this is not currrently reflected on School records or in an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
                     </div>
                     <div class="small-12 medium-6 columns">
                         <fieldset class="content">
@@ -412,6 +412,9 @@ async function loadSettings() {
                                 </div>
                             </label>
                         </fieldset>
+                    </div>
+                    <div class="small-12 columns">
+                        <p class="meta"><strong>Note: </strong>To make official changes of names to a student's records, there is a process that parents need to follow by contacting the Head of the School.</p>
                     </div>
                 </fieldset>
             </section>
@@ -458,17 +461,15 @@ async function loadSettings() {
                         <table class="no-margin"><tbody>${settingselems}</tbody></table>
                     </div>
                 </fieldset>
-                <fieldset class="content">
-                    <div class="small-12 columns">
-                        <p style="text-align: center">The dead name replacer functionality has been disabled by request from the school.</p>
-                    </div>
-                </fieldset>
                 <div class="component-action">
                     <section>
                         <a class="button" style="color: #ff5555;" id="resetbtn">Reset</a>
                     </section>
                 </div>
             </section>
+            <ul class="meta" style="font-size: 12px">
+                SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: scholfeedback@stmichaels.vic.edu.au. <!-- rip dead name remover :( -->
+            </ul>
         </div>`)
 
     for (const setting in settings) {
