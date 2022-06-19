@@ -306,7 +306,7 @@ function profilePage() {
         const profileRow = document.querySelector(".main .profile.content .row");
         profileRow.style.position = "relative";
         profileRow.insertAdjacentHTML("beforeend", `<span class="neutral label hide-for-small-down" style="position: absolute; top: 0; right: 0; margin: 0${!pronouns.length ? "; display: none !important" : ""}" id="pronounslabel">Pronouns: ${pronouns}</span>`)
-        profileRow.children[1].insertAdjacentHTML("beforeend", `<dl class="hide-for-medium-up" ${!pronouns.length ? "style='display: none'" : ""}><dt class="small-4 medium-3 columns">Pronouns:</dt><dd class="small-8 medium-9 columns" id="pronounsrow">${pronouns}</dd></dl>`)
+        profileRow.children[1].insertAdjacentHTML("beforeend", `<dl class="hide-for-medium-up" ${!pronouns.length ? "style='display: none !important'" : ""}><dt class="small-4 medium-3 columns">Pronouns:</dt><dd class="small-8 medium-9 columns" id="pronounsrow">${pronouns}</dd></dl>`)
     })
 }
 
@@ -531,7 +531,7 @@ async function loadSettings() {
             document.getElementById("pronounsrow").innerText = extConfig.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
             if (!extConfig.pronouns.selected.length) {
                 document.getElementById("pronounslabel").style.setProperty("display", "none", "important")
-                document.getElementById("pronounsrow").parentNode.style.display = "none"
+                document.getElementById("pronounsrow").parentNode.style.setProperty("display", "none", "important")
             } else {
                 document.getElementById("pronounslabel").style.display = ""
                 document.getElementById("pronounsrow").parentNode.style.display = ""
