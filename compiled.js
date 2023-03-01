@@ -388,7 +388,7 @@ async function loadSettings() {
                 <fieldset class="content">
                     <legend><strong>Preferred Pronouns</strong></legend>
                     <div class="small-12 columns">
-                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - nothing this is not currrently reflected on School records or in an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
+                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
                     </div>
                     <div class="small-12 medium-6 columns">
                         <fieldset class="content">
