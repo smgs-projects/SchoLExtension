@@ -46,6 +46,15 @@ app.use(express.json())
 app.set("trust proxy", true)
 app.use('/scholext/ptv', ptv)
 
+function validateToken(token) {
+    let tokenData;
+    try { tokenData = jwt.verify(token, process.env.SECRET); return tokenData; }
+    catch { 
+        // It is possible to add more error handling here, but for now, we'll just return false so that the user is not authenticated
+        return false
+    }
+}
+
 app.get("/scholext/compiled.js", async function (req, res, next) {
     res.sendFile(path.resolve(__dirname, '..', 'compiled.js'));
 })
@@ -65,9 +74,8 @@ app.get("/scholext/config", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try {
-            let tokenData;
-            try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
-            catch { return res.sendStatus(403); }
+            let tokenData = validateToken(req.headers.authorization.split(" ")[1]);
+            if (tokenData === false) { return res.sendStatus(403); }
 
             let [config] = await promisePool.execute("SELECT * FROM configs WHERE id = ?", [tokenData.id]);
             if (!config || config.length < 1) return res.json({updated: 0, version: SERVER_VERSION})
@@ -86,9 +94,8 @@ app.post("/scholext/config", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try { 
-            let tokenData;
-            try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
-            catch { return res.sendStatus(403); }
+            let tokenData = validateToken(req.headers.authorization.split(" ")[1]);
+            if (tokenData === false) { return res.sendStatus(403); }
 
             const userConfig = req.body["config"]
             if (!userConfig && userConfig !== false) return res.sendStatus(400)
@@ -115,9 +122,8 @@ app.get("/scholext/pronouns/:userid", async function(req, res, next) {
         if (err) return next(err);
         const promisePool = connection.promise();
         try { 
-            let tokenData;
-            try { tokenData = jwt.verify(req.headers.authorization.split(" ")[1], process.env.SECRET) }
-            catch { return res.sendStatus(403); }
+            let tokenData = validateToken(req.headers.authorization.split(" ")[1]);
+            if (tokenData === false) { return res.sendStatus(403); }
 
             const [reqTheme] = await promisePool.execute("SELECT * FROM configs WHERE id = ?", [tokenData.id]);
             const [userTheme] = await promisePool.execute("SELECT * FROM configs WHERE sbid = ?", [req.params.userid]);
