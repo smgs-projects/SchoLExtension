@@ -51,20 +51,45 @@ async function load() {
         localStorage.removeItem("userToken");
         localStorage.setItem("lastUser", schoolboxUser.id);
     }
-    
-    let extConfigSvr = {updated: 0, version: DEFAULT_CONFIG.version};
+
+    let skip_server_loading = false; // Assume server is online, if not, we will set this to true
+
+    let extConfigSvr = { updated: 0, version: DEFAULT_CONFIG.version };
     try {
-        extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
-    } catch {
-        // If getConfig() fails, it is likely that JWT failed to verify, clear it from localStorage to re-retrieve
-        localStorage.removeItem("userToken");
-        await remoteAuth();
-       
-        // Try again, if this continues to fail, something is quite wrong.
-        extConfigSvr = await getConfig();
+      extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
+    } catch (error) {
+        skip_server_loading = true; // Skip loading from server unless we can fix the issue (e.g. invalid JWT then resolved)
+        if (error.message === 'Forbidden') {
+            console.error('[SCHOLEXT] Access to configuration data is forbidden. This is likely due to an invalid JWT. We will try to generate a new one,'); // Clear JWT and try again
+            localStorage.removeItem('userToken');
+            await remoteAuth();
+            
+            // Try again, if this continues to fail, something is quite wrong.
+            try { extConfigSvr = await getConfig(); skip_server_loading = false; }
+            catch (error) {
+                console.error('[SCHOLEXT] Failed to fetch configuration data after re-authentication. Something is very wrong', error);
+            }
+        } else if (error.message === 'Network error') {
+            console.error('[SCHOLEXT] Could not reach the server. It is possible that the server is down. Will still attempt to load configuration data from local storage.');
+        } else {
+            console.error('[SCHOLEXT] An unknown error occurred while fetching configuration data.');
+        }
     }
     
     if (DEFAULT_CONFIG.version != extConfigSvr.version) { console.log("Version Mismatch"); return; } // If local version is not the same as the server, stop loading
+    
+    if (skip_server_loading) { // If we are skipping server loading, we need to check if we have a local config
+        if (localStorage.getItem("extConfig") !== null) {
+            try { extConfig = JSON.parse(localStorage.getItem("extConfig"));
+            } catch { localStorage.removeItem("extConfig"); return; } // Ensure extConfig is valid JSON
+        } else { // No local config, there is nothing we can do so we will just prevent loading
+            console.error('[SCHOLEXT] No configuration data could be loaded. Server is likely down and no local configuration data exists. Please try again later.');
+            return;
+        }
+        console.warn("[SCHOLEXT] Loaded configuration data from local storage. We were unable to reach the server to fetch the latest configuration data so this may be out of date.");
+        console.warn("[SCHOLEXT] It is possible that some functionality will not work as intended until the server is back online.");
+        console.warn("[SCHOLEXT] If you are seeing this message frequently, please contact the SchoL Extension team.");
+    }
     else if (localStorage.getItem("extConfig") !== null) { // We already have a config locally and versions match
         try { extConfig = JSON.parse(localStorage.getItem("extConfig"));
         } catch { localStorage.removeItem("extConfig"); return; } // Ensure extConfig is valid JSON
@@ -1031,11 +1056,19 @@ function timetable() {
 }
 
 async function remoteAuth() {
-    return new Promise (( resolve ) => {
-        fetch(REMOTE_API).then(r => r.json()).then(result => {
-            localStorage.setItem("userToken", result.token);
-            resolve()
-        })
+    return new Promise(async (resolve, reject) => {
+        try {
+            const response = await fetch(REMOTE_API);
+            if (!response.ok) {
+                throw new Error(`Server error (${response.status})`);
+            } else {
+                const result = await response.json();
+                localStorage.setItem('userToken', result.token);
+                resolve();
+            }
+        } catch (error) {
+            reject(new Error('Network error'));
+        }
     });
 }
 function postImage(image) {
@@ -1054,11 +1087,29 @@ async function getThemes() {
     });
 }
 async function getConfig() {
-    return new Promise (async ( resolve ) => {
-        if (!localStorage.getItem("userToken")) { await remoteAuth(); }
-        fetch(THEME_API + "/config", { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
-        .then(r => r.json())
-        .then(r => { resolve(r) })
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!localStorage.getItem('userToken')) {
+                await remoteAuth();
+            }
+            const response = await fetch(THEME_API + '/config', {
+                headers: new Headers({
+                    Authorization: 'Basic ' + localStorage.getItem('userToken'),
+                }),
+            });
+            if (!response.ok) {
+                if (response.status === 403) {
+                    reject(new Error('Forbidden'));
+                } else {
+                    reject(new Error(`Server error (${response.status})`));
+                }
+            } else {
+                const config = await response.json();
+                resolve(config);
+            }
+        } catch (error) {
+            reject(new Error('Network error'));
+        }
     });
 }
 async function postConfig() {
