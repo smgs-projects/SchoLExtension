@@ -52,7 +52,17 @@ async function load() {
         localStorage.setItem("lastUser", schoolboxUser.id);
     }
     
-    let extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
+    let extConfigSvr = {updated: 0, version: DEFAULT_CONFIG.version};
+    try {
+        extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
+    } catch {
+        // If getConfig() fails, it is likely that JWT failed to verify, clear it from localStorage to re-retrieve
+        localStorage.removeItem("userToken");
+        await remoteAuth();
+       
+        // Try again, if this continues to fail, something is quite wrong.
+        extConfigSvr = await getConfig();
+    }
     
     if (DEFAULT_CONFIG.version != extConfigSvr.version) { console.log("Version Mismatch"); return; } // If local version is not the same as the server, stop loading
     else if (localStorage.getItem("extConfig") !== null) { // We already have a config locally and versions match
