@@ -43,12 +43,13 @@ app.use(connection(mysql, {
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :remote-addr'));
 app.use(cors());
 app.use(express.json())
-app.use('/smgsapi/ptv', ptv)
+app.set("trust proxy", true)
+app.use('/scholext/ptv', ptv)
 
-app.get("/smgsapi/compiled.js", async function (req, res, next) {
+app.get("/scholext/compiled.js", async function (req, res, next) {
     res.sendFile(path.resolve(__dirname, '..', 'compiled.js'));
 })
-app.get("/smgsapi/themes", async function(req, res, next) {
+app.get("/scholext/themes", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -59,7 +60,7 @@ app.get("/smgsapi/themes", async function(req, res, next) {
     })
 })
 
-app.get("/smgsapi/config", async function(req, res, next) {
+app.get("/scholext/config", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -80,7 +81,7 @@ app.get("/smgsapi/config", async function(req, res, next) {
         catch(error) { console.error(error); return res.sendStatus(500); }
     })
 })
-app.post("/smgsapi/config", async function(req, res, next) {
+app.post("/scholext/config", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -109,7 +110,7 @@ app.post("/smgsapi/config", async function(req, res, next) {
         catch (error) { console.error(error); return res.sendStatus(500); }
     })
 })
-app.get("/smgsapi/pronouns/:userid", async function(req, res, next) {
+app.get("/scholext/pronouns/:userid", async function(req, res, next) {
     req.getConnection(async function(err, connection) {
         if (err) return next(err);
         const promisePool = connection.promise();
@@ -152,16 +153,19 @@ function ValidateRGB(rgb) {
 }
 
 // SchoolBox 3rd Party Integration
-app.get("/smgsapi/auth", async function (req, res, next) {
+app.get("/scholext/auth", async function (req, res, next) {
     if (sha1(process.env.REMOTE_API_SECRET + req.query.time + req.query.id) !== req.query.key) {
         return res.sendStatus(401);
     }
     res.json({token: jwt.sign({id: req.query.id, user: req.query.user}, process.env.SECRET)});
 })
 
-https.createServer(certOptions, app).listen(process.env.HTTPS_PORT, () => { console.log(`App listening on port ${process.env.HTTPS_PORT}`) });
-
-http.createServer((req, res) => {
-    res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
-    res.end();
-}).listen(process.env.HTTP_PORT);
+if (process.env.USE_HTTPS != "false") {
+    http.createServer((req, res) => {
+        res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+        res.end();
+    }).listen(process.env.HTTP_PORT);
+    https.createServer(certOptions, app).listen(process.env.HTTPS_PORT, () => { console.log(`App listening on port ${process.env.HTTPS_PORT}`) });
+} else {
+    app.listen(process.env.HTTP_PORT);
+} 
