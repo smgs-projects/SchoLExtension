@@ -2,30 +2,26 @@
     "name": "SchoL Extension",
     "description": "Random schol changes that make it better maybe?",
     "version": "1.0",
-    "manifest_version": 2,
+    "manifest_version": 3,
     "host_permissions": [
         "https://learning.stmichaels.vic.edu.au/*",
         "https://learning-dev.stmichaels.vic.edu.au/*"
     ],
-    "background": { "scripts": ["chrome_ext/hot-reload.js"] },
     "permissions": ["storage"],
     "web_accessible_resources": [
-        "compiled.js",
-        "darkmode.css"
+        {
+            "resources": ["darkmode.css"],
+            "matches": ["https://learning.stmichaels.vic.edu.au/*"]
+        }
     ],
     "content_scripts": [
         {
             "matches": ["https://learning.stmichaels.vic.edu.au/*"],
-            "js": ["chrome_ext/preload.js"],
-            "run_at": "document_start"
-        }, 
-        {
-            "matches": ["https://learning.stmichaels.vic.edu.au/*"],
             "js": ["chrome_ext/extension.js"],
-            "run_at": "document_start"
+            "run_at": "document_end"
         }
     ],
-    "browser_action" : {
+    "action" : {
         "default_popup": "chrome_ext/popup.html"
     }
   }
