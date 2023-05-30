@@ -481,6 +481,22 @@ async function loadSettings() {
         </div>`)
 
 
+        module_darkMode = `  
+        <h2 class="subheader">Dark Mode</h2>
+        <section>
+            <fieldset class="content">
+                <legend><strong>Dark Mode Theme Selector</strong></legend>
+                <div class="small-12 columns">
+                   <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
+                </div>
+                <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
+                <div class="small-12 columns">
+                   <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
+                   <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022) Let us know if you have suggestions/feedback!
+                   </span>
+                </div>
+             </fieldset>
+        </section>`
         module_darkTrial = `  
         <h2 class="subheader">Dark Mode</h2>
         <section>
@@ -506,6 +522,7 @@ async function loadSettings() {
             div.innerHTML += html;
           }
 
+          injectModule(module_darkMode)
           injectModule(module_darkTrial)
 
 if (localStorage.getItem("theme") !== null) {
