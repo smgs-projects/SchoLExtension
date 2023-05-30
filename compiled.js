@@ -6,6 +6,8 @@
 //
 // Latest available code: https://apps.stmichaels.vic.edu.au/scholext/compiled.js
 
+console.log('hi!')
+
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
@@ -42,9 +44,10 @@ if (document.readyState === "complete" || document.readyState === "interactive")
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
 async function load() {
-    if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
+    //if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
 
+    console.log("hi2")
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("extConfig");
         localStorage.removeItem("lastThemeCache");
@@ -70,6 +73,7 @@ async function load() {
         extConfig = DEFAULT_CONFIG
         await timetableCache(true)
     }
+
 
     if (!localStorage.getItem("lastThemeCache") || (localStorage.getItem("lastThemeCache") && Date.now() - parseInt(localStorage.getItem("lastThemeCache")) > 8.64e+7) || extConfig.themedefault == {}) {
         await timetableCache()
@@ -315,6 +319,7 @@ async function loadSettings() {
     for (const subject in extConfig.theme) {
         const rgbvalue = extConfig.theme[subject].color
         const hexvalue = rgbToHex(...rgbvalue.replace(/[^\d\s]/g, '').split(' ').map(Number))
+        console.log("hiagain!")
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${extConfig.theme[subject].current === "image" ? "background-image: url(" + extConfig.theme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td>
@@ -467,6 +472,35 @@ async function loadSettings() {
                     </section>
                 </div>
             </section>
+
+            <h2 class="subheader">Dark Mode</h2>
+            <section>
+                <fieldset class="content">
+                    <legend><strong>Dark Mode Theme Selector</strong></legend>
+                    <div class="small-12 columns">
+                       <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
+                    </div>
+                    <div class="small-12 columns">
+                       <select id="context-selector-darkmode">
+                          <option disabled="" selected="">Click to select a theme</option>
+                          <option value="defaults">System Defaults</option>
+                          <option value="light">Light</option>
+                          <option value="dark">Dark</option>
+                       </select>
+                    </div>
+                    <div class="small-12 columns">
+                       <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
+                       <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (11H), Bea Bentley (11S), and Zac McWilliam (12H) Let us know if you have suggestions/feedback!
+                       </span>
+                    </div>
+                 </fieldset>
+                <div class="component-action">
+                    <section>
+                        <a class="button" style="color: #ff5555;" id="resetDark">Reset</a>
+                    </section>
+                </div>
+            </section>
+
             <ul class="meta" style="font-size: 12px">
                 SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: scholfeedback@stmichaels.vic.edu.au. <!-- rip dead name remover :( -->
             </ul>
