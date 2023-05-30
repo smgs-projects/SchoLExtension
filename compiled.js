@@ -6,8 +6,6 @@
 //
 // Latest available code: https://apps.stmichaels.vic.edu.au/scholext/compiled.js
 
-console.log('hi!')
-
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
@@ -318,7 +316,6 @@ async function loadSettings() {
     for (const subject in extConfig.theme) {
         const rgbvalue = extConfig.theme[subject].color
         const hexvalue = rgbToHex(...rgbvalue.replace(/[^\d\s]/g, '').split(' ').map(Number))
-        console.log("hiagain!")
         tablerows += `<tr role="row" class="subject-color-row" style="background-color: ${rgbvalue.replace("rgb", "rgba").replace(")", ", 10%)")}; ${extConfig.theme[subject].current === "image" ? "background-image: url(" + extConfig.theme[subject].image +");" : ""} background-size: 100% 100%; border-left: 7px solid ${rgbvalue}">
             <td>${subject}</td>
             <td>
@@ -342,6 +339,8 @@ async function loadSettings() {
             <td colspan="3">There are no timetable subjects associated with your account</td>
         </tr>`
     }
+
+    let darkOptions = '<option disabled="" selected="">Click to select a theme</option><option value="defaults">System Defaults</option><option value="light">Light</option><option value="dark">Dark</option>'
 
     let themeoptions = ""
     const themes = await getThemes()
@@ -481,25 +480,13 @@ async function loadSettings() {
                     <div class="small-12 columns">
                        <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
                     </div>
-                    <div class="small-12 columns">
-                       <select id="context-selector-darkmode">
-                          <option disabled="" selected="">Click to select a theme</option>
-                          <option value="defaults">System Defaults</option>
-                          <option value="light">Light</option>
-                          <option value="dark">Dark</option>
-                       </select>
-                    </div>
+                    <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
                     <div class="small-12 columns">
                        <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
                        <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (11H), Bea Bentley (11S), and Zac McWilliam (12H) Let us know if you have suggestions/feedback!
                        </span>
                     </div>
                  </fieldset>
-                <div class="component-action">
-                    <section>
-                        <a class="button" style="color: #ff5555;" id="resetDark">Reset</a>
-                    </section>
-                </div>
             </section>
             </div>
 
@@ -507,6 +494,45 @@ async function loadSettings() {
                 SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: scholfeedback@stmichaels.vic.edu.au. <!-- rip dead name remover :( -->
             </ul>
         </div>`)
+
+//darkmode stuff because i didnt know where else in the document to put it
+
+if (localStorage.getItem("theme") !== null) {
+    // If there is a theme saved, display and select that theme automatically.
+    savedTheme = localStorage.getItem("theme")
+    console.log(savedTheme)
+    document.querySelector("#context-selector-dark").value = localStorage.getItem("theme");
+    }
+
+    // When the page loads, add an event listener to the theme selector.
+    document.querySelector("#context-selector-dark").addEventListener("change", function() {
+        window.location.reload();
+    updateTheme(this.value);
+    });
+
+    document.addEventListener("DOMContentLoaded", updateTheme(savedTheme));
+
+    function updateTheme(theme) {
+    // If the theme is "dark", run the applyDark() function to apply the theme.
+    if (theme === "dark") {
+        console.log("Dark Selected!")
+    } else if (theme === "defaults") {
+        // If the theme is "system defaults", use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            console.log("Dark system now!")
+        } else{
+            console.log("Light system now!")
+        }
+    } else if (theme === "light"){
+        console.log("Light theme selected")
+    }
+
+    
+    // Save the selected theme to the item `dark` in localstorage.
+    localStorage.setItem("theme", theme);
+    
+    // Reload the page to apply the theme.
+    }
 
     for (const setting in settings) {
         const toggle_setting = document.getElementById("toggle_" + setting)
@@ -1079,6 +1105,8 @@ async function getThemes() {
         .then(r => { resolve(r) })
     });
 }
+
+
 async function getConfig() {
     return new Promise (async ( resolve ) => {
         if (!localStorage.getItem("userToken")) { await remoteAuth(); }
