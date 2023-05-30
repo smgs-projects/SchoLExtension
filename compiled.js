@@ -512,14 +512,20 @@ if (localStorage.getItem("theme") !== null) {
 
     document.addEventListener("DOMContentLoaded", updateTheme(savedTheme));
 
+    function applyDark() {
+        console.log("hypothetically, the dark mode would be applied here")
+      }
+
     function updateTheme(theme) {
     // If the theme is "dark", run the applyDark() function to apply the theme.
     if (theme === "dark") {
         console.log("Dark Selected!")
+        applyDark()
     } else if (theme === "defaults") {
         // If the theme is "system defaults", use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             console.log("Dark system now!")
+            applyDark()
         } else{
             console.log("Light system now!")
         }
