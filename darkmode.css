@@ -1,0 +1,904 @@
+/*  AWARDS COMPONENT FROM ALARESS DO NOT TOUCH   */
+/* sorry, i kinda touched it */
+/* BUT IT WAS THE ONLY ERRORS IN THIS FILE- I HAD TO FIX THEM*/
+
+/* td {
+    background-color: red !important;
+    color: red !important;
+} */
+
+.awardsComponent .no-margin {
+    list-style: none;
+}
+
+.awardsComponent .no-margin li ul {
+    margin-bottom: 1rem;
+}
+
+.awardsComponent .comment {
+    list-style: disc inside;
+}
+
+.awardsComponent .award,
+.awardsComponent .detention,
+.awardsComponent .absence {
+    padding-left: 24px;
+}
+
+.awardsComponent .award {
+    background: url(/images/stmichaels/star.png) 0px 5px no-repeat !important;
+}
+
+.awardsComponent .award .award-desc {
+    color: #00cc33 !important;
+}
+
+.awardsComponent .detention {
+    background: url(/images/stmichaels/detention.png) 0px 5px no-repeat !important;
+}
+
+.awardsComponent .detention .detention-desc {
+    color: #db0000 !important;
+}
+
+.awardsComponent .absence {
+    background: url(/images/stmichaels/late.png) 0px 5px no-repeat !important;
+}
+
+.awardsComponent .absence .absence-desc {
+    color: #005288 !important;
+}
+
+h1 {
+    font-weight: 100;
+    font-size: 2.0rem;
+}
+.logo {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+element.style {
+    font-size: 0.75rem;
+}
+@media only screen and (min-width: 64.0625em) {
+    #container {
+        padding: 0.0rem;
+    }
+}
+.left-off-canvas-menu .logo-wrapper .logo {
+    display: block;
+    padding: 0.5rem 0;
+}
+
+:root {
+    /* SPECIAL DARK MODE */
+    color-scheme: dark;
+
+/*greyscale colour codes*/
+    --background: hsla(0, 0%, 12%, 1);
+    --layer1: hsla(0, 0%, 15%, 1);
+    --layer2: hsla(0, 0%, 17%, 1);
+    --text3: hsla(0, 0%, 50%, 1);
+    --text2: hsla(0, 0%, 65%, 1);
+    --text1: hsla(0, 0%, 85%, 1);
+
+/*unique colour codes*/
+    --navBackground: hsla(0, 0%, 15%, 1);
+    --navBackground-hover: hsla(0, 0%, 13%, 1);
+
+    --accent: hsla(204, 60%, 55%, 1);
+    --accentalt: hsla(204, 100%, 25%, 1);
+    --accent-nav-icons: hsla(204, 21%, 49%, 1);
+    --accent-grey: hsla(204, 6%, 20%, 1); 
+    --accent-grey-hover: rgb(38, 39, 43);
+    --accent-box: rgb(37, 47, 57);
+    --accent-box-hover: rgb(28, 37, 46);
+
+/*things that schol needs defined */
+    --black: var(0, 0%, 0%, 1);
+    --white: hsla(0, 0%, 100%, 1);
+    
+/*navigation colours - pertains to items in top navigation bar*/
+    --navigation-foreground: var(--accent-nav-icons);
+    --navigation-foreground-highlight: var(--black);
+    --navigation-background: var(--navBackground);
+    --navigation-hover: var(--navBackground-hover);
+
+    --navigation-foreground-contrast: var(--black);
+    --navigation-background-contrast: var(--white);
+    --navigation-hover-contrast: var(--black);
+/*-----------------------------------------------------------------------------------------------*/
+/*side navigation colours - pertains to idems in the left side navigation bar*/
+    --off-canvas-foreground: var(--text2);
+    --off-canvas-background: var(--layer1);
+    --off-canvas-hover: var(--accent-grey-hover);
+
+    --off-canvas-foreground-contrast: var(--white);
+    --off-canvas-background-contrast: var(--black);
+    --off-canvas-hover-contrast: var(--black);
+/*-----------------------------------------------------------------------------------------------*/
+/* ? */
+    --accounts-menu-foreground: var(--white);
+    --accounts-menu-foreground-contrast: var(--white); 
+    --accounts-menu-background: var(--background);
+    --accounts-menu-hover: var(--accent-grey-hover);
+
+    --accounts-menu-foreground-contrast: var(--white); 
+    --accounts-menu-background-contrast: var(--black);
+    --accounts-menu-hover-contrast: var(--black);
+/*-----------------------------------------------------------------------------------------------*/
+/*buttons*/
+    --content-ui-foreground: var(--accent);
+    --content-ui-background: var(--accent-box);
+    --content-ui-hover: var(--accent-box-hover);
+    --content-ui-selected: var(--accent-box-hover);
+    --content-ui-submit-foreground: var(--white);
+    --content-ui-submit-background: var(--accentalt);
+    --content-ui-foreground-contrast: var(--black);
+    --content-ui-background-contrast: var(--black);
+    --content-ui-hover-contrast: var(--black);
+    --content-ui-selected-contrast: var(--text2);
+    --content-ui-submit-foreground-contrast: var(--black);
+    --content-ui-submit-background-contrast: var(--white);
+/*-----------------------------------------------------------------------------------------------*/
+/*accented boxes - such as file upload box*/
+    --accent-foreground: var(--accent);
+    --accent-background: var(--accent-box);
+    --accent-hover: var(--accent-box-hover);
+
+    --accent-foreground-contrast: var(--white);
+    --accent-background-contrast: var(--black);
+    --accent-hover-contrast: var(--black);
+/*-----------------------------------------------------------------------------------------------*/
+/*corner logo*/    
+    --logo-background: var(--layer1);
+    --logo-background-contrast: var(--white);
+/*-----------------------------------------------------------------------------------------------*/
+/* login page */ 
+    --login-form-background: hsla(0, 0%, 0%, 0.38); 
+    --login-form-background-contrast: var(--white);
+/*-----------------------------------------------------------------------------------------------*/
+/* ? */
+    --form-border-color: var(--background);
+    --form-bg-hover-color: var(--layer1);
+
+    --form-border-color-contrast: var(--black);
+    --form-bg-hover-color-contrast: var(--black);
+/*-----------------------------------------------------------------------------------------------*/
+/*body text - pertains to all body text in news, blogs, etc*/
+    --body-foreground: var(--text2);
+    --body-foreground-h1: var(--text1);
+    --body-background: var(--background);
+    --body-background-contrast: var(--accent-grey-hover);
+}
+
+/*rubric selection - make darker*/
+table>tbody>tr>td:not(.ck-editor__nested-editable):not([style*="background-color:"], .rb-selected), table>thead>tr>th:not([style*="background-color:"]), table > tbody>tr>th[class*="rb-"] {
+    background-color: var(--layer1);
+}
+
+table>tbody>tr>.rb-selected {
+    background-color: var(--accent-box) !important;
+    /* border: 1px solid #3696d1 !important; */
+}
+
+.selectize-input, .selectize-control.single .selectize-input.input-active {
+    background: var(--layer2);
+}
+.selectize-input > .item {
+    color: var(--text1) !important;
+}
+
+/* .selectize-dropdown > .selectize-dropdown-content > .option > span.highlight */
+.selectize-dropdown {
+    background: var(--body-background-contrast);
+}
+.selectize-dropdown-content {
+    color: var(--text1);
+}
+.selectize-dropdown-content > .option:hover,
+.selectize-dropdown-content > .option.active {
+    color: var(--text1);
+    background-color: var(--navBackground-hover);
+}
+.selectize-dropdown-content > .option > span.highlight {
+    background-color: var(--accentalt);
+}
+
+div.article-read-more a:link{
+    color: var(--text1) !important;
+    font-weight: normal !important;
+
+    text-underline-position: under !important;
+}
+div.article-read-more a:hover{
+    color: var(--text2) !important;
+}
+div.article-read-more a:visited{
+    color: var(--text2) !important;
+}
+
+.flex-grade .grade {
+    margin-left: 0;
+}
+
+.feed-item {
+    border: 2px solid var(--background);
+}
+.feed>section {
+    border-bottom: 2px solid var(--background);
+    width: 100%;
+    max-width: 45rem;
+}
+
+.logo:not(.logo-wrapper .logo, #login div div .logo) {
+    /* content: url('chrome-extension://__MSG_@@extension_id__/darkmodeImages/logo-trans.png'); */
+    content: url('chrome-extension://__MSG_@@extension_id__/darkmodeImages/Schol_Logo-25.png');
+    padding: 3px;
+  }
+a[class="logo"]{
+    background-color: var(--navBackground);
+}
+
+:not(a) > h3 {
+    color: var(--text1) !important;
+}
+
+[color="#000000"] {
+    color: var(--text2) !important;
+  }
+
+/*table related stuff*/
+table {
+    border: 1px solid var(--layer1) !important;
+}
+.VueTables__sortable {
+    background: var(--layer2) !important;
+}
+
+.empty-state {
+    background-color: var(--layer1) !important;
+    color: var(--text1) !important;
+}
+
+table>tbody>tr>td>p>span {
+    color: var(--white);
+}
+
+ul[class*="information-list"]>li>article {
+    background-color: var(--layer1) !important;
+}
+
+nav>a[class*="icon-reply"] {
+    background-color: var(--layer1) !important;
+}
+
+#left-menu-dock {
+    color: var(--accent) !important;
+}
+
+.card {
+    background-color: var(--layer1) !important;
+}
+
+span[data-filter-name]::after {
+    border-top: 5px solid var(--accent);
+    /* color: #3696d1 !important; */
+}
+
+li[class*="filter-component"] {
+    border: 1px solid var(--accent) !important;
+    border-color: var(--background) !important;
+}
+ul[class="countdown-timer flex-list"]>li{
+    background-color: var(--layer2) !important;
+    color: var(--white);
+}
+
+.has-submenu>a::after,
+.navthis::before,
+.navthis>span {
+    color: var(--accent) !important;
+}
+
+#calendar>div>div.fc.fc-media-screen.fc-direction-ltr.fc-theme-standard>div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr {
+    border-bottom: 3px solid var(--accent) !important;
+}
+/* .timetable-subject {
+    opacity: 75%;
+} */
+.fc-theme-standard tbody {
+    border: none !important;
+}
+
+.timetable>tbody>tr>td, .timetable-small>tbody>tr>td,
+.timetable>thead>tr>th, .timetable-small>thead>tr>th,
+.timetable-small>tbody>tr>th, .timetable>tbody>tr>th, .timetable-small>div>table>tr>th {
+    background-color: var(--layer1);
+    border-color: var(--background) !important;
+    border-style: solid !important;
+}
+.timetable-period-active{
+    background-color: var(--accent-grey) !important;
+}
+.timetable-day-active{
+    background-color: var(--accent-grey) !important;
+}
+
+
+button:not([class*="icon-"]):not(.ck.ck-color-grid__tile) {
+    background-color: var(--layer2) !important;
+}
+
+.fc-toolbar .fc-button.fc-button-active {
+    color: var(--accent) !important;
+    border-bottom: 3px solid var(--accent) !important;
+    /* background-color: var(--text3) !important; */
+}
+
+div[id="panel-summary"]>div>label {
+    color: var(--white) !important;
+}
+
+div[id="applied_filters"]>div>span,
+div[id="applied_filters"]>div>ul>li {
+    background-color: var(--layer1) !important;
+}
+
+a[class="fc-col-header-cell-cushion "] {
+    color: var(--white) !important
+}
+
+th.fc-col-header-cell {
+    background-color: var(--layer2) !important;
+    border: 1px solid var(--text3) !important;
+}
+
+td[role="gridcell"] {
+    border: 1px solid var(--text3) !important;
+}
+
+.filter-dropdown .filter-component>span.open {
+    background-color: var(--accent-box-hover) !important;
+}
+
+.f-open-dropdown>ul>li>label,
+.f-open-dropdown ul>li>a {
+    color: var(--white) !important;
+}
+
+.filter-component>span::after {
+    border-top: 5px solid var(--accent) !important;
+}
+
+/* .radiolist input[type=radio]:not(.plain):checked+label:before, */
+.radiolist input[type=radio]:not(.plain):checked+label:after,
+/* .radiolist input[type=checkbox]:not(.plain):checked+label:before, */
+.radiolist input[type=checkbox]:not(.plain):checked+label:after {
+    background-color: var(--background) !important;
+    color: var(--white) !important;
+}
+
+.radiolist input[type=checkbox]:not(.plain):not(:disabled):not(:checked)+label:hover:after,
+.radiolist input[type=radio]:not(.plain):not(:disabled):not(:checked)+label:hover:after {
+    background-color: var(--text3) !important;
+}
+
+
+
+
+.f-open-dropdown {
+    background-color: var(--body-background-contrast) !important;
+}
+div.switch>label {
+    background-color: var(--background) !important;
+    
+}
+div.feed-column {
+    background-color: var(--layer1) !important;
+}
+div.switch>label > span {
+color: var(--accent) !important;
+}
+input[type=text]::placeholder {
+color: var(--text2) !important;
+}
+input:not([type]),
+input[type=text],
+input[type=password],
+input[type=date],
+input[type=datetime],
+input[type=datetime-local],
+input[type=month],
+input[type=week],
+input[type=email],
+input[type=number],
+input[type=search],
+input[type=tel],
+input[type=time],
+input[type=url],
+input[type=color],
+select,
+textarea,
+.cke_editable_inline {
+    background-color: var(--layer2) !important;
+    caret-color: var(--black);
+    color: var(--white) !important;
+    border: 1px solid var(--background) !important;
+}
+.feed .subheader,
+.feed h1.mini,
+.feed h2.mini,
+.feed h3.mini,
+.feed h4.mini,
+.feed h5.mini,
+.feed h6.mini,
+.feed table.rubric th[colspan],
+table.rubric .feed th[colspan],
+.feed .Schoolbox_Calendar_Component_Dashboard_Controller .fc-widget-header .fc-list-heading-main,
+.Schoolbox_Calendar_Component_Dashboard_Controller .fc-widget-header .feed .fc-list-heading-main,
+.feed label .mini.unit-heading,
+label .feed .mini.unit-heading {
+    background-color: var(--layer1) !important;
+    border-top: 2px solid var(--background) !important;
+    border-left: 2px solid var(--background) !important;
+    border-right: 2px solid var(--background) !important;
+}
+.feed {
+    background-color: var(--layer1) !important;
+}
+/* .checklist input[type=radio]:not(.plain):checked+label:before,
+.checklist input[type=radio]:not(.plain):checked+label:after,
+.checklist input[type=checkbox]:not(.plain):checked+label:before,
+.checklist input[type=checkbox]:not(.plain):checked+label:after,
+.radiolist input[type=radio]:not(.plain):checked+label:before,
+.radiolist input[type=radio]:not(.plain):checked+label:after,
+.radiolist input[type=checkbox]:not(.plain):checked+label:before,
+.radiolist input[type=checkbox]:not(.plain):checked+label:after {
+    background-color: inherit !important;
+    color: var(--white) !important;
+} */
+.v-card {
+    background-color: var(--text3)!important;
+}
+
+.card-content{
+    background-color: var(--layer2) !important;
+}
+/* .checklist input[type=radio]:not(.plain)+label:before,
+.checklist input[type=checkbox]:not(.plain)+label:before,
+.radiolist input[type=radio]:not(.plain)+label:before,
+.radiolist input[type=checkbox]:not(.plain)+label:before {
+    background-color: green !important;
+    color: white !important;
+} */
+
+.timetable>thead>tr>th {
+    color: var(--white);
+}
+*:not(span[class*="gradient-"])> time {
+    color: var(--text3) !important;
+}
+.timetable>thead>tr>th>time {
+    color: var(--text3) !important;
+}
+
+.card {
+    background-color: var(--layer1) !important;
+}
+
+div>p>a:not([title*="View"]) {
+    color: var(--text1) !important;
+}
+
+li[class="highlighted-day"]>div {
+    background-color: var(--layer2) !important;
+}
+
+.tileList {
+    background-color: var(--layer1) !important;
+}
+
+div[class*="island"]>section {
+    background-color: var(--layer1) !important;
+}
+
+body {
+    color: var(--text2) !important;
+}
+
+.island section {
+    background-color: var(--layer1) !important;
+}
+.tabs > dd>a:hover {
+    border-bottom:2px solid var(--accent-foreground)
+}
+.tabs {
+    background-color: var(--layer1);
+}
+ul.results { 
+    background-color: var(--layer2) !important;
+}
+.tabs dd>a,
+.tabs .tab-title>a,
+table tr th,
+table tr td,
+article>p>span,
+#component-layout .column-left .island section,
+#component-layout .column-right .island section,
+#component-layout .column-top .island section,
+#component-layout .column-bottom .island section, label {
+
+    color: var(--text1) !important;
+}
+button[class*="group-action"]::before {
+    color: var(--white) !important;
+}
+div[class*="group-actions"] {
+    background-color: (--black) !important;
+}
+dd[class*="active"]>a,
+.tabs .tab-title.active>a {
+    color: var(--accent) !important;
+    background-color: var(--accent-grey) !important;
+}
+
+b[class="award-desc"] {
+    color: var(--accent) !important;
+}
+
+.fc .fc-cell-shaded {
+    background-color: var(--layer2) !important;
+}
+
+.editPanel.socialstream-new-post {
+    background-color: var(--layer1) !important;
+}
+
+/* #component-layout .column-right .island section,#socialstream-264085>ul>li:nth-child(2)>ul>li:nth-child(2),#socialstream-264085>ul>li:nth-child(2)>ul>li:nth-child(2)>ul,#socialstream-264085>ul>li:nth-child(2)>ul>li:nth-child(2)>ul>li:nth-child(1),#socialstream-264085>ul>li:nth-child(2),#socialstream-264085>ul>li:nth-child(2)>ul>li:nth-child(2)>ul>li:nth-child(5)>article {
+    color: hsl(0, 0%, 75%) !important;
+} */
+/* div[class="discussion"],#socialstream-264085>ul>li:nth-child(2)>ul>li:nth-child(2)>ul {
+    background-color: red !important;
+} */
+/* #socialstream-264085>ul>li:nth-child(2)>ul>li:nth-child(2) {
+    background-color: red !important;
+} */
+/* li[data-socialstream-row] {
+    background-color: var(--layer2) !important;
+} */
+
+.discussion .reply,
+.discussion .child,
+.threaded .reply,
+.threaded .child {
+    /* border-left: 10px solid var(--text3) !important; */
+    border-left-color: var(--text3);
+}
+
+blockquote {
+    background-color: var(--accent-grey);
+    color: var(--white);
+}
+
+/*breadcrumbs - the lil things on pages that go page1>page2>page3>*/
+ul[class="breadcrumb"]>li>* {
+    color: var(--text1) !important;
+    background-color: var(--accent-box-hover) !important;
+}
+.breadcrumb li > *:before {
+    margin-left: 1px;
+    /* border-left: .4rem solid var(--accent-background); */
+}
+.breadcrumb li.last > *:before {
+    border-left: none;
+    /* border-left: .4rem solid var(--accent-background); */
+}
+.breadcrumb li:not(.active):not(.last) > *:before {
+    border-left-color: var(--accent-nav-icons) !important;
+}
+.breadcrumb li a:after {
+    border-left-color: var(--accent-box-hover) !important;
+}
+
+ul[class="breadcrumb"]>li.active>*,
+ul[class="breadcrumb"]>li.last>* {
+    color: var(--text1) !important;
+    background-color: var(--accent-background) !important;
+}
+
+.breadcrumb li.active > *:before,
+.breadcrumb li.active > *:after,
+.breadcrumb li.last > *:before,
+.breadcrumb li.last > *:after {
+    border-left-color: var(--accent-background) !important;
+}
+
+.breadcrumb {
+    margin-left: 0 !important;
+}
+/* .breadcrumb > li > a {
+    padding-left: 12px;
+} */
+
+
+
+
+.alert-box,
+.eotc-status,
+.alert-box-icon {
+    background-color: var(--accent-background-contrast) !important;
+    color: var(--text1) !important;
+}
+
+
+
+.card.attachment img { 
+    border-right: 1px solid var(--text3);
+}
+.sub-nav > li > a {
+    color:var(--white) !important;
+}
+.sub-nav >li[class="active"] {
+    border-bottom: 2px solid var(--accent);
+}
+.dropzone-wrap > div > div, .dropzone-wrap>div>div>section,.dropzone-wrap>div>div>div>div {
+    background-color: var(--layer1) !important;
+}
+.reveal-modal{
+    background-color: var(--background) !important;
+}
+.reveal-modal>div.component-action>section {
+    background-color: var(--layer1) !important;
+}
+h2 {
+    color: var(--text1) !important;
+}
+
+
+/* Notifications */
+#notification-toggle-full {
+    color: var(--white) !important;
+}
+#notifications > a::before {
+    /* background-color: red !important; */
+    color: var(--white) !important;
+    /* position: fixed !important; */
+    /* padding-top: 10px; */
+}
+li[data-msgitem] > nav > a::before {
+    color: var(--white) !important;
+}
+
+/* This fixes the horrible things that were pushed to prod SchoL on Wednesday 5 April 2023 */
+/* rip feedback circle, you will probably not be missed*/
+.separator[style*="color: navy"] {
+    color: var(--white) !important;
+}
+/* .icon-approve:not(.status-unread nav .icon-approve) {
+    border: none !important;
+    border-radius: 0px !important;
+} */
+#profile-options > li {
+    color: white;
+}
+
+.status-unread > nav:has(.icon-approve) {
+    border-radius: 50px;
+    margin-right: 8px;
+    margin-top: 8px;
+    width: 2.5rem;
+}
+
+.status-unread > nav > .icon-approve {
+    width: 100%;
+    height: 100%;
+}
+
+#message-list > li:has(#msg-mar) > input {
+    margin-bottom: 4px;
+}
+
+#account-content {
+    overflow-y: visible !important;
+}
+
+.Component_Dashboard_ChildSubjectController > div > div > .action-list > li > .card.compact {
+    display: flex;
+}
+
+.preview.loader {
+    background-color: var(--accent);
+}
+
+ul.side-nav {
+    background-color: var(--layer1);
+}
+
+ul.side-nav * {
+    color: var(--text1) !important;
+}
+
+ul.side-nav .active > a {
+    border-left-color: var(--accent);
+}
+
+.side-nav.news-archive-filter > .divider {
+    display: none;
+}
+
+dl.tabs[id^='0'] { /* whoever made an id with a number in it is bad */
+    border-bottom: none;
+}
+dt + dd > span[style="border:1px solid #c8c8c8;padding:2px;background-color:#efefef"] {
+    background-color: var(--layer1) !important;
+}
+
+ul.activity-list.group {
+    background-color: var(--layer1) !important;
+}
+ul.activity-list.group > .actions-small-1 {
+    background-color: var(--layer1) !important;
+}
+
+li.project > ul > .assessment {
+    background-color: var(--layer2) !important;
+    border-left-color: var(--layer1) !important;
+}
+li.project > ul > .assessment > .flex-grade > .card {
+    background-color: var(--layer2) !important;
+}
+
+.fc-scrollgrid-section > td {
+    border: none;
+}
+.fc-scrollgrid-section > th {
+    border: none;
+}
+
+table tr td[style*="background-color"] {
+    color: #000 !important;
+}
+
+.vs__dropdown-menu {
+    background: var(--background);
+}
+
+select {
+    background: var(--layer2) url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='4' height='2' viewBox='0 0 4 2'><path fill='%23ffffff' d='M 2 2 L 0 0 h 4 z'/></svg>") right .75rem center/8px 10px no-repeat !important;
+}
+
+
+/* Submission text box */
+/* .cke_inner {
+    background-color: var(--layer1);
+} */
+.cke_top, .cke_bottom {
+    background-color: var(--layer2) !important;
+}
+.cke_bottom > .cke_wordcount * {
+    color: var(--text1);
+}
+.cke_bottom > .cke_path > a {
+    color: var(--text1);
+}
+.cke_top a > span {
+    filter: invert(100%);
+}
+a.cke_button_on, .cke_combo_on a.cke_combo_button {
+    background-color: var(--background) !important;
+    border-color: var(--background) !important;
+}
+a.cke_path_item:hover, a.cke_button:hover, a.cke_combo_button:hover {
+    border-color: var(--background) !important;
+    background-color: var(--layer1) !important;
+}
+a.cke_toolbox_collapser:hover {
+    background-color: var(--background) !important;
+}
+/* 23.0 CKE SUBMISSION */
+div.ck.ck-toolbar, .ck.ck-word-count {
+    background-color: var(--layer2);
+}
+.ck-icon,
+.ck.ck-button__label,
+.ck.ck-insert-table-dropdown__label {
+    color: var(--text1) !important;
+}
+div.ck.ck-content.ck-editor__editable,
+.ck-table-bogus-paragraph {
+    color: black;
+}
+.ck.ck-dropdown__panel {
+    background-color: var(--background);
+}
+.ck-style-grid__button > .ck-button__label {
+    background-color: var(--layer2) !important;
+}
+.ck-style-grid__button > .ck-style-grid__button__preview {
+    background-color: var(--accent-foreground) !important;
+    border: none !important;
+}
+
+
+
+/* .tile[data-tile] > span[style*="border-radius: 3px; margin-top: 6px"]:has(~a[target="_self"][href*="https://learning.stmichaels.vic.edu.au/search/user/"], ~a[target="_self"][href*="mailto:"], ~span[class="tile-link"]),
+.tile[data-tile]:has(> span[style*="border-radius: 3px; margin-top: 6px"]):has(>a[target="_self"][href*="https://learning.stmichaels.vic.edu.au/search/user/"], >a[target="_self"][href*="mailto:"], >span[class="tile-link"]) {
+    background-color: var(--layer2) !important;
+    color: var(--white) !important;
+} */
+
+span[style*="color:#000"]:not(td[style*="background-color"] span):not(span[style*="background-color"] > span) {
+    color: var(--text1) !important;
+}
+
+.global-search [type=text]:focus+.icon-search:before, 
+.global-search [type=text]:active+.icon-search:before,
+.global-search:hover .icon-search:before {
+    color: var(--navigation-foreground-highlight);
+}
+
+.left-off-canvas-menu ul.off-canvas-list li a,
+.left-off-canvas-menu .left-submenu .back>a {
+    color: var(--accent);
+}
+
+
+/* VCE Key Dates section */
+#component63189 article#textBoxBody6790 td {
+    background-color: var(--layer2) !important;
+    color: var(--text1) !important;
+}
+
+.immersive-reader-button img {
+    filter: invert(100%) sepia(19%) saturate(0%) hue-rotate(313deg) brightness(102%) contrast(107%);
+}
+
+span[style*="background-color"]:not(~ dt + dd > span[style="border:1px solid #c8c8c8;padding:2px;background-color:#efefef"]) {
+    color: black;
+}
+
+.component-action section {
+    background-color: var(--layer2);
+    margin-bottom: -2px;
+    margin-left: 2px;
+    margin-right: -2px;
+}
+ul#attachment-browser-filesystems {
+    border: none;
+}
+.attachment-browser-container .attachment-browser-filesystems ul {
+    box-shadow: none;
+}
+.pseudo-video,
+.record-media-container {
+    background-color: transparent !important;
+}
+
+h4, h5, h6 {
+    color: var(--text1);
+}
+
+.error-state section {
+    color: var(--text2);
+}
+
+.fc-theme-standard td.fc-timegrid-slot {
+    border-color: var(--text3);
+    background-color: transparent !important;
+}
+.fc-timegrid-cols > td[role="gridcell"],
+.fc-timegrid-axis {
+    border-color: var(--text3) !important;
+}
+.fc-timegrid-cols td[role="gridcell"].fc-day-today:not(.fc-timeGridDay-view td) {
+    background-color: var(--accent-background);
+}
+.fc-timegrid-cols > table,
+.fc.timegrid-slots > table {
+    background: none;
+}
+
+#activity-feed .feed-load-more.content {
+    background-color: var(--layer1);
+}

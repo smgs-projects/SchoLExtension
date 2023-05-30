@@ -47,7 +47,6 @@ async function load() {
     //if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
 
-    console.log("hi2")
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
         localStorage.removeItem("extConfig");
         localStorage.removeItem("lastThemeCache");
@@ -442,6 +441,8 @@ async function loadSettings() {
                     </span>
                 </section>
             </div>
+
+            <div id=customStuff>
             <h2 class="subheader">Theme Manager</h2>
             <section>
                 <fieldset class="content">
@@ -500,6 +501,7 @@ async function loadSettings() {
                     </section>
                 </div>
             </section>
+            </div>
 
             <ul class="meta" style="font-size: 12px">
                 SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: scholfeedback@stmichaels.vic.edu.au. <!-- rip dead name remover :( -->
