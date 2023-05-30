@@ -436,7 +436,7 @@ async function loadSettings() {
             <div class="component-action">
                 <section>
                     <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
-                        Feature made by Zac McWilliam (12H) and Sebastien Taylor (11H). Let us know if you have suggestions/feedback!
+                        Feature made by Zac McWilliam (OM2022) and Sebastien Taylor (12H). Let us know if you have suggestions/feedback!
                     </span>
                 </section>
             </div>
@@ -483,7 +483,7 @@ async function loadSettings() {
                     <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
                     <div class="small-12 columns">
                        <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
-                       <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (11H), Bea Bentley (11S), and Zac McWilliam (12H) Let us know if you have suggestions/feedback!
+                       <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022) Let us know if you have suggestions/feedback!
                        </span>
                     </div>
                  </fieldset>
