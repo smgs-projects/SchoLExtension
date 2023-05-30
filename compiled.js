@@ -441,7 +441,6 @@ async function loadSettings() {
                 </section>
             </div>
 
-            <div id=customStuff>
             <h2 class="subheader">Theme Manager</h2>
             <section>
                 <fieldset class="content">
@@ -473,21 +472,7 @@ async function loadSettings() {
                 </div>
             </section>
 
-            <h2 class="subheader">Dark Mode</h2>
-            <section>
-                <fieldset class="content">
-                    <legend><strong>Dark Mode Theme Selector</strong></legend>
-                    <div class="small-12 columns">
-                       <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
-                    </div>
-                    <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
-                    <div class="small-12 columns">
-                       <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
-                       <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022) Let us know if you have suggestions/feedback!
-                       </span>
-                    </div>
-                 </fieldset>
-            </section>
+            <div id=customStuff>
             </div>
 
             <ul class="meta" style="font-size: 12px">
@@ -495,7 +480,33 @@ async function loadSettings() {
             </ul>
         </div>`)
 
-//darkmode stuff because i didnt know where else in the document to put it
+
+        module_darkTrial = `  
+        <h2 class="subheader">Dark Mode</h2>
+        <section>
+            <fieldset class="content">
+                <legend><strong>Dark Mode Theme Selector</strong></legend>
+                <div class="small-12 columns">
+                   <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
+                </div>
+                <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
+                <div class="small-12 columns">
+                   <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
+                   <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022) Let us know if you have suggestions/feedback!
+                   </span>
+                </div>
+             </fieldset>
+        </section>`
+
+        function injectModule(html) {
+            // Get the div tag with the id customStuff
+            var div = document.getElementById("customStuff");
+          
+            // Append the HTML to the div tag
+            div.innerHTML += html;
+          }
+
+          injectModule(module_darkTrial)
 
 if (localStorage.getItem("theme") !== null) {
     // If there is a theme saved, display and select that theme automatically.
