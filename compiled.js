@@ -497,15 +497,54 @@ async function loadSettings() {
                 </div>
              </fieldset>
         </section>`
-        module_darkTrial = `  
-        <h2 class="subheader">Dark Mode</h2>
+        module_darkTrial = `<h2 class="subheader">Dark Mode</h2>
         <section>
             <fieldset class="content">
                 <legend><strong>Dark Mode Theme Selector</strong></legend>
                 <div class="small-12 columns">
                    <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
                 </div>
-                <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
+                <tr>
+
+                <div class="small-12 columns">
+                <table class="no-margin"><tbody>
+                <td style="border-bottom: 0px !important"><label for="toggle_dark">Dark Mode<p>Toggle the Dark Mode theme for SchoL's UI</p></label></td>
+                <td style="border-bottom: 0px !important">
+                    <div class="long switch no-margin" style="float: right">
+                        <input id="toggle_dark" type="checkbox" name="toggle_dark" value="1" checked>
+                        <label for="toggle_dark">
+                            <span>Enabled</span>
+                            <span>Disabled</span>
+                        </label>
+                    </div>
+                </td>
+                </tbody>
+                </table>
+            </div>
+
+            <div class="small-12 columns">
+                <table class="no-margin"><tbody>
+                <td style="border-bottom: 0px !important"><label for="toggle_system">System Preferences<p>Set the Dark Mode to already update based on system preferences</p></label></td>
+                <td style="border-bottom: 0px !important">
+                    <div class="long switch no-margin" style="float: right">
+                        <input id="toggle_system" type="checkbox" name="toggle_system" value="1" checked>
+                        <label for="toggle_system">
+                            <span>Enabled</span>
+                            <span>Disabled</span>
+                        </label>
+                    </div>
+                </td>
+                </tbody>
+                </table>
+            </div>
+            
+            </tr>
+
+            
+                </tbody></table></tbody></table>
+            </div>
+
+
                 <div class="small-12 columns">
                    <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
                    <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022) Let us know if you have suggestions/feedback!
