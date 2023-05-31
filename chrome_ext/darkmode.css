@@ -234,7 +234,7 @@ div.article-read-more a:visited{
 .logo:not(.logo-wrapper .logo, #login div div .logo) {
     /* content: url('chrome-extension://__MSG_@@extension_id__/darkmodeImages/logo-trans.png'); */
     content: url('chrome-extension://__MSG_@@extension_id__/darkmodeImages/Schol_Logo-25.png');
-    padding: 1px;
+    padding: 3px;
   }
 a[class="logo"]{
     background-color: var(--navBackground);

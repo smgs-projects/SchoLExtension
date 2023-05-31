@@ -38,6 +38,8 @@ let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
 
+let savedTheme;
+
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
@@ -195,6 +197,46 @@ function rgbsFromHexes(url) {
     return rgbs
 }
 
+function applyDark() {
+    // console.log("hypothetically, the dark mode would be applied here");
+
+    // TODO: Instead of fetching darkmode css from window data, fetch from external URL!!!!
+    let darkmodeTxt = darkModeCss;
+    // console.log(darkmodeTxt);
+
+    let script = document.createElement('style');
+    let code = document.createTextNode(darkmodeTxt);
+
+    document.styleSheets[1].disabled = true;
+    script.appendChild(code);
+    script.id = "darkmode-core";
+    console.log("adding darkmode...");
+    (document.head || document.body).appendChild(script);
+}
+function updateTheme(theme) {
+    // If the theme is "dark", run the applyDark() function to apply the theme.
+    if (theme === "dark") {
+        console.log("Dark Selected!")
+        applyDark();
+    } else if (theme === "defaults") {
+        // If the theme is "system defaults", use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            console.log("Dark system now!")
+            applyDark();
+        } else{
+            console.log("Light system now!")
+        }
+    } else if (theme === "light"){
+        console.log("Light theme selected")
+    }
+
+    
+    // Save the selected theme to the item `dark` in localstorage.
+    // console.log(theme);
+    
+    // Reload the page to apply the theme.
+}
+
 async function allPages() {
     // Search bar
     if (document.getElementById("message-list").children[1]) {
@@ -231,6 +273,18 @@ async function allPages() {
     }
     // Add Timetable link to profile dropdown
     document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
+
+    // Darkmode
+    if (localStorage.getItem("theme") !== null) {
+        // If there is a theme saved, display and select that theme automatically.
+        savedTheme = localStorage.getItem("theme")
+        console.log(savedTheme)
+    } else {
+        // Default value
+        savedTheme = "light";
+        localStorage.setItem("theme", savedTheme);
+    }
+    document.addEventListener("DOMContentLoaded", updateTheme(savedTheme));
     
     colourSidebar();
     colourTimetable();
@@ -572,40 +626,12 @@ if (localStorage.getItem("theme") !== null) {
     }
 
     // When the page loads, add an event listener to the theme selector.
+    document.querySelector("#context-selector-dark").value = savedTheme;
     document.querySelector("#context-selector-dark").addEventListener("change", function() {
+        localStorage.setItem("theme", this.value);
         window.location.reload();
-    updateTheme(this.value);
+        // updateTheme(this.value);
     });
-
-    document.addEventListener("DOMContentLoaded", updateTheme(savedTheme));
-
-    function applyDark() {
-        console.log("hypothetically, the dark mode would be applied here")
-      }
-
-    function updateTheme(theme) {
-    // If the theme is "dark", run the applyDark() function to apply the theme.
-    if (theme === "dark") {
-        console.log("Dark Selected!")
-        applyDark()
-    } else if (theme === "defaults") {
-        // If the theme is "system defaults", use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            console.log("Dark system now!")
-            applyDark()
-        } else{
-            console.log("Light system now!")
-        }
-    } else if (theme === "light"){
-        console.log("Light theme selected")
-    }
-
-    
-    // Save the selected theme to the item `dark` in localstorage.
-    localStorage.setItem("theme", theme);
-    
-    // Reload the page to apply the theme.
-    }
 
     for (const setting in settings) {
         const toggle_setting = document.getElementById("toggle_" + setting)
