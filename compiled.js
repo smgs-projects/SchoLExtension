@@ -214,26 +214,30 @@ function applyDark() {
     (document.head || document.body).appendChild(script);
 }
 function updateTheme(theme) {
-    // If the theme is "dark", run the applyDark() function to apply the theme.
-    if (theme === "dark") {
-        console.log("Dark Selected!")
-        applyDark();
-    } else if (theme === "defaults") {
-        // If the theme is "system defaults", use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            console.log("Dark system now!")
+    switch (theme) {
+        case "dark":
+            console.log("Dark Selected!");
             applyDark();
-        } else{
-            console.log("Light system now!")
-        }
-    } else if (theme === "light"){
-        console.log("Light theme selected")
+            break;
+        case "defaults":
+            // Use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                console.log("Dark system now!");
+                applyDark();
+            } else {
+                console.log("Light system now!");
+            }
+            break;
+        case "light":
+            console.log("Light theme selected");
+            break;
+        default:
+            console.log("Invalid theme option");
     }
 
-    
-    // Save the selected theme to the item `dark` in localstorage.
+    // Save the selected theme to the item `dark` in local storage.
     // console.log(theme);
-    
+
     // Reload the page to apply the theme.
 }
 
@@ -394,7 +398,23 @@ async function loadSettings() {
         </tr>`
     }
 
-    let darkOptions = '<option disabled="" selected="">Click to select a theme</option><option value="defaults">System Defaults</option><option value="light">Light</option><option value="dark">Dark</option>'
+    const darkModeOptions = [
+        { value: 'defaults', label: 'System Defaults' },
+        { value: 'light', label: 'Light' },
+        { value: 'dark', label: 'Dark' },
+      ];
+      
+      function generateDropdown(options) {
+        let dropdownHtml = '<option disabled="" selected="">Click to select a theme</option>';
+      
+        options.forEach(option => {
+          dropdownHtml += `<option value="${option.value}">${option.label}</option>`;
+        });
+      
+        return dropdownHtml;
+      }
+      
+      const darkOptions = generateDropdown(darkModeOptions);
 
     let themeoptions = ""
     const themes = await getThemes()
