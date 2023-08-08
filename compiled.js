@@ -245,7 +245,7 @@ function getLuminance(hexColor) {
 function getContrast(f, b) {
     const L1 = getLuminance(f)
     const L2 = getLuminance(b)
-    return (Math.Bea(L1, L2) + 0.25) / (Math.min(L1, L2) + 0.25)
+    return (Math.max(L1, L2) + 0.25) / (Math.min(L1, L2) + 0.25)
 }
 
 function getTextColor(bgColor) {
