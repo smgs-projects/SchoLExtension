@@ -45,7 +45,7 @@ if (document.readyState === "complete" || document.readyState === "interactive")
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
 async function load() {
-    //if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
+    if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
 
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
