@@ -54,10 +54,76 @@ async function load() {
         localStorage.removeItem("userToken");
         localStorage.setItem("lastUser", schoolboxUser.id);
     }
-    
-    let extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
-    
+
+    let skip_server_loading = false; // Assume server is online, if not, we will set this to true
+
+    if (localStorage.getItem("skipServerLoading") !== null) { // If we have a skipServerLoading item, check if it is still valid (30 minutes)
+        if (localStorage.getItem("skipServerLoading") > Date.now()) { skip_server_loading = true; }
+        else { localStorage.removeItem("skipServerLoading"); }
+
+        // or if the server is back online, we can remove the skipServerLoading item
+        // If the server is down and localStorage.getItem("skipServerLoading") is set, we will skip server loading for 30 minutes.
+        // Just in case it's back, let's add an async function to check if it's back up and if so, remove the config
+        (async () => {
+            try {
+                await getConfig();
+                console.warn("[SCHOLEXT] Server is back online! Everything will be loaded as normal with the next page load.")
+                localStorage.removeItem("skipServerLoading");
+            } catch (error) { if (error.message === 'Network error') {
+                console.warn(`[SCHOLEXT] Server is still offline, skipping forced server loading for ${Math.round((localStorage.getItem("skipServerLoading") - Date.now()) / 1000 / 60)} minutes`);
+            } }
+        })();
+    }
+
+    let extConfigSvr = { updated: 0, version: DEFAULT_CONFIG.version };
+    if (!skip_server_loading) {
+        try {
+          extConfigSvr = await getConfig(); // IF NOT EXISTS, RETURNS {updated: 0, version: INT}
+        } catch (error) {
+            skip_server_loading = true; // Skip loading from server unless we can fix the issue (e.g. invalid JWT then resolved)
+            if (error.message === 'Forbidden') {
+                console.error('[SCHOLEXT] Access to configuration data is forbidden. This is likely due to an invalid JWT. We will try to generate a new one,'); // Clear JWT and try again
+                localStorage.removeItem('userToken');
+                await remoteAuth();
+
+                // Try again, if this continues to fail, something is quite wrong.
+                try { extConfigSvr = await getConfig(); skip_server_loading = false; }
+                catch (error) {
+                    console.error('[SCHOLEXT] Failed to fetch configuration data after re-authentication. Something is very wrong', error);
+                }
+            } else if (error.message === 'Network error') {
+                console.error('[SCHOLEXT] Could not reach the server. It is possible that the server is down. Will still attempt to load configuration data from local storage.');
+            } else {
+                console.error('[SCHOLEXT] An unknown error occurred while fetching configuration data.');
+            }
+        }
+    }
+
     if (DEFAULT_CONFIG.version != extConfigSvr.version) { console.log("Version Mismatch"); return; } // If local version is not the same as the server, stop loading
+
+    if (skip_server_loading) { // If we are skipping server loading, we need to check if we have a local config
+        if (localStorage.getItem("extConfig") !== null) {
+            try { extConfig = JSON.parse(localStorage.getItem("extConfig"));
+            } catch { localStorage.removeItem("extConfig"); return; } // Ensure extConfig is valid JSON
+        } else { // No local config, there is nothing we can do so we will just prevent loading
+            console.error('[SCHOLEXT] No configuration data could be loaded. Server is likely down and no local configuration data exists. Please try again later.');
+            return;
+        }
+        console.warn("[SCHOLEXT] Loaded configuration data from local storage. We were unable to reach the server to fetch the latest configuration data so this may be out of date.");
+        console.warn("[SCHOLEXT] It is possible that some functionality will not work as intended until the server is back online.");
+        console.warn("[SCHOLEXT] If you are seeing this message frequently, please contact the SchoL Extension team.");
+
+        if (!localStorage.getItem("skipServerLoading")) {
+            // Set a localStorage item to continue skipping server loading for 30 minutes, this means timetable cols will load immediately for the user while the server is down
+            localStorage.setItem("skipServerLoading", Date.now() + 1800000);
+
+            // Alert the user that the server is down and that some functionality may not work as intended
+            // This will only show once, if the user refreshes the page, it will not show again - this is to prevent spamming the user with toasts
+            document.body.insertAdjacentHTML("beforeend", `<div id="scholext-fail-toaster" class="toast alert" data-toast></div>`)
+            const failToaster = $('#scholext-fail-toaster');
+            failToaster.toastActivate({text: 'Could not connect to SchoL Extension server. Custom timetable colours may not work correctly', css: 'alert'});
+        }
+    }
     else if (localStorage.getItem("extConfig") !== null) { // We already have a config locally and versions match
         try { extConfig = JSON.parse(localStorage.getItem("extConfig"));
         } catch { localStorage.removeItem("extConfig"); return; } // Ensure extConfig is valid JSON
@@ -115,7 +181,7 @@ async function timetableCache(forcePush) {
                 }
             }
             localStorage.setItem("lastThemeCache", Date.now())
-            
+
             if (JSON.stringify(extConfig.theme) != JSON.stringify(timetableTheme) || JSON.stringify(extConfig.themedefault) != JSON.stringify(defaultTheme) || forcePush) {
                 extConfig.theme = timetableTheme;
                 extConfig.themedefault = defaultTheme;
@@ -158,7 +224,7 @@ function hexToRgb(hex) {
         var g = parseInt(result[2], 16);
         var b = parseInt(result[3], 16);
         return r + ", " + g + ", " + b;
-    } 
+    }
     return null;
 }
 function getRGB(c) {
@@ -181,7 +247,7 @@ function getContrast(f, b) {
     const L2 = getLuminance(b)
     return (Math.max(L1, L2) + 0.25) / (Math.min(L1, L2) + 0.25)
 }
-  
+
 function getTextColor(bgColor) {
     const whiteContrast = getContrast(bgColor, '#ffffff')
     const blackContrast = getContrast(bgColor, '#000000')
@@ -249,7 +315,7 @@ async function allPages() {
                 }
             }
         });
-        document.getElementById("message-list").children[1].appendChild(searchbar)        
+        document.getElementById("message-list").children[1].appendChild(searchbar)
     }
     // Fix "days remaining" on due work items to a more friendly value
     for (let item of document.querySelectorAll("time")) {
@@ -257,7 +323,7 @@ async function allPages() {
             const daysleft = (new Date(item.dateTime).getTime() - Date.now()) / 8.64e+7
             const hoursleft = (new Date(item.dateTime).getTime() - Date.now()) / 3.6e+6
             const minutesleft = (new Date(item.dateTime).getTime() - Date.now()) / 60000
-            
+
             if (daysleft >= 1) { item.textContent = Math.round(daysleft) + (daysleft == 1 ? " day left" : " days left") }
             else if (hoursleft >= 1) { item.textContent = Math.round(hoursleft) + (hoursleft == 1 ? " hour left" : " hours left") }
             else { item.textContent = Math.round(minutesleft) + (minutesleft == 1 ? " minute left" : " minutes left") }
@@ -265,7 +331,7 @@ async function allPages() {
     }
     // Add Timetable link to profile dropdown
     document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
-
+    
     // Check if extConfig has darkmodeTheme (backwards compatibility)
     if (!extConfig.darkmodetheme) {
         // If the darkmodetheme config is not available, set it to a default val and post to db
@@ -274,7 +340,6 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-
     document.addEventListener("DOMContentLoaded", updateTheme(extConfig.darkmodetheme));
     
     colourSidebar();
@@ -297,7 +362,7 @@ function colourDuework() {
     if (extConfig.settings.colourduework) {
         let dueworkitems = document.querySelectorAll(".Schoolbox_Learning_Component_Dashboard_UpcomingWorkController li")
         if (!dueworkitems.length) { dueworkitems = document.querySelectorAll("#report_content li") }
-        
+
         for (const duework of dueworkitems) {
             const subjects = REGEXP.exec(duework.querySelector("a:not(.title)").innerText)[1]?.split(",")
             for (const subject of subjects) {
@@ -328,7 +393,7 @@ function colourTimetable() {
                 subject.parentNode.style.backgroundImage = "url(" + theme.image + ")"
                 subject.parentNode.style.backgroundSize = `100% 100%`
             }
-        
+
         }
     }
 }
@@ -344,10 +409,10 @@ function classesPage() {
 }
 
 function profilePage() {
-    fetch(THEME_API + "/pronouns/" + window.location.pathname.split("/")[window.location.pathname.split("/").length - 1], 
+    fetch(THEME_API + "/pronouns/" + window.location.pathname.split("/")[window.location.pathname.split("/").length - 1],
         { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
     .then(r => r.json())
-    .then(r => { 
+    .then(r => {
         let pronouns = r.join(", ")
         const profileRow = document.querySelector(".main .profile.content .row");
         profileRow.style.position = "relative";
@@ -437,7 +502,7 @@ async function loadSettings() {
     if (is_profile) {
         contentrow = document.querySelectorAll("#content .row");
         if (!contentrow[3]) { contentrow = contentrow[1] } else { contentrow = contentrow[3] }
-        
+
         contentrow.querySelector("div").classList = "medium-12 large-6 island"
         contentrow.querySelector("div").insertAdjacentHTML("afterbegin", `<h2 class="subheader">Profile</h2>`)
     } else {
@@ -452,7 +517,7 @@ async function loadSettings() {
                 <fieldset class="content">
                     <legend><strong>Preferred Pronouns</strong></legend>
                     <div class="small-12 columns">
-                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - nothing this is not currrently reflected on School records or in an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
+                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
                     </div>
                     <div class="small-12 medium-6 columns">
                         <fieldset class="content">
@@ -593,7 +658,7 @@ async function loadSettings() {
             await postConfig();
         })
     }
-    
+
     let elem_imageupload = document.getElementById("image-uploader")
     let elem_resetbtn = document.getElementById("resetbtn")
     let elem_currenttheme = document.getElementById("currenttheme")
@@ -635,7 +700,7 @@ async function loadSettings() {
         pronoun.addEventListener("change", async function() {
             if (!pronoun.checked) extConfig.pronouns.selected = extConfig.pronouns.selected.filter(e => e != pronoun.name)
             else if (!extConfig.pronouns.selected.includes(pronoun.name)) extConfig.pronouns.selected.push(pronoun.name)
-            
+
             document.getElementById("pronounslabel").innerText = "Pronouns: " + extConfig.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
             document.getElementById("pronounsrow").innerText = extConfig.pronouns.selected.map(e => VALID_PRONOUNS[e]).join(", ")
             if (!extConfig.pronouns.selected.length) {
@@ -665,19 +730,19 @@ async function loadSettings() {
     function updateThemeExport() {
         elem_currenttheme.value = Object.values(extConfig.theme).map(e => {if (e["current"] === "color") {return e["color"]}})
         .filter(e => e !== undefined)
-        .map((e) => { 
-            return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number)) 
+        .map((e) => {
+            return rgbToHex(...e.replace(/[^\d\s]/g, '').split(' ').map(Number))
         }
         ).join("-").replaceAll("#", "").toUpperCase()
     }
     updateThemeExport();
-    
+
     for (const row of document.querySelectorAll(".subject-color-row")) {
         const subject = row.children[0].innerText;
         // Colour picker input
         if (!row.children[1]) continue;
         row.children[1].children[0].children[0].addEventListener("change", async function(e) {
-            const rgbval = "rgb(" + hexToRgb(e.target.value) + ")" 
+            const rgbval = "rgb(" + hexToRgb(e.target.value) + ")"
             row.style.borderLeft = "7px solid " + rgbval
             row.style.backgroundColor = rgbval.replace("rgb", "rgba").replace(")", ", 10%)")
 
@@ -704,7 +769,7 @@ async function loadSettings() {
             extConfig.updated = Date.now();
             localStorage.setItem("extConfig", JSON.stringify(extConfig))
             await postConfig();
-            
+
             setTimeout(function() {
                 e.target.style.border = ""
             }, 5000)
@@ -719,7 +784,7 @@ async function loadSettings() {
             row.style.backgroundSize = "100% 100%"
             row.children[1].children[0].children[0].value = rgbToHex(...rgbval.replace(/[^\d\s]/g, '').split(' ').map(Number))
             row.children[1].children[0].children[1].value = ""
-            
+
             extConfig.theme[subject] = {color: rgbval, image: null, current: "color"}
             extConfig.updated = Date.now();
             localStorage.setItem("extConfig", JSON.stringify(extConfig))
@@ -772,7 +837,7 @@ async function loadSettings() {
         window.location.reload()
     })
     elem_exportbtn.addEventListener("click", function () {
-        elem_exportbtn.innerText = "Copied!"        
+        elem_exportbtn.innerText = "Copied!"
         if (navigator.userAgent.match(/ipad|iphone/i)) {
             Clipboard.copy(elem_currenttheme.value)
         } else {
@@ -785,7 +850,7 @@ async function loadSettings() {
         if (!elem_importtext.value) { return }
         let currenttheme = extConfig.themedefault
         const newtheme = rgbsFromHexes(elem_importtext.value)
-        if (newtheme.length == 0) { 
+        if (newtheme.length == 0) {
             elem_importbtn.parentElement.insertAdjacentHTML("afterend", `<div data-alert class="alert-box alert themecodealert"><strong>Invalid Input:</strong> Ensure the text you enter is a list of hex codes seperated by dashes or a coolors.co link.<br><br>For example: "d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4"</div>`)
             setTimeout(function () {
                 document.querySelector(".themecodealert")?.remove()
@@ -844,9 +909,9 @@ function colourEDiaryList() {
         const eventDot = event.querySelector(".fc-list-event-dot");
         eventDot.style.backgroundColor = eventDot.style.borderColor
         const subjectcode = REGEXP.exec(event.querySelector(".fc-event-title").innerText)
-        if (!subjectcode) return; 
+        if (!subjectcode) return;
         const colour = extConfig.theme[subjectcode[1]]?.color
-        if (!colour) return; 
+        if (!colour) return;
         eventDot.style.borderColor = colour
         eventDot.style.backgroundColor = colour
     })
@@ -878,7 +943,7 @@ function feedback() {
                 summary.style.display = "none"
             }
         }
-    }    
+    }
     // Add colour to feedback classes
     // ~ Desktop
     for (const subject of document.querySelectorAll("ul.activity-list")) {
@@ -903,9 +968,9 @@ function assessments() {
         if (!["SUBMIT RESPONSE", "SUBMISSION HISTORY"].includes(e.innerText)) continue
 
         let matches = document.querySelector(".breadcrumb")?.innerText.match(REGEXP);
-        let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);    
+        let matches2 = document.querySelector(".breadcrumb")?.innerText.match(REGEXP2);
         let match = matches ? matches[0] : matches2[0];
-    
+
         if (7 <= parseInt(match.slice(1, 3)) && parseInt(match.slice(1, 3)) <= 11) {
             const rows = document.querySelectorAll(".row");
             rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
@@ -925,9 +990,9 @@ function eDiary() {
     } else {
         document.querySelectorAll(".fc-timegrid-event, .fc-daygrid-event").forEach(event => {
             const subjectcode = REGEXP.exec(event.innerText)
-            if (!subjectcode) return; 
+            if (!subjectcode) return;
             const colour = extConfig.theme[subjectcode[1]]?.color
-            if (!colour) return; 
+            if (!colour) return;
             const textcol = getTextColor(rgbToHex(...colour.replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             event.style.backgroundColor = colour
             event.querySelectorAll("*").forEach(e => { e.style.color = textcol })
@@ -1066,7 +1131,7 @@ async function mainPage() {
                                     </div>
                                 </span>
                             </div>
-                        `} 
+                        `}
                     </div>
                 </li>
             `
@@ -1089,7 +1154,7 @@ async function mainPage() {
     updateDepartures();
     setInterval(updateDepartures, 60000)
     setInterval(updateDepartureTimes, 1000)
-   
+
     // Timetable (mobile) - Make background white
     document.querySelectorAll(".show-for-small-only").forEach(el => { el.style.backgroundColor = "#FFF"; })
 
@@ -1130,11 +1195,19 @@ function timetable() {
 }
 
 async function remoteAuth() {
-    return new Promise (( resolve ) => {
-        fetch(REMOTE_API).then(r => r.json()).then(result => {
-            localStorage.setItem("userToken", result.token);
-            resolve()
-        })
+    return new Promise(async (resolve, reject) => {
+        try {
+            const response = await fetch(REMOTE_API);
+            if (!response.ok) {
+                throw new Error(`Server error (${response.status})`);
+            } else {
+                const result = await response.json();
+                localStorage.setItem('userToken', result.token);
+                resolve();
+            }
+        } catch (error) {
+            reject(new Error('Network error'));
+        }
     });
 }
 function postImage(image) {
@@ -1155,11 +1228,29 @@ async function getThemes() {
 
 
 async function getConfig() {
-    return new Promise (async ( resolve ) => {
-        if (!localStorage.getItem("userToken")) { await remoteAuth(); }
-        fetch(THEME_API + "/config", { headers: new Headers({"Authorization": "Basic " + localStorage.getItem("userToken")}) })
-        .then(r => r.json())
-        .then(r => { resolve(r) })
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!localStorage.getItem('userToken')) {
+                await remoteAuth();
+            }
+            const response = await fetch(THEME_API + '/config', {
+                headers: new Headers({
+                    Authorization: 'Basic ' + localStorage.getItem('userToken'),
+                }),
+            });
+            if (!response.ok) {
+                if (response.status === 403) {
+                    reject(new Error('Forbidden'));
+                } else {
+                    reject(new Error(`Server error (${response.status})`));
+                }
+            } else {
+                const config = await response.json();
+                resolve(config);
+            }
+        } catch (error) {
+            reject(new Error('Network error'));
+        }
     });
 }
 async function postConfig() {
