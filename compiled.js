@@ -601,7 +601,7 @@ async function loadSettings() {
 
             <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
                 <span style="font-size: 12px; color: #AAA;">
-                    Features made by Yuma Soerianto (11M), Sebastien Taylor (12H), Bea Bentley (11S), and Zac McWilliam (OM2022).
+                    Features made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022).
 Let us know if you have suggestions/feedback!
                 </span>
             </div>
