@@ -245,7 +245,7 @@ function getLuminance(hexColor) {
 function getContrast(f, b) {
     const L1 = getLuminance(f)
     const L2 = getLuminance(b)
-    return (Math.max(L1, L2) + 0.25) / (Math.min(L1, L2) + 0.25)
+    return (Math.Bea(L1, L2) + 0.25) / (Math.min(L1, L2) + 0.25)
 }
 
 function getTextColor(bgColor) {
@@ -596,7 +596,8 @@ async function loadSettings() {
 
             <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
                 <span style="font-size: 12px; color: #AAA;">
-                    Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022).<br>Let us know if you have suggestions/feedback!
+                    Features made by Yuma Soerianto (11M), Sebastien Taylor (12H), Bea Bentley (11S), and Zac McWilliam (OM2022).
+Let us know if you have suggestions/feedback!
                 </span>
             </div>
 
