@@ -24,10 +24,13 @@ const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c709
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
+// Darkmode Theme location
+const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
 
 const DEFAULT_CONFIG = {
     "theme" : {},
     "themedefault" : {},
+    "darkmodetheme" : "light",
     "settings" : {"colourduework":1,"compacttimetable":1},
     "pronouns" : {"selected":[],"show":[1,1,1]},
     "updated" : 0,
@@ -37,8 +40,6 @@ const DEFAULT_CONFIG = {
 let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
-
-let savedTheme;
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
@@ -198,47 +199,34 @@ function rgbsFromHexes(url) {
 }
 
 function applyDark() {
-    // console.log("hypothetically, the dark mode would be applied here");
-
-    // TODO: Instead of fetching darkmode css from window data, fetch from external URL!!!!
-    let darkmodeTxt = darkModeCss;
-    // console.log(darkmodeTxt);
-
-    let script = document.createElement('style');
-    let code = document.createTextNode(darkmodeTxt);
+    let script = document.createElement('link');
+    script.rel = "stylesheet";
+    script.href = DARKMODE_CSS_URL;
 
     document.styleSheets[1].disabled = true;
-    script.appendChild(code);
     script.id = "darkmode-core";
-    console.log("adding darkmode...");
     (document.head || document.body).appendChild(script);
 }
-function updateTheme(theme) {
+async function updateTheme(theme) {
     switch (theme) {
         case "dark":
-            console.log("Dark Selected!");
             applyDark();
             break;
         case "defaults":
             // Use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                console.log("Dark system now!");
                 applyDark();
-            } else {
-                console.log("Light system now!");
             }
             break;
         case "light":
-            console.log("Light theme selected");
             break;
         default:
-            console.log("Invalid theme option");
+            // Set a default config and save it if there's no valid stored value
+            extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig));
+            await postConfig();
     }
-
-    // Save the selected theme to the item `dark` in local storage.
-    // console.log(theme);
-
-    // Reload the page to apply the theme.
 }
 
 async function allPages() {
@@ -278,17 +266,16 @@ async function allPages() {
     // Add Timetable link to profile dropdown
     document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
 
-    // Darkmode
-    if (localStorage.getItem("theme") !== null) {
-        // If there is a theme saved, display and select that theme automatically.
-        savedTheme = localStorage.getItem("theme")
-        console.log(savedTheme)
-    } else {
-        // Default value
-        savedTheme = "light";
-        localStorage.setItem("theme", savedTheme);
+    // Check if extConfig has darkmodeTheme (backwards compatibility)
+    if (!extConfig.darkmodetheme) {
+        // If the darkmodetheme config is not available, set it to a default val and post to db
+        extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
+        extConfig.updated = Date.now();
+        localStorage.setItem("extConfig", JSON.stringify(extConfig));
+        await postConfig();
     }
-    document.addEventListener("DOMContentLoaded", updateTheme(savedTheme));
+
+    document.addEventListener("DOMContentLoaded", updateTheme(extConfig.darkmodetheme));
     
     colourSidebar();
     colourTimetable();
@@ -507,13 +494,6 @@ async function loadSettings() {
                 </thead>
                 <tbody>${tablerows}</tbody>
             </table>
-            <div class="component-action">
-                <section>
-                    <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">
-                        Feature made by Zac McWilliam (OM2022) and Sebastien Taylor (12H). Let us know if you have suggestions/feedback!
-                    </span>
-                </section>
-            </div>
 
             <h2 class="subheader">Theme Manager</h2>
             <section>
@@ -549,50 +529,54 @@ async function loadSettings() {
             <div id=customStuff>
             </div>
 
+            <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
+                <span style="font-size: 12px; color: #AAA;">
+                    Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022).<br>Let us know if you have suggestions/feedback!
+                </span>
+            </div>
+
             <ul class="meta" style="font-size: 12px">
                 SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: scholfeedback@stmichaels.vic.edu.au. <!-- rip dead name remover :( -->
             </ul>
         </div>`)
 
 
-        module_darkMode = `  
+    module_darkMode = `  
         <h2 class="subheader">Dark Mode</h2>
         <section>
             <fieldset class="content">
                 <legend><strong>Dark Mode Theme Selector</strong></legend>
                 <div class="small-12 columns">
-                   <p>Select your SchoL Theme Here! System defaults uses your system theme setting, while light and dark mode override that setting for your preference.</p>
+                    <p>Select your SchoL Theme Here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
                 </div>
-                <div class="small-12 columns"><select id="context-selector-dark">${darkOptions}</select></div>
+                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select></div>
                 <div class="small-12 columns">
-                   <p>Please Note: Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
-                   <span style="line-height: 40px; font-size: 12px; color: #AAA; margin-left: 10px; margin-right: 10px">Feature made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022) Let us know if you have suggestions/feedback!
-                   </span>
+                    <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
                 </div>
-             </fieldset>
-             </section>`
+            </fieldset>
+        </section>
+        `
 
-        function injectModule(html) {
-            // Get the div tag with the id customStuff
-            var div = document.getElementById("customStuff");
-          
-            // Append the HTML to the div tag
-            div.innerHTML += html;
-          }
-
-          injectModule(module_darkMode)
-
-if (localStorage.getItem("theme") !== null) {
-    // If there is a theme saved, display and select that theme automatically.
-    savedTheme = localStorage.getItem("theme")
-    console.log(savedTheme)
-    document.querySelector("#context-selector-dark").value = localStorage.getItem("theme");
+    function injectModule(html) {
+        // Get the div tag with the id customStuff
+        var div = document.getElementById("customStuff");
+        
+        // Append the HTML to the div tag
+        div.innerHTML += html;
     }
 
+    injectModule(module_darkMode)
+
     // When the page loads, add an event listener to the theme selector.
-    document.querySelector("#context-selector-dark").value = savedTheme;
-    document.querySelector("#context-selector-dark").addEventListener("change", function() {
-        localStorage.setItem("theme", this.value);
+    document.querySelector("#context-selector-dark").value = extConfig.darkmodetheme;
+    document.querySelector("#context-selector-dark").addEventListener("change", async function() {
+        // Write to and save darkmode theme config
+        extConfig.darkmodetheme = this.value;
+        extConfig.updated = Date.now();
+        localStorage.setItem("extConfig", JSON.stringify(extConfig))
+        await postConfig();
+
+        // localStorage.setItem("theme", this.value);
         window.location.reload();
         // updateTheme(this.value);
     });
