@@ -1,3 +1,7 @@
+
+// "background": { "scripts": ["chrome_ext/hot-reload.js"] },
+
+
 // https://github.com/xpl/crx-hotreload/
 const filesInDirectory = dir => new Promise (resolve =>
   dir.createReader ().readEntries (entries =>
