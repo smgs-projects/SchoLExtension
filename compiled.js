@@ -4,6 +4,11 @@
 //   _,.-'`_ o `;__,
 //    _.-'` '---'  '
 //
+// Dark mode made by Max Bentley, Yuma Soerianto, and Sebastien Taylor
+//         _
+//     ___(.)<
+//     \____)
+//    
 // Latest available code: https://apps.stmichaels.vic.edu.au/scholext/compiled.js
 
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
