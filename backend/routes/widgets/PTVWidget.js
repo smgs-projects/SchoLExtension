@@ -55,36 +55,41 @@ const stops = {
 reCache();
 setInterval(reCache, 60000)
 async function reCache() {
-    let newSchedule = {} 
-    for (const stationname of Object.keys(stops)) {
-        const station = stops[stationname]
-        
-        for (const direction of (await (await ptvClient).Directions.Directions_ForRoute({route_id: station["route_id"]})).body.directions) {
-            if (![[], undefined].includes(newSchedule[station.route_id + direction.direction_id]?.departures)) continue; 
-            newSchedule[station.route_id + direction.direction_id] = {
-                "name": direction.direction_name, 
-                "route": station.name, 
-                "type": station.route_type, 
-                "colour": station.colour,
-                "prefix": station.prefix,
-                "departures": []
+    try {
+        let newSchedule = {} 
+        for (const stationname of Object.keys(stops)) {
+            const station = stops[stationname]
+            
+            for (const direction of (await (await ptvClient).Directions.Directions_ForRoute({route_id: station["route_id"]})).body.directions) {
+                if (![[], undefined].includes(newSchedule[station.route_id + direction.direction_id]?.departures)) continue; 
+                newSchedule[station.route_id + direction.direction_id] = {
+                    "name": direction.direction_name, 
+                    "route": station.name, 
+                    "type": station.route_type, 
+                    "colour": station.colour,
+                    "prefix": station.prefix,
+                    "departures": []
+                }
+            }
+            let departures = (await (await ptvClient).Departures.Departures_GetForStop({stop_id: station["stop_id"], route_id: station["route_id"], route_type: station["route_type"]})).body
+            for (const departure of departures.departures) {
+                if (new Date(departure.scheduled_departure_utc).getTime() < new Date().getTime()) continue;
+                if (departure.route_id !== station.route_id) continue;
+                if (newSchedule[station.route_id + departure.direction_id].departures.length >= 5) continue;
+                newSchedule[station.route_id + departure.direction_id].departures.push({
+                    "scheduled_time": new Date(departure.scheduled_departure_utc).getTime(),
+                    "estimated_time": new Date(departure.estimated_departure_utc).getTime(),
+                    "platform": departure.platform_number,
+                    "disruption": departure.disruption_ids.length !== 0
+                })
             }
         }
-        let departures = (await (await ptvClient).Departures.Departures_GetForStop({stop_id: station["stop_id"], route_id: station["route_id"], route_type: station["route_type"]})).body
-        for (const departure of departures.departures) {
-            if (new Date(departure.scheduled_departure_utc).getTime() < new Date().getTime()) continue;
-            if (departure.route_id !== station.route_id) continue;
-            if (newSchedule[station.route_id + departure.direction_id].departures.length >= 5) continue;
-            newSchedule[station.route_id + departure.direction_id].departures.push({
-                "scheduled_time": new Date(departure.scheduled_departure_utc).getTime(),
-                "estimated_time": new Date(departure.estimated_departure_utc).getTime(),
-                "platform": departure.platform_number,
-                "disruption": departure.disruption_ids.length !== 0
-            })
-        }
+        schedule = Object.keys(newSchedule).map(e => newSchedule[e]);
+        last_updated = new Date().getTime();
+    } catch (e) {
+        console.error("PTV Error Detected, Passing")
+        console.error(e.stack);
     }
-    schedule = Object.keys(newSchedule).map(e => newSchedule[e]);
-    last_updated = new Date().getTime();
 }
 
 router.get('/schedule', (req, res) => {
