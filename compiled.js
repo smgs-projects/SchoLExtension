@@ -273,8 +273,6 @@ function applyDark() {
     let script = document.createElement('link');
     script.rel = "stylesheet";
     script.href = DARKMODE_CSS_URL;
-
-    document.styleSheets[1].disabled = true;
     script.id = "darkmode-core";
     (document.head || document.body).appendChild(script);
 }
