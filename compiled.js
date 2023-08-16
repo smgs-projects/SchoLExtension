@@ -46,6 +46,50 @@ let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
 
+// Try to push out darkmode early to prevent light mode flash
+function applyDark() {
+    let script = document.createElement('link');
+    script.rel = "stylesheet";
+    script.href = DARKMODE_CSS_URL;
+
+    document.styleSheets[1].disabled = true;
+    script.id = "darkmode-core";
+    (document.head || document.body).appendChild(script);
+}
+async function updateTheme(theme) {
+    switch (theme) {
+        case "dark":
+            applyDark();
+            break;
+        case "defaults":
+            // Use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                applyDark();
+            }
+            break;
+        case "light":
+            break;
+        default:
+            // Set a default config and save it if there's no valid stored value
+            extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
+            extConfig.updated = Date.now();
+            localStorage.setItem("extConfig", JSON.stringify(extConfig));
+            await postConfig();
+    }
+}
+// Check for extConfig existence early to get dark mode theme setting ASAP
+if (localStorage.getItem("extConfig") !== null) {
+    try {
+        let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
+        if (!earlyExtConfig.darkmodetheme) return;
+        updateTheme(earlyExtConfig.darkmodetheme);
+    } catch {
+        return;
+    }
+}
+
+
+
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
@@ -269,35 +313,6 @@ function rgbsFromHexes(url) {
     return rgbs
 }
 
-function applyDark() {
-    let script = document.createElement('link');
-    script.rel = "stylesheet";
-    script.href = DARKMODE_CSS_URL;
-    script.id = "darkmode-core";
-    (document.head || document.body).appendChild(script);
-}
-async function updateTheme(theme) {
-    switch (theme) {
-        case "dark":
-            applyDark();
-            break;
-        case "defaults":
-            // Use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                applyDark();
-            }
-            break;
-        case "light":
-            break;
-        default:
-            // Set a default config and save it if there's no valid stored value
-            extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
-            extConfig.updated = Date.now();
-            localStorage.setItem("extConfig", JSON.stringify(extConfig));
-            await postConfig();
-    }
-}
-
 async function allPages() {
     // Search bar
     if (document.getElementById("message-list").children[1]) {
@@ -343,7 +358,7 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    document.addEventListener("DOMContentLoaded", updateTheme(extConfig.darkmodetheme));
+    updateTheme(extConfig.darkmodetheme);
     
     colourSidebar();
     colourTimetable();
