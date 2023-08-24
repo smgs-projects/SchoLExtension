@@ -1,4 +1,4 @@
-// Random SchoL improvements that make it better maybe?™
+// Random SchoL improvements that make it better maybe?
 // by Zac McWilliam and Sebastien Taylor
 //         ____
 //   _,.-'`_ o `;__,
@@ -8,8 +8,7 @@
 //         _
 //     ___(.)<
 //     \____)
-//    
-// Latest available code: https://apps.stmichaels.vic.edu.au/scholext/compiled.js
+// 
 
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
@@ -47,16 +46,40 @@ let extConfigSvr;
 let extConfig;
 
 // Try to push out darkmode early to prevent light mode flash
+let darkmodeCSSDom;
 function applyDark() {
-    let script = document.createElement('link');
-    script.rel = "stylesheet";
-    script.href = DARKMODE_CSS_URL;
+    darkmodeCSSDom = document.createElement('link');
+    darkmodeCSSDom.rel = "stylesheet";
+    darkmodeCSSDom.href = DARKMODE_CSS_URL;
 
     document.styleSheets[1].disabled = false;
-    script.id = "darkmode-core";
-    (document.head || document.body).appendChild(script);
+    darkmodeCSSDom.id = "darkmode-core";
+    (document.head || document.body).appendChild(darkmodeCSSDom);
+
+    // Custom text contrast checks
+    const layer1Bg = [0, 0, 38];
+    const wcagContrast = 4.5; // WCAG-recommended contrast ratio
+    document
+    .querySelectorAll(`span:not([style*="color:#000"]):not(td[style*="background-color"] span):not(span[style*="background-color"] > span):not(div[style*="background-color"] *)`)
+    .forEach((e) => {
+        let rgb = e.style.color
+        .replace(/[^\d,]/g, "")
+        .split(",")
+        .slice(0, 3);
+
+        // Check if there's enough contrast
+        if (rgb.length === 3 && contrast(layer1Bg, rgb) < wcagContrast) {
+            e.style.color = `rgb(${255 - rgb[0]},${255 - rgb[1]},${255 - rgb[2]})`;
+        }
+    });
 }
 async function updateTheme(theme) {
+    if (darkmodeCSSDom) {
+        // If dark mode css already exists, remove it
+        darkmodeCSSDom.remove();
+        darkmodeCSSDom = undefined;
+    }
+
     switch (theme) {
         case "dark":
             applyDark();
@@ -77,14 +100,15 @@ async function updateTheme(theme) {
             await postConfig();
     }
 }
+
 // Check for extConfig existence early to get dark mode theme setting ASAP
-if (localStorage.getItem("extConfig") !== null) {
+// Also disable if being overrided by dev ScholExt 
+if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
-        if (!earlyExtConfig.darkmodetheme) return;
-        updateTheme(earlyExtConfig.darkmodetheme);
+        if (earlyExtConfig.darkmodetheme) updateTheme(earlyExtConfig.darkmodetheme);
     } catch {
-        return;
+        console.log("2345312");
     }
 }
 
@@ -614,13 +638,12 @@ async function loadSettings() {
 
             <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
                 <span style="font-size: 12px; color: #AAA;">
-                    Features made by Yuma Soerianto (11M), Sebastien Taylor (12H), Max Bentley (11S), and Zac McWilliam (OM2022).
-Let us know if you have suggestions/feedback!
+                    Additional features developed by Yuma (11M), Sebastien (12H), Max (11S), and Zac (OM2022).
                 </span>
             </div>
 
             <ul class="meta" style="font-size: 12px">
-                SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: scholfeedback@stmichaels.vic.edu.au. <!-- rip dead name remover :( -->
+                SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: <a href="mailto:scholfeedback@stmichaels.vic.edu.au">scholfeedback@stmichaels.vic.edu.au</a>. <!-- rip dead name remover :( -->
             </ul>
         </div>`)
 
@@ -1285,3 +1308,34 @@ async function postConfig() {
         }).then(r => { resolve() })
     });
 }
+
+const splashList = [
+    "Ducks are pretty cool",
+    "More themes one day???",
+    "Cubifying dogs, 50% loaded",
+    "Good4u (subscribe)",
+    "Boppity bibbity your breathing is now a concious activity",
+    "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
+    ":D",
+    "Hello there",
+    "General kenobi",
+    "Over 1.8k lines of code!",
+    "We would like to contact your about your cars extended warranty",
+    "As seen on TV!",
+    "It's here!",
+    "One of a kind!",
+    "Mobile compatible!",
+    "Exclusive!",
+    "NP is not in P!",
+    "Jeb_",
+    "Also try services!",
+    "There are no facts, only interpretations.",
+    "Made with CSS!",
+    "Made with JS!",
+    "0% Sugar!"   
+];
+
+const splashIndex = Math.floor(Math.random() * splashList.length);
+const splashText = splashList[splashIndex];
+
+console.log("Schol Extentions Enabled. " + splashText);
