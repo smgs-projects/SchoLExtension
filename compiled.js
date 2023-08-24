@@ -46,33 +46,80 @@ let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
 
-// Try to push out darkmode early to prevent light mode flash
+// ----- RGB CONTRAST STUFF -----
+
+const RED = 0.2126;
+const GREEN = 0.7152;
+const BLUE = 0.0722;
+const GAMMA = 2.4;
+
+function getRgbLuminance(r, g, b) {
+  var a = [r, g, b].map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, GAMMA);
+  });
+  return a[0] * RED + a[1] * GREEN + a[2] * BLUE;
+}
+
+function getRgbContrast(rgb1, rgb2) {
+  var lum1 = getRgbLuminance(...rgb1);
+  var lum2 = getRgbLuminance(...rgb2);
+  var brightest = Math.max(lum1, lum2);
+  var darkest = Math.min(lum1, lum2);
+  return (brightest + 0.05) / (darkest + 0.05);
+}
+
+// ----- END RGB CONTRAST STUFF -----
+
+// Dark Mode
 let darkmodeCSSDom;
 function applyDark() {
     darkmodeCSSDom = document.createElement('link');
     darkmodeCSSDom.rel = "stylesheet";
     darkmodeCSSDom.href = DARKMODE_CSS_URL;
 
-    document.styleSheets[1].disabled = false;
+    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
+
     darkmodeCSSDom.id = "darkmode-core";
     (document.head || document.body).appendChild(darkmodeCSSDom);
 
-    // Custom text contrast checks
-    const layer1Bg = [0, 0, 38];
-    const wcagContrast = 4.5; // WCAG-recommended contrast ratio
-    document
-    .querySelectorAll(`span:not([style*="color:#000"]):not(td[style*="background-color"] span):not(span[style*="background-color"] > span):not(div[style*="background-color"] *)`)
-    .forEach((e) => {
-        let rgb = e.style.color
-        .replace(/[^\d,]/g, "")
-        .split(",")
-        .slice(0, 3);
+    darkmodeCSSDom.onload = (e) => {
+        // Custom text contrast checks
+        const layer1Bg = [0, 0, 38];
+        const wcagContrast = 4.5; // WCAG-recommended contrast ratio
+        document
+        .querySelectorAll(`span:not([style*="color:#000"]):not(td[style*="background-color"] span):not(span[style*="background-color"] > span):not(div[style*="background-color"] *)`)
+        .forEach((e) => {
+            let rgb = window.getComputedStyle(e).color
+            .replace(/[^\d,]/g, "")
+            .split(",")
+            .slice(0, 3);
 
-        // Check if there's enough contrast
-        if (rgb.length === 3 && contrast(layer1Bg, rgb) < wcagContrast) {
-            e.style.color = `rgb(${255 - rgb[0]},${255 - rgb[1]},${255 - rgb[2]})`;
-        }
-    });
+            // Check if there's enough contrast
+            if (rgb.length === 3 && getRgbContrast(layer1Bg, rgb) < wcagContrast) {
+                e.style.color = `rgb(${255 - rgb[0]},${255 - rgb[1]},${255 - rgb[2]})`;
+            }
+        });  
+
+        document.querySelectorAll(`span[style*="background-color"]`).forEach((e) => {
+            let rgb = window.getComputedStyle(e).color
+            .replace(/[^\d,]/g, "")
+            .split(",")
+            .slice(0, 3);
+
+            let rgbBg = window.getComputedStyle(e).backgroundColor
+            .replace(/[^\d,]/g, "")
+            .split(",")
+            .slice(0, 3);
+
+            // Check if there's enough contrast
+            if (rgb.length === 3 && getRgbContrast(rgbBg, rgb) < wcagContrast) {
+                console.log(rgb);
+                e.style.cssText += `color:rgb(${255 - rgb[0]},${255 - rgb[1]},${255 - rgb[2]}) !important;`;
+                console.log(e.style.color);
+            }
+        });
+    };
 }
 async function updateTheme(theme) {
     if (darkmodeCSSDom) {
@@ -102,6 +149,7 @@ async function updateTheme(theme) {
     }
 }
 
+// Try to push out darkmode early to prevent light mode flash
 // Check for extConfig existence early to get dark mode theme setting ASAP
 // Also disable if being overrided by dev ScholExt 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
@@ -1310,33 +1358,35 @@ async function postConfig() {
     });
 }
 
-const splashList = [
-    "Ducks are pretty cool",
-    "More themes one day???",
-    "Cubifying dogs, 50% loaded",
-    "Good4u (subscribe)",
-    "Boppity bibbity your breathing is now a concious activity",
-    "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
-    ":D",
-    "Hello there",
-    "General kenobi",
-    "Over 1.8k lines of code!",
-    "We would like to contact your about your cars extended warranty",
-    "As seen on TV!",
-    "It's here!",
-    "One of a kind!",
-    "Mobile compatible!",
-    "Exclusive!",
-    "NP is not in P!",
-    "Jeb_",
-    "Also try services!",
-    "There are no facts, only interpretations.",
-    "Made with CSS!",
-    "Made with JS!",
-    "0% Sugar!"   
-];
+if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
+    const splashList = [
+        "Ducks are pretty cool",
+        "More themes one day???",
+        "Cubifying dogs, 50% loaded",
+        "Good4u (subscribe)",
+        "Boppity bibbity your breathing is now a concious activity",
+        "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
+        ":D",
+        "Hello there",
+        "General kenobi",
+        "Over 1.8k lines of code!",
+        "We would like to contact your about your cars extended warranty",
+        "As seen on TV!",
+        "It's here!",
+        "One of a kind!",
+        "Mobile compatible!",
+        "Exclusive!",
+        "NP is not in P!",
+        "Jeb_",
+        "Also try services!",
+        "There are no facts, only interpretations.",
+        "Made with CSS!",
+        "Made with JS!",
+        "0% Sugar!"   
+    ];
 
-const splashIndex = Math.floor(Math.random() * splashList.length);
-const splashText = splashList[splashIndex];
+    const splashIndex = Math.floor(Math.random() * splashList.length);
+    const splashText = splashList[splashIndex];
 
-console.log("Schol Extentions Enabled. " + splashText);
+    console.log("Schol Extensions Enabled. " + splashText);
+}
