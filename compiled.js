@@ -118,7 +118,7 @@ function applyDark() {
             }
         });
         
-        document.querySelectorAll(`*[style*="color"]`).forEach((e) => {
+        document.querySelectorAll(`#content *[style*="color"]:not(.breadcrumb *):not(td[style*="background-color"] *):not(div[style*="background-color"] > .Paragraph > *)`).forEach((e) => {
             let rgb = window.getComputedStyle(e).color
             .replace(/[^\d,]/g, "")
             .split(",")
