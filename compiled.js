@@ -687,7 +687,7 @@ async function loadSettings() {
 
             <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
                 <span style="font-size: 12px; color: #AAA;">
-                    Additional features developed by Yuma (11M), Sebastien (12H), Max (11S), and Zac (OM2022).
+                    Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
                 </span>
             </div>
 
@@ -1359,31 +1359,36 @@ async function postConfig() {
 }
 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
+
+    // const splashList = [
+    //     "Ducks are pretty cool",
+    //     "More themes one day???",
+    //     "Cubifying dogs, 50% loaded",
+    //     "Good4u (subscribe)",
+    //     "Boppity bibbity your breathing is now a concious activity",
+    //     "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
+    //     ":D",
+    //     "Hello there",
+    //     "General kenobi",
+    //     "Over 1.8k lines of code!",
+    //     "We would like to contact your about your cars extended warranty",
+    //     "As seen on TV!",
+    //     "It's here!",
+    //     "One of a kind!",
+    //     "Mobile compatible!",
+    //     "Exclusive!",
+    //     "NP is not in P!",
+    //     "Jeb_",
+    //     "Also try services!",
+    //     "There are no facts, only interpretations.",
+    //     "Made with CSS!",
+    //     "Made with JS!",
+    //     "0% Sugar!"   
+    // ];
+
     const splashList = [
-        "Ducks are pretty cool",
-        "More themes one day???",
-        "Cubifying dogs, 50% loaded",
-        "Good4u (subscribe)",
-        "Boppity bibbity your breathing is now a concious activity",
-        "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
-        ":D",
-        "Hello there",
-        "General kenobi",
-        "Over 1.8k lines of code!",
-        "We would like to contact your about your cars extended warranty",
-        "As seen on TV!",
-        "It's here!",
-        "One of a kind!",
-        "Mobile compatible!",
-        "Exclusive!",
-        "NP is not in P!",
-        "Jeb_",
-        "Also try services!",
-        "There are no facts, only interpretations.",
-        "Made with CSS!",
-        "Made with JS!",
-        "0% Sugar!"   
-    ];
+        "Development Enabled"
+    ]
 
     const splashIndex = Math.floor(Math.random() * splashList.length);
     const splashText = splashList[splashIndex];
