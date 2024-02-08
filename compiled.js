@@ -29,8 +29,10 @@ const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c709
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
-// Darkmode Theme location
-const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+// Darkmode Core location
+const CORE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+// Darkmode Theme Location
+const THEMES_CSS_URL = ""
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -71,19 +73,52 @@ function getRgbContrast(rgb1, rgb2) {
 
 // ----- END RGB CONTRAST STUFF -----
 
-// Dark Mode
-let darkmodeCSSDom;
-function applyDark() {
-    darkmodeCSSDom = document.createElement('link');
-    darkmodeCSSDom.rel = "stylesheet";
-    darkmodeCSSDom.href = DARKMODE_CSS_URL;
+// Dark Mode ------------------------------------------------------
+let coreCSSDom;
+let themeCSSDom;
 
+function loadTheme(theme, mode) {
+    darkMode = mode
+
+    //if defaults get the mode from system
+    if (mode === "defaults") darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+
+    if (coreCSSDom) {
+        // If dark mode css already exists, remove it
+        coreCSSDom.remove();
+        coreCSSDom = undefined;
+    }
+
+    if (themeCSSDom) {
+        // If theme css already exists, remove it
+        themeCSSDom.remove();
+        themeCSSDom = undefined;
+    }
+
+    if (theme === "original" || mode === "light" ) return;
+
+    //Applies the core theme
+    coreCSSDom = document.createElement('link');
+    coreCSSDom.rel = "stylesheet";
+    coreCSSDom.href = CORE_CSS_URL;
     document.styleSheets[1] && (document.styleSheets[1].disabled = false);
+    coreCSSDom.id = "darkmode-core";
+    (document.head || document.body).appendChild(coreCSSDom);
 
-    darkmodeCSSDom.id = "darkmode-core";
-    (document.head || document.body).appendChild(darkmodeCSSDom);
+    //Applies the theme on top of the
+    themeCSSDom = document.createElement('link');
+    themeCSSDom.rel = "stylesheet";
+    themeCSSDom.href = THEMES_CSS_URL;
+    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
+    themeCSSDom.id = "darkmode-theme";
+    (document.head || document.body).appendChild(themeCSSDom);
 
-    darkmodeCSSDom.onload = (e) => {
+    console.log("Theme [" + theme + "] loaded with mode of [" + mode +"]")
+}
+
+//this function does the contrast stuff and isnt called at all, so just... yeah
+function contrastCheck() {
+    themeCSSDom.onload = (e) => {
         // Custom text contrast checks
         const layer1Bg = [0, 0, 38];
         const wcagContrast = 4.5; // WCAG-recommended contrast ratio
@@ -121,33 +156,6 @@ function applyDark() {
         });
     };
 }
-async function updateTheme(theme) {
-    if (darkmodeCSSDom) {
-        // If dark mode css already exists, remove it
-        darkmodeCSSDom.remove();
-        darkmodeCSSDom = undefined;
-    }
-
-    switch (theme) {
-        case "dark":
-            applyDark();
-            break;
-        case "defaults":
-            // Use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                applyDark();
-            }
-            break;
-        case "light":
-            break;
-        default:
-            // Set a default config and save it if there's no valid stored value
-            extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
-            extConfig.updated = Date.now();
-            localStorage.setItem("extConfig", JSON.stringify(extConfig));
-            await postConfig();
-    }
-}
 
 // Try to push out darkmode early to prevent light mode flash
 // Check for extConfig existence early to get dark mode theme setting ASAP
@@ -155,13 +163,13 @@ async function updateTheme(theme) {
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
-        if (earlyExtConfig.darkmodetheme) updateTheme(earlyExtConfig.darkmodetheme);
+        if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeMode, earlyExtConfig.darkmodeTheme);
     } catch {
         console.log("2345312");
     }
 }
 
-//git test :)
+// i think this is the end of dark mode related stuff ----------------------------------------------------------------
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
@@ -424,14 +432,14 @@ async function allPages() {
     document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
     
     // Check if extConfig has darkmodeTheme (backwards compatibility)
-    if (!extConfig.darkmodetheme) {
+    if (!extConfig.darkmodeMode) {
         // If the darkmodetheme config is not available, set it to a default val and post to db
-        extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
+        extConfig.darkmodeMode = DEFAULT_CONFIG.darkmodetheme;
         extConfig.updated = Date.now();
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    updateTheme(extConfig.darkmodetheme);
+    loadTheme(extConfig.darkmodeMode, extConfig.darkmodeTheme);
     
     colourSidebar();
     colourTimetable();
@@ -548,7 +556,7 @@ async function loadSettings() {
       ];
 
     const themeConfigOptions = [
-        { value: 'default', label: 'Default' },
+        { value: 'original', label: 'Original' },
         { value: 'artdeco', label: 'Art Deco' },
         { value: 'evergreen', label: 'Evergreen' },
         { value: 'haunt', label: 'Haunt' },
@@ -741,11 +749,25 @@ async function loadSettings() {
     injectModule(module_Timetable)
     injectModule(module_Credits)
 
-    // When the page loads, add an event listener to the theme selector.
-    document.querySelector("#context-selector-dark").value = extConfig.darkmodetheme;
+    // When the page loads, add an event listener to the dakr mode selector.
+    document.querySelector("#context-selector-dark").value = extConfig.darkmodeMode;
     document.querySelector("#context-selector-dark").addEventListener("change", async function() {
         // Write to and save darkmode theme config
-        extConfig.darkmodetheme = this.value;
+        extConfig.darkmodeMode = this.value;
+        extConfig.updated = Date.now();
+        localStorage.setItem("extConfig", JSON.stringify(extConfig))
+        await postConfig();
+
+        // localStorage.setItem("theme", this.value);
+        window.location.reload();
+        // updateTheme(this.value);
+    });
+
+    // When the page loads, add an event listener to the theme selector.
+    document.querySelector("#context-selector-colour-themes").value = extConfig.darkmodeTheme;
+    document.querySelector("#context-selector-colour-themes").addEventListener("change", async function() {
+        // Write to and save darkmode theme config
+        extConfig.darkmodeTheme = this.value;
         extConfig.updated = Date.now();
         localStorage.setItem("extConfig", JSON.stringify(extConfig))
         await postConfig();
