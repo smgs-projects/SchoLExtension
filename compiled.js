@@ -1377,7 +1377,6 @@ async function postConfig() {
 }
 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
-
     let splashList = [
         "Ducks are pretty cool",
         "More themes one day???",
@@ -1404,7 +1403,6 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "0% Sugar!"   
     ];
 
-    console.log("hello?");
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
         splashList = [
             "Development Enabled"
