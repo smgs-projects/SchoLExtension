@@ -1378,38 +1378,41 @@ async function postConfig() {
 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
 
-    // const splashList = [
-    //     "Ducks are pretty cool",
-    //     "More themes one day???",
-    //     "Cubifying dogs, 50% loaded",
-    //     "Good4u (subscribe)",
-    //     "Boppity bibbity your breathing is now a concious activity",
-    //     "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
-    //     ":D",
-    //     "Hello there",
-    //     "General kenobi",
-    //     "Over 1.8k lines of code!",
-    //     "We would like to contact your about your cars extended warranty",
-    //     "As seen on TV!",
-    //     "It's here!",
-    //     "One of a kind!",
-    //     "Mobile compatible!",
-    //     "Exclusive!",
-    //     "NP is not in P!",
-    //     "Jeb_",
-    //     "Also try services!",
-    //     "There are no facts, only interpretations.",
-    //     "Made with CSS!",
-    //     "Made with JS!",
-    //     "0% Sugar!"   
-    // ];
+    let splashList = [
+        "Ducks are pretty cool",
+        "More themes one day???",
+        "Cubifying dogs, 50% loaded",
+        "Good4u (subscribe)",
+        "Boppity bibbity your breathing is now a concious activity",
+        "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy.",
+        ":D",
+        "Hello there",
+        "General kenobi",
+        "Over 1.8k lines of code!",
+        "We would like to contact your about your car's extended warranty",
+        "As seen on TV!",
+        "It's here!",
+        "One of a kind!",
+        "Mobile compatible!",
+        "Exclusive!",
+        "NP is not in P!",
+        "Jeb_",
+        "Also try services!",
+        "There are no facts, only interpretations.",
+        "Made with CSS!",
+        "Made with JS!",
+        "0% Sugar!"   
+    ];
 
-    const splashList = [
-        "Development Enabled"
-    ]
+    console.log("hello?");
+    if (window.chrome && chrome.runtime && chrome.runtime.id) {
+        splashList = [
+            "Development Enabled"
+        ]
+    }
 
     const splashIndex = Math.floor(Math.random() * splashList.length);
     const splashText = splashList[splashIndex];
 
-    console.log("Schol Extensions Enabled. " + splashText);
+    console.log("SchoL Extensions Enabled. " + splashText);
 }
