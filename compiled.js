@@ -546,9 +546,19 @@ async function loadSettings() {
         { value: 'light', label: 'Light' },
         { value: 'dark', label: 'Dark' },
       ];
+
+    const themeConfigOptions = [
+        { value: 'default', label: 'Default' },
+        { value: 'artdeco', label: 'Art Deco' },
+        { value: 'evergreen', label: 'Evergreen' },
+        { value: 'haunt', label: 'Haunt' },
+        { value: 'blurple', label: 'Blurple' },
+        { value: 'blossom', label: 'Blossom' },
+        { value: 'alpine', label: 'Alpine' },
+      ];
       
       function generateDropdown(options) {
-        let dropdownHtml = '<option disabled="" selected="">Click to select a theme</option>';
+        let dropdownHtml = '<option disabled="" selected="">Click to select an option</option>';
       
         options.forEach(option => {
           dropdownHtml += `<option value="${option.value}">${option.label}</option>`;
@@ -558,6 +568,7 @@ async function loadSettings() {
       }
       
       const darkOptions = generateDropdown(darkModeOptions);
+      const customThemeOptions = generateDropdown(themeConfigOptions)
 
     let themeoptions = ""
     const themes = await getThemes()
@@ -602,61 +613,51 @@ async function loadSettings() {
         document.getElementById("msg-settings-wrapper").appendChild(contentrow)
         contentrow = contentrow.parentNode
     }
-    contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", `<div class="medium-12 large-6 island">
-            <h2 class="subheader">Preferred Pronouns</h2>
-            <section>
+    contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", "<div class='medium-12 large-6 island'><div id=customStuff></div></div>")
+    
+    module_Pronouns = `            <h2 class="subheader">Preferred Pronouns</h2>
+    <section>
+        <fieldset class="content">
+            <legend><strong>Preferred Pronouns</strong></legend>
+            <div class="small-12 columns">
+                <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
+            </div>
+            <div class="small-12 medium-6 columns">
                 <fieldset class="content">
-                    <legend><strong>Preferred Pronouns</strong></legend>
-                    <div class="small-12 columns">
-                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
-                    </div>
-                    <div class="small-12 medium-6 columns">
-                        <fieldset class="content">
-                            <label>Select Pronouns
-                                <div class="checklist checklist-container" id="pronoun-list">
-                                    <input id="checkbox-pronoun1" type="checkbox" name="theythem"><label for="checkbox-pronoun1">They/Them</label>
-                                    <input id="checkbox-pronoun2" type="checkbox" name="hehim"><label for="checkbox-pronoun2">He/Him</label>
-                                    <input id="checkbox-pronoun3" type="checkbox" name="sheher"><label for="checkbox-pronoun3">She/Her</label>
-                                    <input id="checkbox-pronoun4" type="checkbox" name="other"><label for="checkbox-pronoun4">Other (Ask Me)</label>
-                                </div>
-                            </label>
-                        </fieldset>
-                    </div>
-                    <div class="small-12 medium-6 columns">
-                        <fieldset class="content">
-                            <label>Select roles to show your pronouns to
-                                <div class="checklist checklist-container" id="pronoun-roles">
-                                    <input id="checkbox-roles1" type="checkbox" name="0"><label for="checkbox-roles1">Students</label>
-                                    <input id="checkbox-roles2" type="checkbox" name="1"><label for="checkbox-roles2">Staff/Teachers</label>
-                                    <input id="checkbox-roles3" type="checkbox" name="2"><label for="checkbox-roles3">Parents</label>
-                                </div>
-                            </label>
-                        </fieldset>
-                    </div>
-                    <div class="small-12 columns">
-                        <p class="meta"><strong>Note: </strong>To make official changes of names to a student's records, there is a process that parents need to follow by contacting the Head of the School.</p>
-                    </div>
+                    <label>Select Pronouns
+                        <div class="checklist checklist-container" id="pronoun-list">
+                            <input id="checkbox-pronoun1" type="checkbox" name="theythem"><label for="checkbox-pronoun1">They/Them</label>
+                            <input id="checkbox-pronoun2" type="checkbox" name="hehim"><label for="checkbox-pronoun2">He/Him</label>
+                            <input id="checkbox-pronoun3" type="checkbox" name="sheher"><label for="checkbox-pronoun3">She/Her</label>
+                            <input id="checkbox-pronoun4" type="checkbox" name="other"><label for="checkbox-pronoun4">Other (Ask Me)</label>
+                        </div>
+                    </label>
                 </fieldset>
-            </section>
-            <h2 class="subheader">Timetable Theme</h2>
-            <table class="dataTable no-footer" role="grid">
-                <thead>
-                    <tr role="row">
-                        <th style="width: 1000px">Subject</th>
-                        <th style="width: 200px">Pick Theme</th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>${tablerows}</tbody>
-            </table>
+            </div>
+            <div class="small-12 medium-6 columns">
+                <fieldset class="content">
+                    <label>Select roles to show your pronouns to
+                        <div class="checklist checklist-container" id="pronoun-roles">
+                            <input id="checkbox-roles1" type="checkbox" name="0"><label for="checkbox-roles1">Students</label>
+                            <input id="checkbox-roles2" type="checkbox" name="1"><label for="checkbox-roles2">Staff/Teachers</label>
+                            <input id="checkbox-roles3" type="checkbox" name="2"><label for="checkbox-roles3">Parents</label>
+                        </div>
+                    </label>
+                </fieldset>
+            </div>
+            <div class="small-12 columns">
+                <p class="meta"><strong>Note: </strong>To make official changes of names to a student's records, there is a process that parents need to follow by contacting the Head of the School.</p>
+            </div>
+        </fieldset>
+    </section>`
 
-            <h2 class="subheader">Theme Manager</h2>
+    module_Timetable = `
+            <h2 class="subheader">Timetable Themes</h2>
             <section>
                 <fieldset class="content">
-                    <legend><strong>Theme Import/Export</strong></legend>
+                    <legend><strong>Timetable Theme Import/Export</strong></legend>
                     <div class="small-12 columns">
-                        <p>Import a theme (list of hex codes seperated by dashes), this also supports URLs from <a target="_blank" href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
+                        <p>Import a timetable theme (list of hex codes seperated by dashes), this also supports URLs from <a target="_blank" href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
                     </div>
                     <div class="small-12 columns">
                         <div class="input-group">
@@ -664,9 +665,9 @@ async function loadSettings() {
                             <a class="button disabled" id="importbtn">Import</a>
                         </div>
                     </div>
-                    <div class="small-12 columns"><p>Export your current theme to share it with friends!</p></div>
+                    <div class="small-12 columns"><p>Export your current timetable theme to share it with friends!</p></div>
                     <div class="small-12 columns"><div class="input-group"><input type="text" id="currenttheme" readonly><a class="button" id="exportbtn">Export</a></div></div>
-                    <div class="small-12 columns"><p>Or choose a premade theme!</p></div>
+                    <div class="small-12 columns"><p>Or choose a premade timetable theme!</p></div>
                     <div class="small-12 columns"><select id="context-selector-themes">${themeoptions}</select></div>
                 </fieldset>
                 <fieldset class="content">
@@ -681,37 +682,51 @@ async function loadSettings() {
                     </section>
                 </div>
             </section>
+            <table class="dataTable no-footer" role="grid">
+            <thead>
+                <tr role="row">
+                    <th style="width: 1000px">Subject</th>
+                    <th style="width: 200px">Pick Theme</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>${tablerows}</tbody>
+        </table>`
 
-            <div id=customStuff>
-            </div>
-
-            <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
-                <span style="font-size: 12px; color: #AAA;">
-                    Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
-                </span>
-            </div>
-
-            <ul class="meta" style="font-size: 12px">
-                SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: <a href="mailto:scholfeedback@stmichaels.vic.edu.au">scholfeedback@stmichaels.vic.edu.au</a>. <!-- rip dead name remover :( -->
-            </ul>
-        </div>`)
-
-
-    module_darkMode = `  
-        <h2 class="subheader">Dark Mode</h2>
+        module_Themes = `  
+        <h2 class="subheader">Custom Themes</h2>
         <section>
             <fieldset class="content">
-                <legend><strong>Dark Mode Theme Selector</strong></legend>
+                <legend><strong>Colour Theme Selector</strong></legend>
                 <div class="small-12 columns">
-                    <p>Select your SchoL Theme Here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
+                    <p>Select your Colour Theme Here!<br></p>
+                </div>
+                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-colour-themes">${customThemeOptions}</select></div>
+
+                <legend><strong>Dark Mode</strong></legend>
+                <div class="small-12 columns">
+                <p>And select the mode here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
                 </div>
                 <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select></div>
+
                 <div class="small-12 columns">
-                    <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
+                    <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
                 </div>
             </fieldset>
         </section>
         `
+
+    module_Credits = `
+    <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
+        <span style="font-size: 12px; color: #AAA;">
+            Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
+        </span>
+    </div>
+
+    <ul class="meta" style="font-size: 12px">
+        SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: <a href="mailto:scholfeedback@stmichaels.vic.edu.au">scholfeedback@stmichaels.vic.edu.au</a>. <!-- rip dead name remover :( -->
+    </ul>`
 
     function injectModule(html) {
         // Get the div tag with the id customStuff
@@ -721,7 +736,10 @@ async function loadSettings() {
         div.innerHTML += html;
     }
 
-    injectModule(module_darkMode)
+    injectModule(module_Pronouns)
+    injectModule(module_Themes)
+    injectModule(module_Timetable)
+    injectModule(module_Credits)
 
     // When the page loads, add an event listener to the theme selector.
     document.querySelector("#context-selector-dark").value = extConfig.darkmodetheme;
