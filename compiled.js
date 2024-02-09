@@ -120,6 +120,7 @@ function loadTheme(theme, mode) {
         (document.head || document.body).appendChild(themeCSSDom);
     });
     console.log("Theme [" + theme + "] loaded with mode of [" + mode +"]")
+    contrastCheck()
 }
 
 //this function does the contrast stuff and isnt called at all, so just... yeah
