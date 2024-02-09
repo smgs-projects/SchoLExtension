@@ -32,7 +32,7 @@ const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Core location
 const CORE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
 // Darkmode Theme Location
-const THEMES_CSS_URL = ""
+const THEMES_CSS_URL = "https://api.onedrive.com/v1.0/shares/s!Ai0PkvhmurwZge_4fiSBxkmJaiRsF_I/root/content"
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -82,20 +82,20 @@ function loadTheme(theme, mode) {
 
     //if defaults get the mode from system
     if (mode === "defaults") darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
-
     if (coreCSSDom) {
         // If dark mode css already exists, remove it
         coreCSSDom.remove();
         coreCSSDom = undefined;
     }
-
     if (themeCSSDom) {
         // If theme css already exists, remove it
         themeCSSDom.remove();
         themeCSSDom = undefined;
     }
-
-    if (theme === "original" || mode === "light" ) return;
+    if (theme === "original" && mode === "light" ){
+        console.log("No theme being loaded.")
+        return;
+    }
 
     //Applies the core theme
     coreCSSDom = document.createElement('link');
@@ -105,15 +105,19 @@ function loadTheme(theme, mode) {
     coreCSSDom.id = "darkmode-core";
     (document.head || document.body).appendChild(coreCSSDom);
 
-    //Applies the theme on top of the
-    themeCSSDom = document.createElement('link');
-    themeCSSDom.rel = "stylesheet";
-    themeCSSDom.href = THEMES_CSS_URL;
-    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
-    themeCSSDom.id = "darkmode-theme";
-    (document.head || document.body).appendChild(themeCSSDom);
-
-    console.log("Theme [" + theme + "] loaded with mode of [" + mode +"]")
+    //Applies the theme on top of the page
+    fetch(THEMES_CSS_URL)
+        .then(response => response.json())
+        .then(themesJson => {
+        const themeData = themesJson["themes"][mode][theme];
+        const themeCSSDom = document.createElement('style');
+        themeCSSDom.textContent = themeData;
+        if (document.styleSheets[1]) {
+        document.styleSheets[1].disabled = false;
+        }
+        themeCSSDom.id = "darkmode-theme";
+        (document.head || document.body).appendChild(themeCSSDom);
+    });
 }
 
 //this function does the contrast stuff and isnt called at all, so just... yeah
@@ -163,7 +167,7 @@ function contrastCheck() {
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
-        if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeMode, earlyExtConfig.darkmodeTheme);
+        if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeTheme, earlyExtConfig.darkmodeMode);
     } catch {
         console.log("2345312");
     }
@@ -439,7 +443,7 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    loadTheme(extConfig.darkmodeMode, extConfig.darkmodeTheme);
+    loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);
     
     colourSidebar();
     colourTimetable();
@@ -714,13 +718,16 @@ async function loadSettings() {
 
                 <legend><strong>Dark Mode</strong></legend>
                 <div class="small-12 columns">
-                <p>And select the mode here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
+                <p>And select the mode here!<br></p>
                 </div>
-                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select></div>
-
-                <div class="small-12 columns">
-                    <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
-                </div>
+                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select>
+                <p class="meta">'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.</p></div>
+            </fieldset>
+            
+            <fieldset class="content">
+            <div class="small-12 columns">
+                <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
+            </div>
             </fieldset>
         </section>
         `
@@ -1401,7 +1408,7 @@ async function postConfig() {
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
     let splashList = [
         "Ducks are pretty cool",
-        "More themes one day???",
+        "Custom themes one day???",
         "Cubifying dogs, 50% loaded",
         "Good4u (subscribe)",
         "Boppity bibbity your breathing is now a concious activity",
@@ -1412,6 +1419,7 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "Over 1.8k lines of code!",
         "We would like to contact your about your car's extended warranty",
         "As seen on TV!",
+        "Déjà vu!",
         "It's here!",
         "One of a kind!",
         "Mobile compatible!",
@@ -1422,7 +1430,39 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "There are no facts, only interpretations.",
         "Made with CSS!",
         "Made with JS!",
-        "0% Sugar!"   
+        "0% Sugar!",
+        "The future is now!",
+        "Schol+ >>>",
+        "bea was here",
+        "2024 exclusive!",
+        "Now with themes!",
+        "All I want for christmas is for you to wash your dishes",
+        "... But no one came.",
+        "You are filled with determination.",
+        "Hey you. You're finally awake",
+        "Thats an infix!",
+        "Did you spot it?",
+        "Was that the bite of 87???",
+        "150% hyperbole!",
+        "Any computer is a laptop if you're brave enough!",
+        "| || || |_",
+        "Complex cellular automata!",
+        "Déjà vu!",
+        "Doesn't avoid double negatives!",
+        "doot doot",
+        "From the streets of Melbourne!",
+        "Ghoughpteighbteau tchoghs!",
+        "Bring me a shrubbery.",
+        "Dragon free!",
+        "Probably follows ventilation guidelines.",
+        "Breen should win the house cup!",
+        "Hughes should win the house cup!",
+        "Mitre should win the house cup!",
+        "Kilburn should win the house cup!",
+        "Sarum should win the house cup!",
+        "Look Mum! I'm a splash!",
+        "Meeting expectations!",
+
     ];
 
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
@@ -1433,6 +1473,10 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
 
     const splashIndex = Math.floor(Math.random() * splashList.length);
     const splashText = splashList[splashIndex];
+    if(splashText == "Did you spot it?"){
+        console.log("SchoL Extentions Loaded. " + splashText);
+    }else{
+    console.log("SchoL Extensions Loaded. " + splashText);
+    }
 
-    console.log("SchoL Extensions Enabled. " + splashText);
 }
