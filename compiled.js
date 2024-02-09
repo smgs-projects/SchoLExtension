@@ -109,7 +109,6 @@ function loadTheme(theme, mode) {
     fetch(THEMES_CSS_URL)
         .then(response => response.json())
         .then(themesJson => {
-        console.log(themesJson);
         const themeData = themesJson["themes"][mode][theme];
         const themeCSSDom = document.createElement('style');
         themeCSSDom.textContent = themeData;
@@ -119,8 +118,6 @@ function loadTheme(theme, mode) {
         themeCSSDom.id = "darkmode-theme";
         (document.head || document.body).appendChild(themeCSSDom);
     });
-    console.log("Theme [" + theme + "] loaded with mode of [" + mode +"]")
-    contrastCheck()
 }
 
 //this function does the contrast stuff and isnt called at all, so just... yeah
@@ -1411,7 +1408,7 @@ async function postConfig() {
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
     let splashList = [
         "Ducks are pretty cool",
-        "More themes one day???",
+        "Custom themes one day???",
         "Cubifying dogs, 50% loaded",
         "Good4u (subscribe)",
         "Boppity bibbity your breathing is now a concious activity",
@@ -1422,6 +1419,7 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "Over 1.8k lines of code!",
         "We would like to contact your about your car's extended warranty",
         "As seen on TV!",
+        "Déjà vu!",
         "It's here!",
         "One of a kind!",
         "Mobile compatible!",
@@ -1432,7 +1430,39 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "There are no facts, only interpretations.",
         "Made with CSS!",
         "Made with JS!",
-        "0% Sugar!"   
+        "0% Sugar!",
+        "The future is now!",
+        "Schol+ >>>",
+        "bea was here",
+        "2024 exclusive!",
+        "Now with themes!",
+        "All I want for christmas is for you to wash your dishes",
+        "... But no one came.",
+        "You are filled with determination.",
+        "Hey you. You're finally awake",
+        "Thats an infix!",
+        "Did you spot it?",
+        "Was that the bite of 87???",
+        "150% hyperbole!",
+        "Any computer is a laptop if you're brave enough!",
+        "| || || |_",
+        "Complex cellular automata!",
+        "Déjà vu!",
+        "Doesn't avoid double negatives!",
+        "doot doot",
+        "From the streets of Melbourne!",
+        "Ghoughpteighbteau tchoghs!",
+        "Bring me a shrubbery.",
+        "Dragon free!",
+        "Probably follows ventilation guidelines.",
+        "Breen should win the house cup!",
+        "Hughes should win the house cup!",
+        "Mitre should win the house cup!",
+        "Kilburn should win the house cup!",
+        "Sarum should win the house cup!",
+        "Look Mum! I'm a splash!",
+        "Meeting expectations!",
+
     ];
 
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
@@ -1443,6 +1473,10 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
 
     const splashIndex = Math.floor(Math.random() * splashList.length);
     const splashText = splashList[splashIndex];
+    if(splashText == "Did you spot it?"){
+        console.log("SchoL Extentions Loaded. " + splashText);
+    }else{
+    console.log("SchoL Extensions Loaded. " + splashText);
+    }
 
-    console.log("SchoL Extensions Enabled. " + splashText);
 }
