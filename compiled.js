@@ -101,7 +101,6 @@ function loadTheme(theme, mode) {
     coreCSSDom = document.createElement('link');
     coreCSSDom.rel = "stylesheet";
     coreCSSDom.href = CORE_CSS_URL;
-    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
     coreCSSDom.id = "darkmode-core";
     (document.head || document.body).appendChild(coreCSSDom);
 
@@ -1462,7 +1461,45 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "Sarum should win the house cup!",
         "Look Mum! I'm a splash!",
         "Meeting expectations!",
-
+        "Usually!",
+        "2345312!",
+        "The cake is a lie.",
+        "I'll show you how deep the rabbit hole goes.",
+        "duckawesome is not a cheat code!",
+        "Ctrl+Alt+Del your worries away!",
+        "Error 404: Splash not found!",
+        "Error 418: I'm a teapot!",
+        "Error 503: Out of coffee!",
+        "Reality.exe has stopped working!",
+        "Glitch in the matrix detected!",
+        "Only 50p!",
+        "It's not a bug, it's a feature!",
+        "This splash text is a lie!",
+        "Ctrl+S to save this splash!",
+        "Roses are red, violets are blue, this splash text is random, and so are you!",
+        "Chipi chipi chapa chapa dubi dubi daba daba!",
+        "Just a splash town girl!",
+        "Every splash you take, I'll be watching you!",
+        "Press any key to continue!",
+        "Use W to walk!",
+        "Debugging... or maybe just bugging...",
+        "Still trying to find Wally!",
+        "Reality is just a crutch for people who can't handle video games.",
+        "A wild splash appeared!",
+        "To infinity and beyond!",
+        "That's what she said",
+        "Have you turned it on and off again?",
+        "Keep your enemies close and your... wait",
+        "I'm on a boat!",
+        "Works at Sea (probably!)",
+        "Who lives in the console under the sea (me. i do.)",
+        "Its me, Hi, I'm SchoLExtention, its me!",
+        "This is not a drill!",
+        "This is a drill!",
+        "I solemly swear I am up to no good",
+        "That's what she coded",
+        "Houston we have a problem!",
+        "Do you want to know the odds of seeing this message? 1/" + splashList.length
     ];
 
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
