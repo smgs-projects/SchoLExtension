@@ -82,7 +82,16 @@ function loadTheme(theme, mode) {
 
     //if defaults get the mode from system
     if (mode === "defaults") darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
-
+    if (coreCSSDom) {
+        // If dark mode css already exists, remove it
+        coreCSSDom.remove();
+        coreCSSDom = undefined;
+    }
+    if (themeCSSDom) {
+        // If theme css already exists, remove it
+        themeCSSDom.remove();
+        themeCSSDom = undefined;
+    }
     if (theme === "original" && mode === "light" ){
         console.log("No theme being loaded.")
         return;
@@ -436,7 +445,6 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    
     loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);
     
     colourSidebar();
