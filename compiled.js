@@ -29,8 +29,10 @@ const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c709
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
-// Darkmode Theme location
-const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+// Darkmode Core location
+const CORE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+// Darkmode Theme Location
+const THEMES_CSS_URL = "https://api.onedrive.com/v1.0/shares/s!Ai0PkvhmurwZge_4fiSBxkmJaiRsF_I/root/content"
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -71,19 +73,55 @@ function getRgbContrast(rgb1, rgb2) {
 
 // ----- END RGB CONTRAST STUFF -----
 
-// Dark Mode
-let darkmodeCSSDom;
-function applyDark() {
-    darkmodeCSSDom = document.createElement('link');
-    darkmodeCSSDom.rel = "stylesheet";
-    darkmodeCSSDom.href = DARKMODE_CSS_URL;
+// Dark Mode ------------------------------------------------------
+let coreCSSDom;
+let themeCSSDom;
 
-    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
+function loadTheme(theme, mode) {
+    darkMode = mode
 
-    darkmodeCSSDom.id = "darkmode-core";
-    (document.head || document.body).appendChild(darkmodeCSSDom);
+    //if defaults get the mode from system
+    if (mode === "defaults") darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+    if (coreCSSDom) {
+        // If dark mode css already exists, remove it
+        coreCSSDom.remove();
+        coreCSSDom = undefined;
+    }
+    if (themeCSSDom) {
+        // If theme css already exists, remove it
+        themeCSSDom.remove();
+        themeCSSDom = undefined;
+    }
+    if (theme === "original" && mode === "light" ){
+        console.log("No theme being loaded.")
+        return;
+    }
 
-    darkmodeCSSDom.onload = (e) => {
+    //Applies the core theme
+    coreCSSDom = document.createElement('link');
+    coreCSSDom.rel = "stylesheet";
+    coreCSSDom.href = CORE_CSS_URL;
+    coreCSSDom.id = "darkmode-core";
+    (document.head || document.body).appendChild(coreCSSDom);
+
+    //Applies the theme on top of the page
+    fetch(THEMES_CSS_URL)
+        .then(response => response.json())
+        .then(themesJson => {
+        const themeData = themesJson["themes"][mode][theme];
+        const themeCSSDom = document.createElement('style');
+        themeCSSDom.textContent = themeData;
+        if (document.styleSheets[1]) {
+        document.styleSheets[1].disabled = false;
+        }
+        themeCSSDom.id = "darkmode-theme";
+        (document.head || document.body).appendChild(themeCSSDom);
+    });
+}
+
+//this function does the contrast stuff and isnt called at all, so just... yeah
+function contrastCheck() {
+    themeCSSDom.onload = (e) => {
         // Custom text contrast checks
         const layer1Bg = [0, 0, 38];
         const wcagContrast = 4.5; // WCAG-recommended contrast ratio
@@ -136,33 +174,6 @@ function applyDark() {
         });
     };
 }
-async function updateTheme(theme) {
-    if (darkmodeCSSDom) {
-        // If dark mode css already exists, remove it
-        darkmodeCSSDom.remove();
-        darkmodeCSSDom = undefined;
-    }
-
-    switch (theme) {
-        case "dark":
-            applyDark();
-            break;
-        case "defaults":
-            // Use the matchMedia() method to check whether the system is light or dark and apply the theme accordingly.
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                applyDark();
-            }
-            break;
-        case "light":
-            break;
-        default:
-            // Set a default config and save it if there's no valid stored value
-            extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
-            extConfig.updated = Date.now();
-            localStorage.setItem("extConfig", JSON.stringify(extConfig));
-            await postConfig();
-    }
-}
 
 // Try to push out darkmode early to prevent light mode flash
 // Check for extConfig existence early to get dark mode theme setting ASAP
@@ -170,13 +181,13 @@ async function updateTheme(theme) {
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
-        if (earlyExtConfig.darkmodetheme) updateTheme(earlyExtConfig.darkmodetheme);
+        if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeTheme, earlyExtConfig.darkmodeMode);
     } catch {
         console.log("2345312");
     }
 }
 
-
+// i think this is the end of dark mode related stuff ----------------------------------------------------------------
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
@@ -439,14 +450,14 @@ async function allPages() {
     document.querySelector("#profile-options .icon-staff-students").insertAdjacentHTML("afterend", `<li><a href="/timetable" class="icon-timetable">Timetable</a></li>`)
     
     // Check if extConfig has darkmodeTheme (backwards compatibility)
-    if (!extConfig.darkmodetheme) {
+    if (!extConfig.darkmodeMode) {
         // If the darkmodetheme config is not available, set it to a default val and post to db
-        extConfig.darkmodetheme = DEFAULT_CONFIG.darkmodetheme;
+        extConfig.darkmodeMode = DEFAULT_CONFIG.darkmodetheme;
         extConfig.updated = Date.now();
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    updateTheme(extConfig.darkmodetheme);
+    loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);
     
     colourSidebar();
     colourTimetable();
@@ -561,9 +572,19 @@ async function loadSettings() {
         { value: 'light', label: 'Light' },
         { value: 'dark', label: 'Dark' },
       ];
+
+    const themeConfigOptions = [
+        { value: 'original', label: 'Original' },
+        { value: 'artdeco', label: 'Art Deco' },
+        { value: 'evergreen', label: 'Evergreen' },
+        { value: 'haunt', label: 'Haunt' },
+        { value: 'blurple', label: 'Blurple' },
+        { value: 'blossom', label: 'Blossom' },
+        { value: 'alpine', label: 'Alpine' },
+      ];
       
       function generateDropdown(options) {
-        let dropdownHtml = '<option disabled="" selected="">Click to select a theme</option>';
+        let dropdownHtml = '<option disabled="" selected="">Click to select an option</option>';
       
         options.forEach(option => {
           dropdownHtml += `<option value="${option.value}">${option.label}</option>`;
@@ -573,6 +594,7 @@ async function loadSettings() {
       }
       
       const darkOptions = generateDropdown(darkModeOptions);
+      const customThemeOptions = generateDropdown(themeConfigOptions)
 
     let themeoptions = ""
     const themes = await getThemes()
@@ -617,61 +639,51 @@ async function loadSettings() {
         document.getElementById("msg-settings-wrapper").appendChild(contentrow)
         contentrow = contentrow.parentNode
     }
-    contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", `<div class="medium-12 large-6 island">
-            <h2 class="subheader">Preferred Pronouns</h2>
-            <section>
+    contentrow.insertAdjacentHTML(is_profile ? "beforeend" : "afterend", "<div class='medium-12 large-6 island'><div id=customStuff></div></div>")
+    
+    module_Pronouns = `            <h2 class="subheader">Preferred Pronouns</h2>
+    <section>
+        <fieldset class="content">
+            <legend><strong>Preferred Pronouns</strong></legend>
+            <div class="small-12 columns">
+                <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
+            </div>
+            <div class="small-12 medium-6 columns">
                 <fieldset class="content">
-                    <legend><strong>Preferred Pronouns</strong></legend>
-                    <div class="small-12 columns">
-                        <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
-                    </div>
-                    <div class="small-12 medium-6 columns">
-                        <fieldset class="content">
-                            <label>Select Pronouns
-                                <div class="checklist checklist-container" id="pronoun-list">
-                                    <input id="checkbox-pronoun1" type="checkbox" name="theythem"><label for="checkbox-pronoun1">They/Them</label>
-                                    <input id="checkbox-pronoun2" type="checkbox" name="hehim"><label for="checkbox-pronoun2">He/Him</label>
-                                    <input id="checkbox-pronoun3" type="checkbox" name="sheher"><label for="checkbox-pronoun3">She/Her</label>
-                                    <input id="checkbox-pronoun4" type="checkbox" name="other"><label for="checkbox-pronoun4">Other (Ask Me)</label>
-                                </div>
-                            </label>
-                        </fieldset>
-                    </div>
-                    <div class="small-12 medium-6 columns">
-                        <fieldset class="content">
-                            <label>Select roles to show your pronouns to
-                                <div class="checklist checklist-container" id="pronoun-roles">
-                                    <input id="checkbox-roles1" type="checkbox" name="0"><label for="checkbox-roles1">Students</label>
-                                    <input id="checkbox-roles2" type="checkbox" name="1"><label for="checkbox-roles2">Staff/Teachers</label>
-                                    <input id="checkbox-roles3" type="checkbox" name="2"><label for="checkbox-roles3">Parents</label>
-                                </div>
-                            </label>
-                        </fieldset>
-                    </div>
-                    <div class="small-12 columns">
-                        <p class="meta"><strong>Note: </strong>To make official changes of names to a student's records, there is a process that parents need to follow by contacting the Head of the School.</p>
-                    </div>
+                    <label>Select Pronouns
+                        <div class="checklist checklist-container" id="pronoun-list">
+                            <input id="checkbox-pronoun1" type="checkbox" name="theythem"><label for="checkbox-pronoun1">They/Them</label>
+                            <input id="checkbox-pronoun2" type="checkbox" name="hehim"><label for="checkbox-pronoun2">He/Him</label>
+                            <input id="checkbox-pronoun3" type="checkbox" name="sheher"><label for="checkbox-pronoun3">She/Her</label>
+                            <input id="checkbox-pronoun4" type="checkbox" name="other"><label for="checkbox-pronoun4">Other (Ask Me)</label>
+                        </div>
+                    </label>
                 </fieldset>
-            </section>
-            <h2 class="subheader">Timetable Theme</h2>
-            <table class="dataTable no-footer" role="grid">
-                <thead>
-                    <tr role="row">
-                        <th style="width: 1000px">Subject</th>
-                        <th style="width: 200px">Pick Theme</th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>${tablerows}</tbody>
-            </table>
+            </div>
+            <div class="small-12 medium-6 columns">
+                <fieldset class="content">
+                    <label>Select roles to show your pronouns to
+                        <div class="checklist checklist-container" id="pronoun-roles">
+                            <input id="checkbox-roles1" type="checkbox" name="0"><label for="checkbox-roles1">Students</label>
+                            <input id="checkbox-roles2" type="checkbox" name="1"><label for="checkbox-roles2">Staff/Teachers</label>
+                            <input id="checkbox-roles3" type="checkbox" name="2"><label for="checkbox-roles3">Parents</label>
+                        </div>
+                    </label>
+                </fieldset>
+            </div>
+            <div class="small-12 columns">
+                <p class="meta"><strong>Note: </strong>To make official changes of names to a student's records, there is a process that parents need to follow by contacting the Head of the School.</p>
+            </div>
+        </fieldset>
+    </section>`
 
-            <h2 class="subheader">Theme Manager</h2>
+    module_Timetable = `
+            <h2 class="subheader">Timetable Themes</h2>
             <section>
                 <fieldset class="content">
-                    <legend><strong>Theme Import/Export</strong></legend>
+                    <legend><strong>Timetable Theme Import/Export</strong></legend>
                     <div class="small-12 columns">
-                        <p>Import a theme (list of hex codes seperated by dashes), this also supports URLs from <a target="_blank" href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
+                        <p>Import a timetable theme (list of hex codes seperated by dashes), this also supports URLs from <a target="_blank" href="https://coolors.co/d9ed92-b5e48c-99d98c-76c893-52b69a-34a0a4-168aad-1a759f-1e6091-184e77">coolors.co</a></p>
                     </div>
                     <div class="small-12 columns">
                         <div class="input-group">
@@ -679,9 +691,9 @@ async function loadSettings() {
                             <a class="button disabled" id="importbtn">Import</a>
                         </div>
                     </div>
-                    <div class="small-12 columns"><p>Export your current theme to share it with friends!</p></div>
+                    <div class="small-12 columns"><p>Export your current timetable theme to share it with friends!</p></div>
                     <div class="small-12 columns"><div class="input-group"><input type="text" id="currenttheme" readonly><a class="button" id="exportbtn">Export</a></div></div>
-                    <div class="small-12 columns"><p>Or choose a premade theme!</p></div>
+                    <div class="small-12 columns"><p>Or choose a premade timetable theme!</p></div>
                     <div class="small-12 columns"><select id="context-selector-themes">${themeoptions}</select></div>
                 </fieldset>
                 <fieldset class="content">
@@ -696,37 +708,54 @@ async function loadSettings() {
                     </section>
                 </div>
             </section>
+            <table class="dataTable no-footer" role="grid">
+            <thead>
+                <tr role="row">
+                    <th style="width: 1000px">Subject</th>
+                    <th style="width: 200px">Pick Theme</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>${tablerows}</tbody>
+        </table>`
 
-            <div id=customStuff>
-            </div>
-
-            <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
-                <span style="font-size: 12px; color: #AAA;">
-                    Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
-                </span>
-            </div>
-
-            <ul class="meta" style="font-size: 12px">
-                SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: <a href="mailto:scholfeedback@stmichaels.vic.edu.au">scholfeedback@stmichaels.vic.edu.au</a>. <!-- rip dead name remover :( -->
-            </ul>
-        </div>`)
-
-
-    module_darkMode = `  
-        <h2 class="subheader">Dark Mode</h2>
+        module_Themes = `  
+        <h2 class="subheader">Custom Themes</h2>
         <section>
             <fieldset class="content">
-                <legend><strong>Dark Mode Theme Selector</strong></legend>
+                <legend><strong>Colour Theme Selector</strong></legend>
                 <div class="small-12 columns">
-                    <p>Select your SchoL Theme Here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
+                    <p>Select your Colour Theme Here!<br></p>
                 </div>
-                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select></div>
+                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-colour-themes">${customThemeOptions}</select></div>
+
+                <legend><strong>Dark Mode</strong></legend>
                 <div class="small-12 columns">
-                    <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with dark mode, due to overridden custom formatting added to news/blog posts.</p>
+                <p>And select the mode here!<br></p>
                 </div>
+                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select>
+                <p class="meta">'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.</p></div>
+            </fieldset>
+            
+            <fieldset class="content">
+            <div class="small-12 columns">
+                <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
+            </div>
             </fieldset>
         </section>
         `
+
+    module_Credits = `
+    <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
+        <span style="font-size: 12px; color: #AAA;">
+            Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
+        </span>
+    </div>
+
+    <ul class="meta" style="font-size: 12px">
+        SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: <a href="mailto:scholfeedback@stmichaels.vic.edu.au">scholfeedback@stmichaels.vic.edu.au</a>. <!-- rip dead name remover :( -->
+    </ul>`
 
     function injectModule(html) {
         // Get the div tag with the id customStuff
@@ -736,13 +765,30 @@ async function loadSettings() {
         div.innerHTML += html;
     }
 
-    injectModule(module_darkMode)
+    injectModule(module_Pronouns)
+    injectModule(module_Themes)
+    injectModule(module_Timetable)
+    injectModule(module_Credits)
 
-    // When the page loads, add an event listener to the theme selector.
-    document.querySelector("#context-selector-dark").value = extConfig.darkmodetheme;
+    // When the page loads, add an event listener to the dakr mode selector.
+    document.querySelector("#context-selector-dark").value = extConfig.darkmodeMode;
     document.querySelector("#context-selector-dark").addEventListener("change", async function() {
         // Write to and save darkmode theme config
-        extConfig.darkmodetheme = this.value;
+        extConfig.darkmodeMode = this.value;
+        extConfig.updated = Date.now();
+        localStorage.setItem("extConfig", JSON.stringify(extConfig))
+        await postConfig();
+
+        // localStorage.setItem("theme", this.value);
+        window.location.reload();
+        // updateTheme(this.value);
+    });
+
+    // When the page loads, add an event listener to the theme selector.
+    document.querySelector("#context-selector-colour-themes").value = extConfig.darkmodeTheme;
+    document.querySelector("#context-selector-colour-themes").addEventListener("change", async function() {
+        // Write to and save darkmode theme config
+        extConfig.darkmodeTheme = this.value;
         extConfig.updated = Date.now();
         localStorage.setItem("extConfig", JSON.stringify(extConfig))
         await postConfig();
@@ -1374,39 +1420,114 @@ async function postConfig() {
 }
 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
+    let splashList = [
+        "Ducks are pretty cool",
+        "Custom themes one day???",
+        "Cubifying dogs, 50% loaded",
+        "Good4u (subscribe)",
+        "Boppity bibbity your breathing is now a concious activity",
+        "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy.",
+        ":D",
+        "Hello there",
+        "General kenobi",
+        "Over 1.8k lines of code!",
+        "We would like to contact your about your car's extended warranty",
+        "As seen on TV!",
+        "Déjà vu!",
+        "It's here!",
+        "One of a kind!",
+        "Mobile compatible!",
+        "Exclusive!",
+        "NP is not in P!",
+        "Jeb_",
+        "Also try services!",
+        "There are no facts, only interpretations.",
+        "Made with CSS!",
+        "Made with JS!",
+        "0% Sugar!",
+        "The future is now!",
+        "Schol+ >>>",
+        "bea was here",
+        "2024 exclusive!",
+        "Now with themes!",
+        "All I want for christmas is for you to wash your dishes",
+        "... But no one came.",
+        "You are filled with determination.",
+        "Hey you. You're finally awake",
+        "Thats an infix!",
+        "Did you spot it?",
+        "Was that the bite of 87???",
+        "150% hyperbole!",
+        "Any computer is a laptop if you're brave enough!",
+        "| || || |_",
+        "Complex cellular automata!",
+        "Déjà vu!",
+        "Doesn't avoid double negatives!",
+        "doot doot",
+        "From the streets of Melbourne!",
+        "Ghoughpteighbteau tchoghs!",
+        "Bring me a shrubbery.",
+        "Dragon free!",
+        "Probably follows ventilation guidelines.",
+        "Breen should win the house cup!",
+        "Hughes should win the house cup!",
+        "Mitre should win the house cup!",
+        "Kilburn should win the house cup!",
+        "Sarum should win the house cup!",
+        "Look Mum! I'm a splash!",
+        "Meeting expectations!",
+        "Usually!",
+        "2345312!",
+        "The cake is a lie.",
+        "I'll show you how deep the rabbit hole goes.",
+        "duckawesome is not a cheat code!",
+        "Ctrl+Alt+Del your worries away!",
+        "Error 404: Splash not found!",
+        "Error 418: I'm a teapot!",
+        "Error 503: Out of coffee!",
+        "Reality.exe has stopped working!",
+        "Glitch in the matrix detected!",
+        "Only 50p!",
+        "It's not a bug, it's a feature!",
+        "This splash text is a lie!",
+        "Ctrl+S to save this splash!",
+        "Roses are red, violets are blue, this splash text is random, and so are you!",
+        "Chipi chipi chapa chapa dubi dubi daba daba!",
+        "Just a splash town girl!",
+        "Every splash you take, I'll be watching you!",
+        "Press any key to continue!",
+        "Use W to walk!",
+        "Debugging... or maybe just bugging...",
+        "Still trying to find Wally!",
+        "Reality is just a crutch for people who can't handle video games.",
+        "A wild splash appeared!",
+        "To infinity and beyond!",
+        "That's what she said",
+        "Have you turned it on and off again?",
+        "Keep your enemies close and your... wait",
+        "I'm on a boat!",
+        "Works at Sea (probably!)",
+        "Who lives in the console under the sea (me. i do.)",
+        "Its me, Hi, I'm SchoLExtention, its me!",
+        "This is not a drill!",
+        "This is a drill!",
+        "I solemly swear I am up to no good",
+        "That's what she coded",
+        "Houston we have a problem!",
+        "Do you want to know the odds of seeing this message? 1/" + splashList.length
+    ];
 
-    // const splashList = [
-    //     "Ducks are pretty cool",
-    //     "More themes one day???",
-    //     "Cubifying dogs, 50% loaded",
-    //     "Good4u (subscribe)",
-    //     "Boppity bibbity your breathing is now a concious activity",
-    //     "Here you leave the world of today, and enter the world of yesterday, tomorrow, and fantasy ",
-    //     ":D",
-    //     "Hello there",
-    //     "General kenobi",
-    //     "Over 1.8k lines of code!",
-    //     "We would like to contact your about your cars extended warranty",
-    //     "As seen on TV!",
-    //     "It's here!",
-    //     "One of a kind!",
-    //     "Mobile compatible!",
-    //     "Exclusive!",
-    //     "NP is not in P!",
-    //     "Jeb_",
-    //     "Also try services!",
-    //     "There are no facts, only interpretations.",
-    //     "Made with CSS!",
-    //     "Made with JS!",
-    //     "0% Sugar!"   
-    // ];
-
-    const splashList = [
-        "Development Enabled"
-    ]
+    if (window.chrome && chrome.runtime && chrome.runtime.id) {
+        splashList = [
+            "Development Enabled"
+        ]
+    }
 
     const splashIndex = Math.floor(Math.random() * splashList.length);
     const splashText = splashList[splashIndex];
-
-    console.log("Schol Extensions Enabled. " + splashText);
+    if(splashText == "Did you spot it?"){
+        console.log("SchoL Extentions Loaded. " + splashText);
+    }else{
+    console.log("SchoL Extensions Loaded. " + splashText);
+    }
 }
