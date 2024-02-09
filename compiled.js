@@ -32,7 +32,7 @@ const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Core location
 const CORE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
 // Darkmode Theme Location
-const THEMES_CSS_URL = ""
+const THEMES_CSS_URL = "https://api.onedrive.com/v1.0/shares/s!Ai0PkvhmurwZge_4fiSBxkmJaiRsF_I/root/content"
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -83,20 +83,8 @@ function loadTheme(theme, mode) {
     //if defaults get the mode from system
     if (mode === "defaults") darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
 
-    if (coreCSSDom) {
-        // If dark mode css already exists, remove it
-        coreCSSDom.remove();
-        coreCSSDom = undefined;
-    }
-
-    if (themeCSSDom) {
-        // If theme css already exists, remove it
-        themeCSSDom.remove();
-        themeCSSDom = undefined;
-    }
-
     if (theme === "original" && mode === "light" ){
-        console.log("config checked")
+        console.log("No theme being loaded.")
         return;
     }
 
@@ -108,14 +96,20 @@ function loadTheme(theme, mode) {
     coreCSSDom.id = "darkmode-core";
     (document.head || document.body).appendChild(coreCSSDom);
 
-    //Applies the theme on top of the
-    themeCSSDom = document.createElement('link');
-    themeCSSDom.rel = "stylesheet";
-    themeCSSDom.href = THEMES_CSS_URL;
-    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
-    themeCSSDom.id = "darkmode-theme";
-    (document.head || document.body).appendChild(themeCSSDom);
-
+    //Applies the theme on top of the page
+    fetch(THEMES_CSS_URL)
+        .then(response => response.json())
+        .then(themesJson => {
+        console.log(themesJson);
+        const themeData = themesJson["themes"][mode][theme];
+        const themeCSSDom = document.createElement('style');
+        themeCSSDom.textContent = themeData;
+        if (document.styleSheets[1]) {
+        document.styleSheets[1].disabled = false;
+        }
+        themeCSSDom.id = "darkmode-theme";
+        (document.head || document.body).appendChild(themeCSSDom);
+    });
     console.log("Theme [" + theme + "] loaded with mode of [" + mode +"]")
 }
 
@@ -442,6 +436,7 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
+    
     loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);
     
     colourSidebar();
@@ -717,13 +712,16 @@ async function loadSettings() {
 
                 <legend><strong>Dark Mode</strong></legend>
                 <div class="small-12 columns">
-                <p>And select the mode here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
+                <p>And select the mode here!<br></p>
                 </div>
-                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select></div>
-
-                <div class="small-12 columns">
-                    <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
-                </div>
+                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select>
+                <p class="meta">'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.</p></div>
+            </fieldset>
+            
+            <fieldset class="content">
+            <div class="small-12 columns">
+                <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
+            </div>
             </fieldset>
         </section>
         `
