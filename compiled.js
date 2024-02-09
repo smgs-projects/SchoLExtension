@@ -95,7 +95,10 @@ function loadTheme(theme, mode) {
         themeCSSDom = undefined;
     }
 
-    if (theme === "original" || mode === "light" ) return;
+    if (theme === "original" && mode === "light" ){
+        console.log("config checked")
+        return;
+    }
 
     //Applies the core theme
     coreCSSDom = document.createElement('link');
@@ -163,7 +166,7 @@ function contrastCheck() {
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
-        if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeMode, earlyExtConfig.darkmodeTheme);
+        if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeTheme, earlyExtConfig.darkmodeMode);
     } catch {
         console.log("2345312");
     }
@@ -439,7 +442,7 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    loadTheme(extConfig.darkmodeMode, extConfig.darkmodeTheme);
+    loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);
     
     colourSidebar();
     colourTimetable();
