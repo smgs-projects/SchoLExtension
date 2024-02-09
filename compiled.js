@@ -152,9 +152,24 @@ function contrastCheck() {
 
             // Check if there's enough contrast
             if (rgb.length === 3 && getRgbContrast(rgbBg, rgb) < wcagContrast) {
-                console.log(rgb);
                 e.style.cssText += `color:rgb(${255 - rgb[0]},${255 - rgb[1]},${255 - rgb[2]}) !important;`;
-                console.log(e.style.color);
+            }
+        });
+        
+        document.querySelectorAll(`#content *[style*="color"]:not(.breadcrumb *):not(td[style*="background-color"] *):not(div[style*="background-color"] > .Paragraph > *)`).forEach((e) => {
+            let rgb = window.getComputedStyle(e).color
+            .replace(/[^\d,]/g, "")
+            .split(",")
+            .slice(0, 3);
+        
+            let rgbBg = window.getComputedStyle(e).backgroundColor
+            .replace(/[^\d,]/g, "")
+            .split(",")
+            .slice(0, 3);
+        
+            // Check if there's enough contrast
+            if (rgb.length === 3 && getRgbContrast(rgbBg, rgb) < wcagContrast) {
+                e.style.cssText += `color:rgb(${255 - rgb[0]},${255 - rgb[1]},${255 - rgb[2]}) !important;`;
             }
         });
     };
@@ -1515,5 +1530,4 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
     }else{
     console.log("SchoL Extensions Loaded. " + splashText);
     }
-
 }
