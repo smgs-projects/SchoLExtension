@@ -99,8 +99,8 @@ function loadTheme(theme, mode) {
         coreCSSDom.remove();
         coreCSSDom = undefined;
     }
-    if (theme === "original" && mode === "light" ){
-        console.log("No theme being loaded.")
+    if (/*theme === "original" &&*/ mode === "light") {
+        // console.log("No theme being loaded.");
         return;
     }
 
@@ -111,9 +111,11 @@ function loadTheme(theme, mode) {
     coreCSSDom.id = "darkmode-core";
     (document.head || document.body).appendChild(coreCSSDom);
 
+    return; // MARK: Remove when theme feature is ready
+
     // Apply the theme colours
     let themesJson = JSON.parse(loadTextFileAjaxSync(THEMES_CSS_URL, "application/json"));
-    
+
     const themeData = themesJson["themes"][mode][theme];
     const themeCSSDom = document.createElement('style');
     themeCSSDom.textContent = themeData;
@@ -709,36 +711,43 @@ async function loadSettings() {
             <tbody>${tablerows}</tbody>
         </table>`
 
-        module_Themes = `  
-        <h2 class="subheader">Custom Themes</h2>
-        <section>
-            <fieldset class="content">
-                <legend><strong>Colour Theme Selector</strong></legend>
-                <div class="small-12 columns">
-                    <p>Select your Colour Theme Here!<br></p>
-                </div>
-                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-colour-themes">${customThemeOptions}</select></div>
+    module_Themes = `  
+    <h2 class="subheader">Custom Themes</h2>
+    <section>
+        <fieldset class="content">
+    
 
-                <legend><strong>Dark Mode</strong></legend>
-                <div class="small-12 columns">
-                <p>And select the mode here!<br></p>
-                </div>
-                <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select>
-                <p class="meta">'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.</p></div>
-            </fieldset>
-            
-            <fieldset class="content">
+            <legend><strong>Dark Mode</strong></legend>
             <div class="small-12 columns">
-                <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with custom themes, due to overridden custom formatting added to news/blog posts.</p>
+            <p>Enable or disable Dark mode here.<br></p>
             </div>
-            </fieldset>
-        </section>
-        `
+            <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-dark">${darkOptions}</select>
+            <p class="meta">'System Defaults' uses your system's theme settings. 'Light' and 'Dark' mode manually sets SchoL's theme settings.</p></div>
+        </fieldset>
+        
+        <fieldset class="content">
+        <div class="small-12 columns">
+            <p class="meta"><strong>Note:</strong> Not all text on SchoL will be compatible with Dark mode, due to overridden custom formatting added to news/blog posts.</p>
+        </div>
+        </fieldset>
+    </section>
+    `
+
+    // MARK: Add back when theme feature is ready
+    /*
+
+            <legend><strong>Colour Theme Selector</strong></legend>
+            <div class="small-12 columns">
+                <p>Select your Colour Theme here!<br></p>
+            </div>
+            <div class="small-12 columns" style="margin-top:10px;"><select id="context-selector-colour-themes">${customThemeOptions}</select></div>
+
+    */
 
     module_Credits = `
     <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
         <span style="font-size: 12px; color: #AAA;">
-            Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
+            Additional features developed by Yuma (12M), Sebastien (OM2023), Max (12S), and Zac (OM2022).
         </span>
     </div>
 
@@ -773,19 +782,20 @@ async function loadSettings() {
         // updateTheme(this.value);
     });
 
+    // MARK: Uncomment when theme feature is ready
     // When the page loads, add an event listener to the theme selector.
-    document.querySelector("#context-selector-colour-themes").value = extConfig.darkmodeTheme;
-    document.querySelector("#context-selector-colour-themes").addEventListener("change", async function() {
-        // Write to and save darkmode theme config
-        extConfig.darkmodeTheme = this.value;
-        extConfig.updated = Date.now();
-        localStorage.setItem("extConfig", JSON.stringify(extConfig))
-        await postConfig();
+    // document.querySelector("#context-selector-colour-themes").value = extConfig.darkmodeTheme;
+    // document.querySelector("#context-selector-colour-themes").addEventListener("change", async function() {
+    //     // Write to and save darkmode theme config
+    //     extConfig.darkmodeTheme = this.value;
+    //     extConfig.updated = Date.now();
+    //     localStorage.setItem("extConfig", JSON.stringify(extConfig))
+    //     await postConfig();
 
-        // localStorage.setItem("theme", this.value);
-        window.location.reload();
-        // updateTheme(this.value);
-    });
+    //     // localStorage.setItem("theme", this.value);
+    //     window.location.reload();
+    //     // updateTheme(this.value);
+    // });
 
     for (const setting in settings) {
         const toggle_setting = document.getElementById("toggle_" + setting)
