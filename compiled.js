@@ -1274,7 +1274,11 @@ async function mainPage() {
                 </li>
             `
         }
-        document.getElementById("ptvDepartures").innerHTML = `<ul class="information-list">${departureHTML}</ul>`
+        const ptvDeparturesElement = document.getElementById("ptvDepartures");
+        if (ptvDeparturesElement) {
+            // IT people removed this from the schol homepage so i added this to prevent an error every time
+            ptvDeparturesElement.innerHTML = `<ul class="information-list">${departureHTML}</ul>`;
+        }
         ptvUpdating = false;
     }
     window.addEventListener("focus", function (e) { PTVDepatureUpdate = true}, false);
@@ -1503,27 +1507,26 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "Houston we have a problem!",
         "Colourmatic!"
     ];
-    console.log('%cThis is an informational message', 'color: pink')
+
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
         splashList = [
             "Development Enabled"
         ]
     }
 
-    console.log(splashList[splashList.length-1])
-
-    const splashIndex = Math.floor(Math.random() * splashList.length);
-    const splashText = "%c\n" + splashList[splashIndex];
+    splashIndex = Math.floor(Math.random() * splashList.length);
+    //splashIndex = splashList.length -1
+    const splashText = "\n" + splashList[splashIndex];
 
     switch (splashText) {
-        case "Did you spot it?":
-          console.log("SchoL Extentions Loaded. " + splashText, "color: #DDD605");
+        case "\nDid you spot it?":
+          console.log("SchoL Extentions Loaded. " + "%c" + splashText, "color: #fcfc74");
           break;
-        case "Colourmatic!":
-          console.log("SchoL Extentions Loaded. " + "%cC%co%cl%co%cu%cr%cm%ca%ct%ci%cc!", "color: #c73c3c", "color: #c7663c", "color: #d9bc55", "color: #8fc74c", "color: #4cc78e", "color: #4cc7a2", "color: #5e4cc7", "color: #854cc7", "color: #aa4cc7", "color: #c74cbb", "color: #c74c8a");
+        case "\nColourmatic!":
+          console.log("SchoL Extentions Loaded. " + "\n%cC%co%cl%co%cu%cr%cm%ca%ct%ci%cc!", "color: #c73c3c", "color: #c7663c", "color: #d9bc55", "color: #8fc74c", "color: #4cc78e", "color: #4cc7a2", "color: #5e4cc7", "color: #854cc7", "color: #aa4cc7", "color: #c74cbb", "color: #c74c8a");
           break;
         default:
-          console.log("SchoL Extensions Loaded. " + splashText, "color: #fcfc74");
+          console.log("SchoL Extensions Loaded. " + "%c" + splashText, "color: #fcfc74");
       }
 
 }
