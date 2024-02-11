@@ -11,6 +11,7 @@
     "web_accessible_resources": [
         "darkmodeImages/*",
         "compiled.js",
+        "compiled.min.js",
         "chrome_ext/*"
     ],
     "content_scripts": [
