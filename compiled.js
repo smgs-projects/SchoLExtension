@@ -1500,7 +1500,6 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "I solemly swear I am up to no good",
         "That's what she coded",
         "Houston we have a problem!",
-        "Do you want to know the odds of seeing this message? 1/" + splashList.length
     ];
     
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
