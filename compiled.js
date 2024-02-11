@@ -10,9 +10,9 @@
 //     ___(.)<
 //     \____)
 // 
-
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
+
 const REGEXP = /\(([^)]+)\)/;
 const REGEXP2 = /\[([^)]+)\]/;
 // Timetable rows NOT to remove if all blank
@@ -31,7 +31,7 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Core location
 const CORE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
-// Darkmode Theme Location
+// Darkmode Theme Json Location
 const THEMES_CSS_URL = "https://api.onedrive.com/v1.0/shares/s!Ai0PkvhmurwZge_4fiSBxkmJaiRsF_I/root/content"
 
 const DEFAULT_CONFIG = {
@@ -76,6 +76,7 @@ function getRgbContrast(rgb1, rgb2) {
 // Dark Mode ------------------------------------------------------
 let coreCSSDom;
 let themeCSSDom;
+let themeApplied = false;
 
 function loadTheme(theme, mode) {
     darkMode = mode
@@ -97,27 +98,26 @@ function loadTheme(theme, mode) {
         return;
     }
 
-    //Applies the core theme
-    coreCSSDom = document.createElement('link');
-    coreCSSDom.rel = "stylesheet";
-    coreCSSDom.href = CORE_CSS_URL;
-    document.styleSheets[1] && (document.styleSheets[1].disabled = false);
-    coreCSSDom.id = "darkmode-core";
-    (document.head || document.body).appendChild(coreCSSDom);
+//Applies the theme data and core files
+fetch(THEMES_CSS_URL)
+    .then(response => response.json())
+    .then(themesJson => {
 
-    //Applies the theme on top of the page
-    fetch(THEMES_CSS_URL)
-        .then(response => response.json())
-        .then(themesJson => {
+        //Applies the core theme
+        const coreCSSDom = document.createElement('link');
+        coreCSSDom.rel = "stylesheet";
+        coreCSSDom.href = CORE_CSS_URL;
+        coreCSSDom.id = "darkmode-core";
+        (document.head || document.body).appendChild(coreCSSDom);
+
+        //Applies the theme
         const themeData = themesJson["themes"][mode][theme];
         const themeCSSDom = document.createElement('style');
         themeCSSDom.textContent = themeData;
-        if (document.styleSheets[1]) {
-        document.styleSheets[1].disabled = false;
-        }
         themeCSSDom.id = "darkmode-theme";
         (document.head || document.body).appendChild(themeCSSDom);
-    });
+        themeApplied = true;
+});
 }
 
 //this function does the contrast stuff and isnt called at all, so just... yeah
@@ -443,7 +443,7 @@ async function allPages() {
         localStorage.setItem("extConfig", JSON.stringify(extConfig));
         await postConfig();
     }
-    loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);
+    if(themeApplied==true){loadTheme(extConfig.darkmodeTheme, extConfig.darkmodeMode);}
     
     colourSidebar();
     colourTimetable();
