@@ -74,50 +74,52 @@ function getRgbContrast(rgb1, rgb2) {
 // ----- END RGB CONTRAST STUFF -----
 
 // Dark Mode ------------------------------------------------------
-let coreCSSDom;
-let themeCSSDom;
+var coreCSSDom;
+var themeCSSDom;
 let themeApplied = false;
+
+// Load text with Ajax synchronously: takes path to file and optional MIME type
+function loadTextFileAjaxSync(filePath, mimeType) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", filePath, false);
+
+    if (mimeType != null && xmlhttp.overrideMimeType) xmlhttp.overrideMimeType(mimeType);
+    xmlhttp.send();
+
+    return (xmlhttp.status == 200 && xmlhttp.readyState == 4) ? xmlhttp.responseText : null;
+}
 
 function loadTheme(theme, mode) {
     darkMode = mode
 
     //if defaults get the mode from system
     if (mode === "defaults") darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
-    if (coreCSSDom) {
+    if (coreCSSDom != undefined) {
         // If dark mode css already exists, remove it
         coreCSSDom.remove();
         coreCSSDom = undefined;
-    }
-    if (themeCSSDom) {
-        // If theme css already exists, remove it
-        themeCSSDom.remove();
-        themeCSSDom = undefined;
     }
     if (theme === "original" && mode === "light" ){
         console.log("No theme being loaded.")
         return;
     }
 
-//Applies the theme data and core files
-fetch(THEMES_CSS_URL)
-    .then(response => response.json())
-    .then(themesJson => {
+    // Apply the core theme
+    coreCSSDom = document.createElement('link');
+    coreCSSDom.rel = "stylesheet";
+    coreCSSDom.href = CORE_CSS_URL;
+    coreCSSDom.id = "darkmode-core";
+    (document.head || document.body).appendChild(coreCSSDom);
 
-        //Applies the core theme
-        const coreCSSDom = document.createElement('link');
-        coreCSSDom.rel = "stylesheet";
-        coreCSSDom.href = CORE_CSS_URL;
-        coreCSSDom.id = "darkmode-core";
-        (document.head || document.body).appendChild(coreCSSDom);
-
-        //Applies the theme
-        const themeData = themesJson["themes"][mode][theme];
-        const themeCSSDom = document.createElement('style');
-        themeCSSDom.textContent = themeData;
-        themeCSSDom.id = "darkmode-theme";
-        (document.head || document.body).appendChild(themeCSSDom);
-        themeApplied = true;
-});
+    // Apply the theme colours
+    let themesJson = JSON.parse(loadTextFileAjaxSync(THEMES_CSS_URL, "application/json"));
+    
+    const themeData = themesJson["themes"][mode][theme];
+    const themeCSSDom = document.createElement('style');
+    themeCSSDom.textContent = themeData;
+    themeCSSDom.id = "darkmode-theme";
+    (document.head || document.body).appendChild(themeCSSDom);
+    themeApplied = true;
 }
 
 //this function does the contrast stuff and isnt called at all, so just... yeah
@@ -168,8 +170,9 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
         if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeTheme, earlyExtConfig.darkmodeMode);
-    } catch {
-        console.log("2345312");
+    } catch (e) {
+        console.warn("[SCHOLEXT] Sorry if there was a light mode flash! This is due to settings requiring a sync with the server. =•= 🐤");
+        console.warn(e);
     }
 }
 
