@@ -1406,6 +1406,7 @@ async function postConfig() {
 }
 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
+
     let splashList = [
         "Ducks are pretty cool",
         "Custom themes one day???",
@@ -1500,20 +1501,29 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "I solemly swear I am up to no good",
         "That's what she coded",
         "Houston we have a problem!",
+        "Colourmatic!"
     ];
-    
+    console.log('%cThis is an informational message', 'color: pink')
     if (window.chrome && chrome.runtime && chrome.runtime.id) {
         splashList = [
             "Development Enabled"
         ]
     }
 
+    console.log(splashList[splashList.length-1])
+
     const splashIndex = Math.floor(Math.random() * splashList.length);
-    const splashText = splashList[splashIndex];
-    if(splashText == "Did you spot it?"){
-        console.log("SchoL Extentions Loaded. " + splashText);
-    }else{
-    console.log("SchoL Extensions Loaded. " + splashText);
-    }
+    const splashText = "%c\n" + splashList[splashIndex];
+
+    switch (splashText) {
+        case "Did you spot it?":
+          console.log("SchoL Extentions Loaded. " + splashText, "color: #DDD605");
+          break;
+        case "Colourmatic!":
+          console.log("SchoL Extentions Loaded. " + "%cC%co%cl%co%cu%cr%cm%ca%ct%ci%cc!", "color: #c73c3c", "color: #c7663c", "color: #d9bc55", "color: #8fc74c", "color: #4cc78e", "color: #4cc7a2", "color: #5e4cc7", "color: #854cc7", "color: #aa4cc7", "color: #c74cbb", "color: #c74c8a");
+          break;
+        default:
+          console.log("SchoL Extensions Loaded. " + splashText, "color: #fcfc74");
+      }
 
 }
