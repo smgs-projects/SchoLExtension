@@ -1409,6 +1409,14 @@ async function postConfig() {
     });
 }
 
+function iSolvedForX(x,y) {
+    if (Math.sqrt(x+36) + Math.sqrt(2*x-33) === Math.sqrt(6*x+6) && y === Math.sqrt(6*x+6)) {
+        return "Nice.";
+    } else {
+        return "The maths is not mathing";
+    }
+}
+
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
 
     let splashList = [
@@ -1447,7 +1455,7 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "Hey you. You're finally awake",
         "Thats an infix!",
         "Did you spot it?",
-        "Was that the bite of 87???",
+        "Was that the bite of '87???",
         "150% hyperbole!",
         "Any computer is a laptop if you're brave enough!",
         "| || || |_",
@@ -1498,20 +1506,18 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         "I'm on a boat!",
         "Works at Sea (probably)!",
         "Who lives in the console under the sea? Me!",
-        "Its me, Hi, I'm SchoLExtention, its me!",
+        "Its me, Hi, I'm SchoLExtension, its me!",
         "This is not a drill!",
         "This is a drill!",
         "I solemly swear I am up to no good!",
         "That's what she coded!",
         "Houston we have a problem!",
-        "Colourmatic!"
+        "Colourmatic!",
+        "0!=1",
+        "Solve sqrt(x+36) + sqrt(2x-33) = sqrt(6x+6) for x. Substitute the answer into the left hand side and evaluate, storing the result as y.\nOnce you are done, run the function iSolvedForX(x,y)! (Hint: sqrt(x) can be expressed in JS as Math.sqrt(x).)"
     ];
-
-    if (window.chrome && chrome.runtime && chrome.runtime.id) {
-        splashList = [
-            "Development Enabled"
-        ]
-    }
+    
+    let devSplash = window.scholChromeExt ? "[Development Enabled] " : "";
 
     splashIndex = Math.floor(Math.random() * splashList.length);
     //splashIndex = splashList.length -1
@@ -1519,13 +1525,12 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
 
     switch (splashText) {
         case "\nDid you spot it?":
-          console.log("SchoL Extentions Loaded. " + "%c" + splashText, "color: #fcfc74");
+          console.log(devSplash + "SchoL Extentions Loaded. " + "%c" + splashText, "color: #fcfc74");
           break;
         case "\nColourmatic!":
-          console.log("SchoL Extensions Loaded. " + "\n%cC%co%cl%co%cu%cr%cm%ca%ct%ci%cc!", "color: #c73c3c", "color: #c7663c", "color: #d9bc55", "color: #8fc74c", "color: #4cc78e", "color: #4cc7a2", "color: #5e4cc7", "color: #854cc7", "color: #aa4cc7", "color: #c74cbb", "color: #c74c8a");
+          console.log(devSplash + "SchoL Extensions Loaded. " + "\n%cC%co%cl%co%cu%cr%cm%ca%ct%ci%cc!", "color: #c73c3c", "color: #c7663c", "color: #d9bc55", "color: #8fc74c", "color: #4cc78e", "color: #4cc7a2", "color: #5e4cc7", "color: #854cc7", "color: #aa4cc7", "color: #c74cbb", "color: #c74c8a");
           break;
         default:
-          console.log("SchoL Extensions Loaded. " + "%c" + splashText, "color: #fcfc74");
-      }
-
+          console.log(devSplash + "SchoL Extensions Loaded. " + "%c" + splashText, "color: #fcfc74");
+    }
 }
