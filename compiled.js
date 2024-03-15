@@ -170,6 +170,8 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
         if (earlyExtConfig.darkmodeMode) loadTheme(earlyExtConfig.darkmodeTheme, earlyExtConfig.darkmodeMode);
+        
+        colourTimetable(earlyExtConfig);
     } catch (e) {
         console.warn("[SCHOLEXT] Sorry if there was a light mode flash! This is due to settings requiring a sync with the server. =•= 🐤");
         console.warn(e);
@@ -481,13 +483,13 @@ function colourDuework() {
     }
 }
 
-function colourTimetable() {
+function colourTimetable(earlyExtConfig) {
     // Change timetable subject colours to match everywhere
     for (const subject of document.querySelectorAll(".timetable-subject[style*='background-color'] div, .timetable-subject[style*='background'] div, .show-for-small-only tr td .timetable-subject div")) {
         if (!REGEXP.exec(subject.textContent)) continue;
         const subjectcodes = REGEXP.exec(subject.innerText)[1].split(",")
         for (const subjectcode of subjectcodes) {
-            const theme = extConfig.theme[subjectcode]
+            const theme = (earlyExtConfig || extConfig).theme[subjectcode]
             if (!theme?.color) continue
             const textcol = getTextColor(rgbToHex(...theme["color"].replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             subject.parentNode.style.backgroundColor = theme["color"]
@@ -1419,6 +1421,8 @@ function iSolvedForX(x,y) {
         return "The maths is not mathing";
     }
 }
+
+function duckawesome() { console.log("I told you!"); }
 
 if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
 
