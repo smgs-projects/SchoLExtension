@@ -292,7 +292,7 @@ async function load() {
     if (window.location.pathname.startsWith("/timetable")) timetable();
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
-    if (window.location.pathname.startsWith("/settings/messages")) await loadSettings();
+    if (window.location.pathname.startsWith("/settings/notifications")) await loadSettings();
 }
 
 async function timetableCache(forcePush) {
@@ -1271,8 +1271,8 @@ async function mainPage() {
 function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
-        <a href="/settings/messages" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
-        <a href="/settings/messages" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+        <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
+        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
     `)
 
     if (extConfig.settings.compacttimetable) {
