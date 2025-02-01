@@ -11,6 +11,8 @@
 //     \____)
 // 
 
+// Last updated 01-02-2025
+
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
@@ -492,7 +494,6 @@ function colourTimetable() {
             const textcol = getTextColor(rgbToHex(...theme["color"].replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             subject.parentNode.style.backgroundColor = theme["color"]
             subject.parentNode.style.color = textcol
-            subject.parentNode.querySelectorAll("*:not(a)").forEach(e => { e.style.color = textcol })
             if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
 
             if (theme.current == "image" && theme.image) {
