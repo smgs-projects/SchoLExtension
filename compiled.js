@@ -11,6 +11,8 @@
 //     \____)
 // 
 
+// Last updated 01-02-2025
+
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
@@ -292,7 +294,7 @@ async function load() {
     if (window.location.pathname.startsWith("/timetable")) timetable();
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
-    if (window.location.pathname.startsWith("/settings/messages")) await loadSettings();
+    if (window.location.pathname.startsWith("/settings/notifications")) await loadSettings();
 }
 
 async function timetableCache(forcePush) {
@@ -492,7 +494,6 @@ function colourTimetable() {
             const textcol = getTextColor(rgbToHex(...theme["color"].replace(/[^\d\s]/g, '').split(' ').map(Number)).toUpperCase())
             subject.parentNode.style.backgroundColor = theme["color"]
             subject.parentNode.style.color = textcol
-            subject.parentNode.querySelectorAll("*:not(a)").forEach(e => { e.style.color = textcol })
             if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
 
             if (theme.current == "image" && theme.image) {
@@ -1271,8 +1272,8 @@ async function mainPage() {
 function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
-        <a href="/settings/messages" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
-        <a href="/settings/messages" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+        <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
+        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
     `)
 
     if (extConfig.settings.compacttimetable) {
