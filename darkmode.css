@@ -57,6 +57,9 @@ h1 {
     padding-top: 0px;
     padding-bottom: 0px;
 }
+.title-section h1 {
+    color: var(--text1) !important;
+}
 element.style {
     font-size: 0.75rem;
 }
@@ -78,6 +81,9 @@ element.style {
     --background: hsla(0, 0%, 12%, 1);
     --layer1: hsla(0, 0%, 15%, 1);
     --layer2: hsla(0, 0%, 17%, 1);
+    --layer3: hsla(0, 0%, 19%, 1);
+    --layer4: hsla(0, 0%, 21%, 1);
+    --layer5: hsla(0, 0%, 23%, 1);
     --text3: hsla(0, 0%, 50%, 1);
     --text2: hsla(0, 0%, 65%, 1);
     --text1: hsla(0, 0%, 85%, 1);
@@ -95,9 +101,25 @@ element.style {
     --accent-box-hover: rgb(28, 37, 46);
 
 /*things that schol needs defined */
-    --black: var(0, 0%, 0%, 1);
+    --black: hsla(0, 0%, 0%, 1);
     --white: hsla(0, 0%, 100%, 1);
-    
+
+/* alert colours */
+    --alert: #fa4a47;
+    --success: #4fa74f;
+    --warning: #ff7d00;
+
+/* checkbox colours */
+    --unselected-background: var(--layer5);
+    --unselected-check: transparent;
+    --unselected-border: var(--layer3);
+    --hover-background: var(--accent);
+    --hover-check: var(--accentalt);
+    --selected-background: var(--layer5);
+    --selected-check: var(--accent);
+    --selected-border: transparent;
+
+/*-----------------------------------------------------------------------------------------------*/ 
 /*navigation colours - pertains to items in top navigation bar*/
     --navigation-foreground: var(--accent-nav-icons);
     --navigation-foreground-highlight: var(--black);
@@ -300,9 +322,47 @@ ul[class="countdown-timer flex-list"]>li{
 .navthis>span {
     color: var(--accent) !important;
 }
-
+/* calendar related stuff */
 #calendar>div>div.fc.fc-media-screen.fc-direction-ltr.fc-theme-standard>div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr {
     border-bottom: 3px solid var(--accent) !important;
+}
+.flatpickr-calendar {
+color: var(--text1) !important;
+    background-color: var(--layer2) !important;
+    border-color: var(--accent-grey) !important;
+    border-bottom: 0px
+}
+.flatpickr-day {
+    color: var(--text2) !important;
+}
+.flatpickr-day:hover {
+    background-color: var(--accent-grey) !important;
+    border-color: var(--accent-grey-hover) !important;
+}
+.flatpickr-calendar .flatpickr-next-month,
+.flatpickr-calendar .flatpickr-weekday,
+.flatpickr-calendar,
+.flatpickr-calendar .arrowUp,
+.flatpickr-calendar .arrowDown {
+    color: var(--text2) 
+}
+.flatpickr-prev-month, .flatpickr-next-month {
+    fill: var(--text1) !important;
+}
+.displayDate {
+    color: var(--text3) !important;
+}
+.flatpickr-day.selected {
+    color: var(--text1) !important;
+    background-color: var(--accent-box) !important;
+    border-color: var(--white) !important;
+}
+.flatpickr-day.prevMonthDay, .flatpickr-day.prevMonthDay {
+    color: var(--text2) !important;
+}
+
+.flatpickr-innerContainer {
+    border: none !important;
 }
 /* .timetable-subject {
     opacity: 75%;
@@ -345,8 +405,8 @@ div[id="applied_filters"]>div>ul>li {
     background-color: var(--layer1) !important;
 }
 
-a[class="fc-col-header-cell-cushion "] {
-    color: var(--white) !important
+.fc-col-header-cell-cushion {
+    color: var(--text1) !important;
 }
 
 th.fc-col-header-cell {
@@ -629,7 +689,7 @@ ul[class="breadcrumb"]>li.last>* {
 .alert-box,
 .eotc-status,
 .alert-box-icon {
-    background-color: var(--accent-background-contrast) !important;
+    background-color: var(--layer2) !important;
     color: var(--text1) !important;
 }
 
@@ -900,7 +960,130 @@ h4, h5, h6 {
 .fc.timegrid-slots > table {
     background: none;
 }
-
+    
 #activity-feed .feed-load-more.content {
     background-color: var(--layer1);
+}
+
+.sb-ck-callout--success, .sb-ck-callout--target, .sb-ck-callout--warning {
+    background-color: var(--layer2);
+}
+
+/* all dropdowns */
+div.f-dropdown.content {
+    color: var(--text2) !important;
+    background-color: var(--layer1) !important;
+}
+
+/* search stuff */
+.c-card {
+    background-color: var(--layer2) !important;
+    color: var(--text1) !important;
+}
+.c-card--child {
+    background-color: var(--layer3) !important;
+}
+div.empty-state-flex-centered { /* "To begin searching, please enter..." */
+    background-color: var(--layer2) !important;
+    color: var(--text2) !important;
+}
+div.search-result {
+    background-color: var(--layer2) !important;
+}
+span.selected-item__name-span {
+    color: var(--text1) !important;
+}
+.c-island {
+    background-color: var(--layer1) !important;
+}
+#search-field {
+    caret-color: var(--white);
+}
+/* element edit panel */
+.editPanel {
+    background-color: var(--layer2);
+}
+/* text under "my subjects" */
+.off-canvas-list h4 {
+    color: var(--text2) !important;
+}
+/* text (name) under profile picure on hover */
+li.separator {
+    color: var(--text2) !important;
+}
+/* pronoun label on profile page */
+#pronounslabel {
+    color: var(--text1) !important;
+    background-color: var(--layer3) !important;
+}
+/* notification prompt */
+#pwaPrompt {
+    background-color: var(--layer2) !important;
+}
+
+/* checkbox */
+/* selected colours*/
+.checklist input[type=radio]:not(.plain):checked+label:before,.checklist input[type=radio]:not(.plain):checked+label:after,.checklist input[type=checkbox]:not(.plain):checked+label:before,.checklist input[type=checkbox]:not(.plain):checked+label:after,.radiolist input[type=radio]:not(.plain):checked+label:before,.radiolist input[type=radio]:not(.plain):checked+label:after,.radiolist input[type=checkbox]:not(.plain):checked+label:before,.radiolist input[type=checkbox]:not(.plain):checked+label:after {
+    color: var(--selected-check) !important; /* colour of the check when selected */
+    background-color: var(--selected-background) !important; /* colour of the box background when selected */
+}
+
+/* Style for inputs that are not checked and not hovered */
+.checklist input[type=radio]:not(.plain):not(:checked):not(:hover) + label:before,
+.checklist input[type=radio]:not(.plain):not(:checked):not(:hover) + label:after,
+.checklist input[type=checkbox]:not(.plain):not(:checked):not(:hover) + label:before,
+.checklist input[type=checkbox]:not(.plain):not(:checked):not(:hover) + label:after,
+.radiolist input[type=radio]:not(.plain):not(:checked):not(:hover) + label:before,
+.radiolist input[type=radio]:not(.plain):not(:checked):not(:hover) + label:after,
+.radiolist input[type=checkbox]:not(.plain):not(:checked):not(:hover) + label:before,
+.radiolist input[type=checkbox]:not(.plain):not(:checked):not(:hover) + label:after {
+    color: var(--unselected-check) !important;           /* tick colour when not checked */
+    background-color: var(--unselected-background) !important; /* box background when not checked */
+    border-color: var(--unselected-border) !important; /* border colour when not checked */
+}
+.checklist input[type=radio]:not(.plain):not(:disabled)+label:hover:before,.checklist input[type=radio]:not(.plain):not(:disabled)+label:hover:after,.checklist input[type=checkbox]:not(.plain):not(:disabled)+label:hover:before,.checklist input[type=checkbox]:not(.plain):not(:disabled)+label:hover:after,.radiolist input[type=radio]:not(.plain):not(:disabled)+label:hover:before,.radiolist input[type=radio]:not(.plain):not(:disabled)+label:hover:after,.radiolist input[type=checkbox]:not(.plain):not(:disabled)+label:hover:before,.radiolist input[type=checkbox]:not(.plain):not(:disabled)+label:hover:after {
+    background-color: var(--hover-background) !important;
+}
+/* hover - tick colour */
+.checklist input[type=radio]:not(.plain):not(:disabled)+label:hover:after,.checklist input[type=checkbox]:not(.plain):not(:disabled)+label:hover:after,.radiolist input[type=radio]:not(.plain):not(:disabled)+label:hover:after,.radiolist input[type=checkbox]:not(.plain):not(:disabled)+label:hover:after {
+    color: var(--hover-check) !important;
+}
+/* selected box border color */
+.checklist input[type=radio]:not(.plain):not(:disabled):focus+label:before,.checklist input[type=checkbox]:not(.plain):not(:disabled):focus+label:before,.radiolist input[type=radio]:not(.plain):not(:disabled):focus+label:before,.radiolist input[type=checkbox]:not(.plain):not(:disabled):focus+label:before {
+    background-color: var(--selected-border) !important;
+}
+
+/* pronoun checkboxes because they don't have backgrounds */
+/* always make the background transparent */
+
+/* checked state */
+#pronoun-list input[type="checkbox"]:not(.plain):checked + label:before,
+#pronoun-list input[type="checkbox"]:not(.plain):checked + label:after,
+#pronoun-roles input[type="checkbox"]:not(.plain):checked + label:before,
+#pronoun-roles input[type="checkbox"]:not(.plain):checked + label:after {
+    background-color: transparent !important;
+}
+
+/* unchecked (non-hover) state */
+#pronoun-list input[type="checkbox"]:not(.plain):not(:checked):not(:hover) + label:before,
+#pronoun-list input[type="checkbox"]:not(.plain):not(:checked):not(:hover) + label:after,
+#pronoun-roles input[type="checkbox"]:not(.plain):not(:checked):not(:hover) + label:before,
+#pronoun-roles input[type="checkbox"]:not(.plain):not(:checked):not(:hover) + label:after {
+    background-color: transparent !important;
+}
+
+/* hover state */
+#pronoun-list input[type="checkbox"]:not(.plain):not(:disabled):hover + label:before,
+#pronoun-list input[type="checkbox"]:not(.plain):not(:disabled):hover + label:after,
+#pronoun-roles input[type="checkbox"]:not(.plain):not(:disabled):hover + label:before,
+#pronoun-roles input[type="checkbox"]:not(.plain):not(:disabled):hover + label:after {
+    background-color: transparent !important;
+}
+
+/* focused state */
+#pronoun-list input[type="checkbox"]:not(.plain):not(:disabled):focus + label:before,
+#pronoun-list input[type="checkbox"]:not(.plain):not(:disabled):focus + label:after,
+#pronoun-roles input[type="checkbox"]:not(.plain):not(:disabled):focus + label:before,
+#pronoun-roles input[type="checkbox"]:not(.plain):not(:disabled):focus + label:after {
+    background-color: transparent !important;
 }
