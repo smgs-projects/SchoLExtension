@@ -33,6 +33,8 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Theme location
 const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+// Confetti JS location (canvas-confetti)
+const CONFETTI_JS_URL = "https://schol.baj810.com/canvas-confetti.js";
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -44,6 +46,7 @@ const DEFAULT_CONFIG = {
     "version" : 2
 }
 
+let minConfettiGrade = 90;
 let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
@@ -1024,6 +1027,51 @@ function colourEDiaryList() {
     })
 }
 
+function confettiGrades() {
+    const confettiGrades = document.createElement("script");
+    confettiGrades.src = CONFETTI_JS_URL;
+    
+    confettiGrades.onload = () => {
+        let gradeDiv = document.querySelectorAll(".grade");
+        let confettiRunning = false;
+
+        gradeDiv.forEach(gradeDiv => {
+            let gradeText = gradeDiv.textContent.trim();
+            let gradeValue = parseFloat(gradeText.replace('%', ''));
+
+            // When hovering over grade
+            gradeDiv.addEventListener('mouseenter', () => {
+                if (gradeValue >= minConfettiGrade && !confettiRunning) {
+                    confettiRunning = true;
+
+                    // Find center of gradeDiv
+                    const gradeRect = gradeDiv.getBoundingClientRect();
+                    const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
+                    const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
+                    window.confetti({
+                        particleCount: window.innerWidth >= 950 ? 100 : 75,
+                        spread: window.innerWidth >= 950 ? 90 : 160,
+                        decay: 0.88,
+                        scalar: 1.25,
+                        startVelocity: window.innerWidth >= 950 ? 40 : 35,
+                        origin: { x: gradeOriginX, y: gradeOriginY },
+                        angle: window.innerWidth >= 950 ? 130 : 90
+                    }).finally(() => {
+                        confettiRunning = false;
+                    }).catch(error => {
+                        console.error("Confetti grade error:", error);
+                        confettiRunning = false;
+                    });
+                }
+            });
+        });
+    };
+    confettiGrades.onerror = () => {
+        console.error("Failed to load confetti script from", CONFETTI_JS_URL);
+    };
+    document.head.appendChild(confettiGrades);
+}
+
 function feedback() {
     // Add "Click to view feedback" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
@@ -1068,8 +1116,15 @@ function feedback() {
             }
         }
     }
+
+    // Add confetti to grades over 90%
+    confettiGrades()
 }
+
 function assessments() {
+    // Add confetti to grades over 90%
+    confettiGrades()
+
     let subheaders = document.querySelectorAll(".subheader");
     for (e of subheaders) {
         if (!["SUBMIT RESPONSE", "SUBMISSION HISTORY"].includes(e.innerText)) continue
