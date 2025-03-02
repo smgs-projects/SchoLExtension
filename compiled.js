@@ -1174,11 +1174,34 @@ function eDiary() {
     }
 }
 async function mainPage() {
-    if (!document.querySelector("h2[data-timetable-header]")) {
+    const timetableHeader = document.querySelector("h2[data-timetable-header]");
+    if (timetableHeader) {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
-        .then(r=>r.json())
-        .then(r=>document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`))
+            .then(r => r.json())
+            .then(r => {
+                const fullText = r.text;
+                const matchResult = fullText.match(/Week\s*\d+\s*Day\s*\d+/);
+                const weekDayText = matchResult ? matchResult[0] : null;
+                const dayWeekText = weekDayText ? weekDayText.replace(/(Week\s*\d+)\s*(Day\s*\d+)/, '$2 $1') : null;
+    
+                if (document.querySelector(".island") && dayWeekText) {
+                    document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
+                } else if (weekDayText) {
+                    timetableHeader.textContent = r.text;
+                }
+    
+                timetableHeader.style.display = weekDayText ? "none" : "block";
+            })
+            .catch(error => {
+                console.error("Failed to fetch services dwi info", error);
+                timetableHeader.style.display = "block";
+            });
+    } else {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+            .then(r => r.json())
+            .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`));
     }
+
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
