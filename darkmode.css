@@ -199,6 +199,14 @@ table>tbody>tr>td:not(.ck-editor__nested-editable):not([style*="background-color
     background-color: var(--layer1);
 }
 
+tbody#rubric-tbody {
+    background-color: var(--layer2) !important;
+}
+
+table.diagonal-headings-table th {
+    background-color: var(--layer1) !important;
+}
+
 table>tbody>tr>.rb-selected {
     background-color: var(--accent-box) !important;
     /* border: 1px solid #3696d1 !important; */
@@ -268,7 +276,11 @@ a[class="logo"]{
 
 [color="#000000"] {
     color: var(--text2) !important;
-  }
+}
+
+abbr {
+    color: var(--text2) !important;
+}
 
 /*table related stuff*/
 table {
@@ -322,6 +334,11 @@ ul[class="countdown-timer flex-list"]>li{
 .navthis>span {
     color: var(--accent) !important;
 }
+
+tfoot {
+    background-color: var(--layer1) !important;
+}
+
 /* calendar related stuff */
 #calendar>div>div.fc.fc-media-screen.fc-direction-ltr.fc-theme-standard>div.fc-header-toolbar.fc-toolbar.fc-toolbar-ltr {
     border-bottom: 3px solid var(--accent) !important;
@@ -358,12 +375,22 @@ color: var(--text1) !important;
     border-color: var(--white) !important;
 }
 .flatpickr-day.prevMonthDay, .flatpickr-day.prevMonthDay {
-    color: var(--text2) !important;
+    color: var(--text3) !important;
 }
 
 .flatpickr-innerContainer {
     border: none !important;
 }
+
+.flatpickr-am-pm {
+    color: var(--text1) !important;
+    background: var(--layer3) !important;
+}
+
+.flatpickr-am-pm:hover {
+    background: var(--layer5) !important;
+}
+
 /* .timetable-subject {
     opacity: 75%;
 } */
@@ -569,6 +596,9 @@ body {
     color: var(--text2);
 }
 
+.accordion dd>.content.active {
+    background-color: var(--layer2) !important;
+}  
 .island section {
     background-color: var(--layer1) !important;
 }
@@ -638,7 +668,7 @@ b[class="award-desc"] {
     border-left-color: var(--text3);
 }
 
-blockquote {
+blockquote:not(.ck-editor__main *) {
     background-color: var(--accent-grey);
     color: var(--white);
 }
@@ -683,17 +713,12 @@ ul[class="breadcrumb"]>li.last>* {
     padding-left: 12px;
 } */
 
-
-
-
-.alert-box,
+div[class="alert-box"],
 .eotc-status,
 .alert-box-icon {
     background-color: var(--layer2) !important;
     color: var(--text1) !important;
 }
-
-
 
 .card.attachment img { 
     border-right: 1px solid var(--text3);
@@ -965,8 +990,15 @@ h4, h5, h6 {
     background-color: var(--layer1);
 }
 
-.sb-ck-callout--success, .sb-ck-callout--target, .sb-ck-callout--warning {
+.sb-ck-callout--success:not(.ck-editor__main *), 
+.sb-ck-callout--target:not(.ck-editor__main *), 
+.sb-ck-callout--warning:not(.ck-editor__main *), 
+.sb-ck-callout--info:not(.ck-editor__main *) {
     background-color: var(--layer2);
+}
+
+.sb-ck-callout--info:not(.ck-editor__main *) {
+    color: var(--accent);
 }
 
 /* all dropdowns */
@@ -1019,6 +1051,11 @@ li.separator {
 /* notification prompt */
 #pwaPrompt {
     background-color: var(--layer2) !important;
+}
+
+ul.filters input[type=checkbox]:checked+label {
+    background-color: var(--accentalt) !important;
+    color: var(--white) !important;
 }
 
 /* checkbox */
@@ -1086,4 +1123,9 @@ li.separator {
 #pronoun-roles input[type="checkbox"]:not(.plain):not(:disabled):focus + label:before,
 #pronoun-roles input[type="checkbox"]:not(.plain):not(:disabled):focus + label:after {
     background-color: transparent !important;
+}
+
+/* selected box hover */
+.checklist.checklist-container input[type=checkbox]:not(.plain):not(:disabled):checked+label:hover {
+    background-color: var(--hover-background) !important;
 }

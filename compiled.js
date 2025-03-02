@@ -32,7 +32,7 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Theme location
-const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+const DARKMODE_CSS_URL = "https://schol.baj810.com/darkmode.css?v=1.9.1";
 
 const DEFAULT_CONFIG = {
     "theme" : {},
