@@ -294,6 +294,7 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/due")) setInterval(dueWork, 500);
     if (window.location.pathname.startsWith("/learning/grades")) feedback();
     if (window.location.pathname.startsWith("/learning/assessments/")) assessments();
+    if (window.location.pathname.startsWith(`/learning/grades/${schoolboxUser.id}/`) && window.location.pathname.split('/').length > 4) subjectFeedback();
     if (window.location.pathname.startsWith("/timetable")) timetable();
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
@@ -1142,6 +1143,52 @@ function assessments() {
             </div>`)
         }
         break
+    }
+}
+function subjectFeedback() {
+        // Add percentage to feedback average
+        if (document.querySelector(".grade")) {
+            const gradeElements = document.querySelectorAll(".grade");
+            const averageGradeElement = document.querySelector(".small-12.medium-3.xlarge-2.right .grade");
+            let averagePercentageGrade = 0;
+            let percentageGradeText = "";
+            let gradeCount = 0;
+            let gradeSum = 0;
+            const letterGradeText = averageGradeElement.textContent.trim();
+    
+            // Get grade values and find average percentage
+            gradeElements.forEach(gradeElement => {
+                if (gradeElement.textContent.includes("%")) {
+                    individualGrade = parseFloat(gradeElement.textContent.trim().replace('%', ''));
+                    gradeCount++;
+                    gradeSum += individualGrade;
+                }
+            });
+    
+            if (gradeCount > 1) {
+                averagePercentageGrade = gradeSum / gradeCount;
+                percentageGradeText = (averagePercentageGrade.toFixed(2) + "%");
+            } else {
+                percentageGradeText = "";
+            }
+            
+            // Create container to split
+            const gradeContainer = document.createElement('div');
+            gradeContainer.style.display = 'flex';
+            gradeContainer.style.justifyContent = 'space-between';
+            gradeContainer.style.width = '100%';
+            gradeContainer.style.fontSize = '1rem';
+            gradeContainer.style.lineHeight = '2rem';
+            
+            const gradeContent = document.createElement('div');
+            gradeContent.textContent = letterGradeText;
+            const averageContent = document.createElement('div');
+            averageContent.textContent = percentageGradeText;
+    
+            gradeContainer.appendChild(gradeContent);
+            gradeContainer.appendChild(averageContent);
+            averageGradeElement.innerHTML = '';
+            averageGradeElement.appendChild(gradeContainer);
     }
 }
 function eDiary() {
