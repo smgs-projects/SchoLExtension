@@ -32,9 +32,9 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Theme location
-const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+const DARKMODE_CSS_URL = "https://docs.robotics.smgs.baj810.com/private/scholext/darkmode/css";
 // Confetti JS location (canvas-confetti)
-const CONFETTI_JS_URL = "https://schol.baj810.com/canvas-confetti.js";
+const CONFETTI_JS_URL = "https://docs.robotics.smgs.baj810.com/private/scholext/confetti/js";
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -1213,7 +1213,23 @@ async function mainPage() {
             }
         }
     }
-    (document.querySelector(".awardsComponent") || document.querySelector("#component62394"))?.insertAdjacentHTML("afterend", `
+
+    // Hide papercut component if not on school intranet
+    try {
+        await fetch("https://print.stmichaels.vic.edu.au/js/refresh.js", { mode: 'no-cors' })
+    } catch (error) {
+        if (error.name === 'TypeError') {
+            document.getElementById("component63192").style.display = "none";
+        }
+    }
+
+    // Hide "My day" if there are no events
+    const calendarElement = document.getElementById("calendar68");
+    if (calendarElement && (calendarElement.style.display === "none" || calendarElement.innerHTML.trim() === "")) {
+        document.getElementById("component68").style.display = "none";
+    }
+
+    (document.querySelector(".awardsComponent") || document.querySelector("#component295991"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
