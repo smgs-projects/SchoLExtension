@@ -174,7 +174,7 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
         if (earlyExtConfig.darkmodetheme) updateTheme(earlyExtConfig.darkmodetheme);
     } catch {
-        console.log("2345312");
+        console.log("Early extConfig parse failed");
     }
 }
 
@@ -182,6 +182,15 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
+
+// Append header CSS for all pages
+const styleTag = document.createElement('style');
+styleTag.innerHTML = `
+    .logo-wrapper {
+        height: 72px;
+    }
+`;
+document.head.appendChild(styleTag);
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
