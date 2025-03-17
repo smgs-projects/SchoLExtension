@@ -16,7 +16,7 @@
     "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "mysql2": "^2.3.3",
+    "mysql2": "^3.13.0",
     "node-fetch": "^3.2.3",
     "path": "^0.12.7",
     "ptv-api": "^0.1.0",
