@@ -1421,6 +1421,32 @@ function timetable() {
             }
         }
     }
+
+    // Highlight current day on mobile timetable
+    if (window.innerWidth <= 640) {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+            .then(r => {
+                return r.json();
+            })
+            .then(r => {
+                const currentDay = r.D;
+                // find "Day ..." in h2.subheaders
+                const headers = document.querySelectorAll("h2.subheader");
+                for (let header of headers) {
+                    const text = header.textContent.trim();
+                    const match = text.match(/^Day\s*(\d+)$/);
+                    if (match) {
+                        if (parseInt(match[1]) === parseInt(currentDay)) {
+                            header.style.setProperty("color", "var(--accent-foreground)", "important");
+                            header.style.setProperty("font-weight", "600", "important");
+                            break; // stop searching after finding the current day
+                        }
+                    }
+                }
+            }).catch(error => {
+                console.error("Error fetching dwi data:", error);
+            });
+    }
 }
 
 async function remoteAuth() {
