@@ -1028,48 +1028,76 @@ function colourEDiaryList() {
 }
 
 function confettiGrades() {
-    const confettiGrades = document.createElement("script");
-    confettiGrades.src = CONFETTI_JS_URL;
-    
-    confettiGrades.onload = () => {
-        let gradeDiv = document.querySelectorAll(".grade");
-        let confettiRunning = false;
+    if (schoolboxUser.role.student === true) { // Only run confetti for students
+        const confettiGrades = document.createElement("script");
+        confettiGrades.src = CONFETTI_JS_URL;
+        
+        confettiGrades.onload = async () => {
+            let attempts = 0;
+            let gradeDiv = document.querySelectorAll(".grade");
+            // wait until there are at least 2 grade elements on the page
+            while (gradeDiv.length <= 2 && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 250));
+                gradeDiv = document.querySelectorAll(".grade");
+                attempts++;
+            }
+            gradeDiv = document.querySelectorAll(".grade");
+            let confettiRunning = false;
 
-        gradeDiv.forEach(gradeDiv => {
-            let gradeText = gradeDiv.textContent.trim();
-            let gradeValue = parseFloat(gradeText.replace('%', ''));
+            gradeDiv.forEach(gradeDiv => {
+                let gradeText = gradeDiv.textContent.trim();
+                let gradeValue = null;
 
-            // When hovering over grade
-            gradeDiv.addEventListener('mouseenter', () => {
-                if (gradeValue >= minConfettiGrade && !confettiRunning) {
-                    confettiRunning = true;
-
-                    // Find center of gradeDiv
-                    const gradeRect = gradeDiv.getBoundingClientRect();
-                    const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
-                    const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
-                    window.confetti({
-                        particleCount: window.innerWidth >= 950 ? 100 : 75,
-                        spread: window.innerWidth >= 950 ? 90 : 160,
-                        decay: 0.88,
-                        scalar: 1.25,
-                        startVelocity: window.innerWidth >= 950 ? 40 : 35,
-                        origin: { x: gradeOriginX, y: gradeOriginY },
-                        angle: window.innerWidth >= 950 ? 130 : 90
-                    }).finally(() => {
-                        confettiRunning = false;
-                    }).catch(error => {
-                        console.error("Confetti grade error:", error);
-                        confettiRunning = false;
-                    });
+                // if grade is a percentage
+                if (gradeText.includes("%")) {
+                    gradeValue = parseFloat(gradeText.replace('%', ''));
                 }
+
+                // if grade is a fraction
+                else if (gradeText.includes(" / ")) {
+                    let [numerator, denominator] = gradeText.split(" / ").map(Number);
+                    gradeValue = denominator ? (numerator / denominator) * 100 : 0;
+                }
+
+                // if grade is a letter
+                else if (gradeText.includes("A+")) {
+                    gradeValue = 95;
+                }
+
+                // When hovering over grade
+                gradeDiv.addEventListener('mouseenter', () => {
+                    if (gradeValue >= minConfettiGrade && !confettiRunning) {
+                        confettiRunning = true;
+
+                        // Find center of gradeDiv
+                        const gradeRect = gradeDiv.getBoundingClientRect();
+                        const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
+                        const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
+                        window.confetti({
+                            particleCount: window.innerWidth >= 950 ? 100 : 75,
+                            spread: window.innerWidth >= 950 ? 90 : 160,
+                            decay: 0.86,
+                            scalar: 1.25,
+                            gravity: 1.02,
+                            ticks: 90,
+                            startVelocity: window.innerWidth >= 950 ? 40 : 35,
+                            origin: { x: gradeOriginX, y: gradeOriginY },
+                            angle: window.innerWidth >= 950 ? 130 : 90
+                        }).finally(() => {
+                            confettiRunning = false;
+                        }).catch(error => {
+                            console.error("Confetti grade error:", error);
+                            confettiRunning = false;
+                        });
+                    }
+                });
             });
-        });
-    };
-    confettiGrades.onerror = () => {
-        console.error("Failed to load confetti script from", CONFETTI_JS_URL);
-    };
-    document.head.appendChild(confettiGrades);
+        };
+        confettiGrades.onerror = () => {
+            console.error("Failed to load confetti script from", CONFETTI_JS_URL);
+        };
+        document.head.appendChild(confettiGrades);
+    }
 }
 
 function feedback() {
