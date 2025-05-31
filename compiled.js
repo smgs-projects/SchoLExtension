@@ -32,7 +32,7 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Theme location
-const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css?v=1.10.0";
 // Confetti JS location (canvas-confetti)
 const CONFETTI_JS_URL = "https://docs.robotics.smgs.baj810.com/private/scholext/confetti/js";
 
@@ -177,7 +177,7 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
         if (earlyExtConfig.darkmodetheme) updateTheme(earlyExtConfig.darkmodetheme);
     } catch {
-        console.log("2345312");
+        console.log("Early extConfig parse failed");
     }
 }
 
@@ -185,6 +185,15 @@ if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL =
 
 if (document.readyState === "complete" || document.readyState === "interactive") { load(); }
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
+
+// Append header CSS for all pages
+const styleTag = document.createElement('style');
+styleTag.innerHTML = `
+    .logo-wrapper {
+        height: 72px;
+    }
+`;
+document.head.appendChild(styleTag);
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
@@ -1230,6 +1239,7 @@ async function mainPage() {
             .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`));
     }
 
+    // compact timetable
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -1256,8 +1266,9 @@ async function mainPage() {
     if (calendarElement && (calendarElement.style.display === "none" || calendarElement.innerHTML.trim() === "")) {
         document.getElementById("component68").style.display = "none";
     }
-
-    (document.querySelector(".awardsComponent") || document.querySelector("#component295991"))?.insertAdjacentHTML("afterend", `
+ 
+    // ptv stuff
+    (document.querySelector(".awardsComponent") || document.querySelector("#component68"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
