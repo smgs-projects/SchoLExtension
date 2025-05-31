@@ -63,6 +63,7 @@ async function reCache() {
             for (const direction of (await (await ptvClient).Directions.Directions_ForRoute({route_id: station["route_id"]})).body.directions) {
                 if (![[], undefined].includes(newSchedule[station.route_id + direction.direction_id]?.departures)) continue; 
                 newSchedule[station.route_id + direction.direction_id] = {
+                    "route_id": station.route_id,
                     "name": direction.direction_name, 
                     "route": station.name, 
                     "type": station.route_type, 
