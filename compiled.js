@@ -33,6 +33,8 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Theme location
 const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css";
+// Confetti JS location (canvas-confetti)
+const CONFETTI_JS_URL = "https://docs.robotics.smgs.baj810.com/private/scholext/confetti/js";
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -44,6 +46,7 @@ const DEFAULT_CONFIG = {
     "version" : 2
 }
 
+let minConfettiGrade = 90;
 let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
@@ -1024,6 +1027,79 @@ function colourEDiaryList() {
     })
 }
 
+function confettiGrades() {
+    if (schoolboxUser.role.student === true) { // Only run confetti for students
+        const confettiGrades = document.createElement("script");
+        confettiGrades.src = CONFETTI_JS_URL;
+        
+        confettiGrades.onload = async () => {
+            let attempts = 0;
+            let gradeDiv = document.querySelectorAll(".grade");
+            // wait until there are at least 2 grade elements on the page
+            while (gradeDiv.length <= 2 && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 250));
+                gradeDiv = document.querySelectorAll(".grade");
+                attempts++;
+            }
+            gradeDiv = document.querySelectorAll(".grade");
+            let confettiRunning = false;
+
+            gradeDiv.forEach(gradeDiv => {
+                let gradeText = gradeDiv.textContent.trim();
+                let gradeValue = null;
+
+                // if grade is a percentage
+                if (gradeText.includes("%")) {
+                    gradeValue = parseFloat(gradeText.replace('%', ''));
+                }
+
+                // if grade is a fraction
+                else if (gradeText.includes(" / ")) {
+                    let [numerator, denominator] = gradeText.split(" / ").map(Number);
+                    gradeValue = denominator ? (numerator / denominator) * 100 : 0;
+                }
+
+                // if grade is a letter
+                else if (gradeText.includes("A+")) {
+                    gradeValue = 95;
+                }
+
+                // When hovering over grade
+                gradeDiv.addEventListener('mouseenter', () => {
+                    if (gradeValue >= minConfettiGrade && !confettiRunning) {
+                        confettiRunning = true;
+
+                        // Find center of gradeDiv
+                        const gradeRect = gradeDiv.getBoundingClientRect();
+                        const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
+                        const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
+                        window.confetti({
+                            particleCount: window.innerWidth >= 950 ? 100 : 75,
+                            spread: window.innerWidth >= 950 ? 90 : 160,
+                            decay: 0.86,
+                            scalar: 1.25,
+                            gravity: 1.02,
+                            ticks: 90,
+                            startVelocity: window.innerWidth >= 950 ? 40 : 35,
+                            origin: { x: gradeOriginX, y: gradeOriginY },
+                            angle: window.innerWidth >= 950 ? 130 : 90
+                        }).finally(() => {
+                            confettiRunning = false;
+                        }).catch(error => {
+                            console.error("Confetti grade error:", error);
+                            confettiRunning = false;
+                        });
+                    }
+                });
+            });
+        };
+        confettiGrades.onerror = () => {
+            console.error("Failed to load confetti script from", CONFETTI_JS_URL);
+        };
+        document.head.appendChild(confettiGrades);
+    }
+}
+
 function feedback() {
     // Add "Click to view feedback" button for junior school & Y12 feedback as overall grades do not show
     for (const subject of document.querySelectorAll(".activity-list")) {
@@ -1068,8 +1144,15 @@ function feedback() {
             }
         }
     }
+
+    // Add confetti to grades over 90%
+    confettiGrades()
 }
+
 function assessments() {
+    // Add confetti to grades over 90%
+    confettiGrades()
+
     let subheaders = document.querySelectorAll(".subheader");
     for (e of subheaders) {
         if (!["SUBMIT RESPONSE", "SUBMISSION HISTORY"].includes(e.innerText)) continue
@@ -1119,11 +1202,34 @@ function eDiary() {
     }
 }
 async function mainPage() {
-    if (!document.querySelector("h2[data-timetable-header]")) {
+    const timetableHeader = document.querySelector("h2[data-timetable-header]");
+    if (timetableHeader) {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
-        .then(r=>r.json())
-        .then(r=>document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`))
+            .then(r => r.json())
+            .then(r => {
+                const fullText = r.text;
+                const matchResult = fullText.match(/Week\s*\d+\s*Day\s*\d+/);
+                const weekDayText = matchResult ? matchResult[0] : null;
+                const dayWeekText = weekDayText ? weekDayText.replace(/(Week\s*\d+)\s*(Day\s*\d+)/, '$2 $1') : null;
+    
+                if (document.querySelector(".island") && dayWeekText) {
+                    document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
+                } else if (weekDayText) {
+                    timetableHeader.textContent = r.text;
+                }
+    
+                timetableHeader.style.display = weekDayText ? "none" : "block";
+            })
+            .catch(error => {
+                console.error("Failed to fetch services dwi info", error);
+                timetableHeader.style.display = "block";
+            });
+    } else {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+            .then(r => r.json())
+            .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`));
     }
+
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -1135,7 +1241,23 @@ async function mainPage() {
             }
         }
     }
-    (document.querySelector(".awardsComponent") || document.querySelector("#component62394"))?.insertAdjacentHTML("afterend", `
+
+    // Hide papercut component if not on school intranet
+    try {
+        await fetch("https://print.stmichaels.vic.edu.au/js/refresh.js", { mode: 'no-cors' })
+    } catch (error) {
+        if (error.name === 'TypeError') {
+            document.getElementById("component63192").style.display = "none";
+        }
+    }
+
+    // Hide "My day" if there are no events
+    const calendarElement = document.getElementById("calendar68");
+    if (calendarElement && (calendarElement.style.display === "none" || calendarElement.innerHTML.trim() === "")) {
+        document.getElementById("component68").style.display = "none";
+    }
+
+    (document.querySelector(".awardsComponent") || document.querySelector("#component295991"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
@@ -1223,7 +1345,7 @@ async function mainPage() {
                                     </div>
                                 </span>
                             </div>
-                            <div style="display: inline"><h3 style="padding-left: 10px"><a class="title">${schedule.prefix}to ${schedule.name}</a></h3></div>
+                            <div style="display: inline"><h3 style="padding-left: 10px"><a href="https://ptv.vic.gov.au/route/${schedule.route_id}" target="_blank" rel="noopener noreferrer" class="title">${schedule.prefix}to ${schedule.name}</a></h3></div>
                         </div>
                         ${schedule.departures.length == 0 ? `<p style="margin-top: 10px">No more scheduled departures today</p>` : `
                             <p style="margin-top: 10px">
@@ -1298,6 +1420,32 @@ function timetable() {
                 body[index].remove()
             }
         }
+    }
+
+    // Highlight current day on mobile timetable
+    if (window.innerWidth <= 640) {
+        fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+            .then(r => {
+                return r.json();
+            })
+            .then(r => {
+                const currentDay = r.D;
+                // find "Day ..." in h2.subheaders
+                const headers = document.querySelectorAll("h2.subheader");
+                for (let header of headers) {
+                    const text = header.textContent.trim();
+                    const match = text.match(/^Day\s*(\d+)$/);
+                    if (match) {
+                        if (parseInt(match[1]) === parseInt(currentDay)) {
+                            header.style.setProperty("color", "var(--accent-foreground)", "important");
+                            header.style.setProperty("font-weight", "600", "important");
+                            break; // stop searching after finding the current day
+                        }
+                    }
+                }
+            }).catch(error => {
+                console.error("Error fetching dwi data:", error);
+            });
     }
 }
 
