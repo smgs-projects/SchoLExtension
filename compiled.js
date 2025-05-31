@@ -32,7 +32,7 @@ const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "Th
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
 // Darkmode Theme location
-const DARKMODE_CSS_URL = "https://schol.baj810.com/darkmode.css?v=1.9.1";
+const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css?v=1.10.0";
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -1128,11 +1128,14 @@ function eDiary() {
     }
 }
 async function mainPage() {
+    // dwi info above timetable
     if (!document.querySelector("h2[data-timetable-header]")) {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
         .then(r=>r.json())
         .then(r=>document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`))
     }
+
+    // compact timetable
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
         const heading = document.querySelectorAll(".timetable th, .show-for-small-only th")
@@ -1144,7 +1147,9 @@ async function mainPage() {
             }
         }
     }
-    (document.querySelector(".awardsComponent") || document.querySelector("#component62394"))?.insertAdjacentHTML("afterend", `
+
+    // ptv stuff
+    (document.querySelector(".awardsComponent") || document.querySelector("#component68"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
