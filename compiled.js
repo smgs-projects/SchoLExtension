@@ -1260,12 +1260,6 @@ async function mainPage() {
             document.getElementById("component63192").style.display = "none";
         }
     }
-
-    // Hide "My day" if there are no events
-    const calendarElement = document.getElementById("calendar68");
-    if (calendarElement && (calendarElement.style.display === "none" || calendarElement.innerHTML.trim() === "")) {
-        document.getElementById("component68").style.display = "none";
-    }
  
     // ptv stuff
     (document.querySelector(".awardsComponent") || document.querySelector("#component68"))?.insertAdjacentHTML("afterend", `
