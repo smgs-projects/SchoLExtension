@@ -634,7 +634,6 @@ async function loadSettings() {
             <h2 class="subheader">Preferred Pronouns</h2>
             <section>
                 <fieldset class="content">
-                    <legend><strong>Preferred Pronouns</strong></legend>
                     <div class="small-12 columns">
                         <p>St Michael's is committed to ensuring that we have safe and inclusive learning environments and in keeping with our values, that we respect and acknowledge the diversity of our community. We have therefore provided the option for students and staff to choose their pronouns on SchoL - noting that this is not currrently reflected on School records nor an official notification to the School. There is no expectation or requirement for students or staff to select their pronouns.</p>
                     </div>
@@ -715,7 +714,7 @@ async function loadSettings() {
 
             <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
                 <span style="font-size: 12px; color: #AAA;">
-                    Additional features developed by Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
+                    Additional features developed by Billy (M2026), Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
                 </span>
             </div>
 
@@ -729,7 +728,6 @@ async function loadSettings() {
         <h2 class="subheader">Dark Mode</h2>
         <section>
             <fieldset class="content">
-                <legend><strong>Dark Mode Theme Selector</strong></legend>
                 <div class="small-12 columns">
                     <p>Select your SchoL Theme Here! 'System Defaults' uses your system theme setting, while light and dark mode override that setting for your preference.<br></p>
                 </div>
