@@ -590,10 +590,6 @@ label .feed .mini.unit-heading {
     background-color: var(--layer1) !important;
 }
 
-div:not(div[style*="background-color"])>p>a:not([title*="View"]) {
-    color: var(--text1) !important;
-}
-
 li[class="highlighted-day"]>div {
     background-color: var(--layer2) !important;
 }
@@ -691,6 +687,10 @@ blockquote:not(.ck-editor__main *) {
     color: var(--white);
 }
 
+blockquote p:not(.ck-editor__main *) {
+    color: var(--text2) !important;
+}
+
 /*breadcrumbs - the lil things on pages that go page1>page2>page3>*/
 ul[class="breadcrumb"]>li>* {
     color: var(--text1) !important;
@@ -750,6 +750,9 @@ div[class="alert-box"],
 .dropzone-wrap > div > div, .dropzone-wrap>div>div>section,.dropzone-wrap>div>div>div>div {
     background-color: var(--layer1) !important;
 }
+.attachzone ul.az-list>li, .dropzone-wrap ul.az-list>li {
+    background: transparent !important;
+}
 .reveal-modal{
     background-color: var(--background) !important;
 }
@@ -787,7 +790,9 @@ li[data-msgitem] > nav > a::before {
 #profile-options > li {
     color: white;
 }
-
+li.ck-editor__main * {
+    color: black !important;
+}
 .status-unread > nav:has(.icon-approve) {
     border-radius: 50px;
     margin-right: 8px;
@@ -830,6 +835,15 @@ ul.side-nav .active > a {
 
 .side-nav.news-archive-filter > .divider {
     display: none;
+}
+
+/* Pinned news posts */
+.sticky {
+    background-color: var(--content-ui-selected) !important;
+}
+
+li.actions-small-1.sticky.read .list-item > div.small-12.card.wrap-down {
+    background-color: var(--content-ui-selected) !important;
 }
 
 span.label.unsubmitted {
@@ -995,6 +1009,10 @@ h4, h5, h6 {
     color: var(--text2);
 }
 
+.error-state section div div h1 {
+    color: var(--text1) !important;
+}
+
 .fc-theme-standard td.fc-timegrid-slot {
     border-color: var(--text3);
     background-color: transparent !important;
@@ -1074,7 +1092,7 @@ li.separator {
     background-color: var(--layer3) !important;
 }
 /* notification prompt */
-#pwaPrompt {
+#pwaPrompt, .pwa-side-menu {
     background-color: var(--layer2) !important;
 }
 
