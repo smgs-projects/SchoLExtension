@@ -187,13 +187,13 @@ if (document.readyState === "complete" || document.readyState === "interactive")
 else { window.addEventListener('DOMContentLoaded', () => { load() }); }
 
 // Append header CSS for all pages
-const styleTag = document.createElement('style');
-styleTag.innerHTML = `
+const headerImgTag = document.createElement('style');
+headerImgTag.innerHTML = `
     .logo-wrapper {
-        height: 72px;
+        margin: -1px;
     }
 `;
-document.head.appendChild(styleTag);
+document.head.appendChild(headerImgTag);
 
 async function load() {
     if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
