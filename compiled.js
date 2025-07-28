@@ -26,7 +26,7 @@ const THEME_API = "https://apps.stmichaels.vic.edu.au/scholext"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://apps.stmichaels.vic.edu.au/scholext/auth") + "/window"
 // Link to image to show at the bottom of all due work items (levels of achievement table)
-const ACHIEVEMENT_IMG = "/storage/image.php?hash=82df5e189a863cb13e2e988daa1c7098ef4aa9e1"
+const ACHIEVEMENT_IMG = "/storage/image.php?hash=0ef0761e9567b338269bd59f7189664c053d441c"
 // List of valid pronouns
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of valid image types for timetable themes
