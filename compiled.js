@@ -1348,7 +1348,7 @@ async function mainPage() {
                                     </div>
                                 </span>
                             </div>
-                            <div style="display: inline"><h3 style="padding-left: 10px"><a href="https://ptv.vic.gov.au/route/${schedule.route_id}" target="_blank" rel="noopener noreferrer" class="title">${schedule.prefix}to ${schedule.name}</a></h3></div>
+                            <div style="display: inline"><h3 style="padding-left: 10px"><a href="https://transport.vic.gov.au/route/${schedule.route_id}" target="_blank" rel="noopener noreferrer" class="title">${schedule.prefix}to ${schedule.name}</a></h3></div>
                         </div>
                         ${schedule.departures.length == 0 ? `<p style="margin-top: 10px">No more scheduled departures today</p>` : `
                             <p style="margin-top: 10px">
