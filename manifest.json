@@ -1,17 +1,24 @@
 {
     "name": "SchoL Extension",
     "description": "Random schol changes that make it better maybe?",
-    "version": "2.3453.12",
-    "manifest_version": 2,
+    "version": "3.0.0",
+    "manifest_version": 3,
     "host_permissions": [
         "https://learning.stmichaels.vic.edu.au/*",
         "https://learning-dev.stmichaels.vic.edu.au/*"
     ],
-    "permissions": ["storage", "favicon", "tabs"],
+    "permissions": ["storage", "tabs", "scripting", "activeTab", "webNavigation"],
     "web_accessible_resources": [
-        "darkmodeImages/*",
-        "compiled.js",
-        "chrome_ext/*"
+        {
+            "resources": [
+                "darkmodeImages/*",
+                "compiled.js",
+                "chrome_ext/storage.js",
+                "chrome_ext/override.js",
+                "chrome_ext/*"
+            ],
+            "matches": ["<all_urls>"]
+        }
     ],
     "content_scripts": [
         {
@@ -20,13 +27,26 @@
                 "https://learning-dev.stmichaels.vic.edu.au/*"
             ],
             "js": [
-                "chrome_ext/preload.js",
-                "chrome_ext/extension.js"
+                "chrome_ext/content.js"
             ],
-            "run_at": "document_start"
+            "run_at": "document_start",
+            "all_frames": false
         }
     ],
-    "browser_action" : {
-        "default_popup": "chrome_ext/popup.html"
+    "background": {
+        "service_worker": "chrome_ext/background.js"
+    },
+    "action" : {
+        "default_popup": "chrome_ext/popup.html",
+        "default_icon": {
+            "16": "chrome_ext/Disabled.png",
+            "48": "chrome_ext/Disabled.png",
+            "128": "chrome_ext/Disabled.png"
+        }
+    },
+    "icons": {
+        "16": "chrome_ext/Disabled.png",
+        "48": "chrome_ext/Disabled.png",
+        "128": "chrome_ext/Disabled.png"
     }
 }

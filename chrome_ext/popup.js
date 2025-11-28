@@ -5,9 +5,12 @@ function updateButton() {
         theButton.innerHTML = result.onOrOff ? "Enabled" : "Disabled";
         theButton.className = result.onOrOff ? "buttonON" : "buttonOFF";
 
-        chrome.browserAction.setIcon({
-            path: result.onOrOff ? "Enabled.png" : "Disabled.png"
-        });
+        const actionAPI = chrome.action || chrome.browserAction;
+        if (actionAPI) {
+            actionAPI.setIcon({
+                path: result.onOrOff ? "Enabled.png" : "Disabled.png"
+            });
+        }
 
         chrome.tabs.query({ url: [ "https://learning.stmichaels.vic.edu.au/*", "https://learning-dev.stmichaels.vic.edu.au/*" ] }, tabs => {
             tabs.forEach(tab => {
@@ -25,4 +28,4 @@ function toggleButton(e) {
 }
 
 updateButton()
-theButton.onclick = toggleButton
+theButton.addEventListener('click', toggleButton)
