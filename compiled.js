@@ -25,16 +25,12 @@ const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", 
 const THEME_API = "https://apps.stmichaels.vic.edu.au/scholext"
 // SchoL Remote Service API Link
 const REMOTE_API = "/modules/remote/" + btoa("https://apps.stmichaels.vic.edu.au/scholext/auth") + "/window"
-// Link to image to show at the bottom of all due work items (levels of achievement table)
-const ACHIEVEMENT_IMG = "/storage/image.php?hash=0ef0761e9567b338269bd59f7189664c053d441c"
 // List of valid pronouns
 const VALID_PRONOUNS = {"hehim" : "He/Him", "sheher": "She/Her", "theythem": "They/Them", "other": "Ask Me"}
 // List of valid image types for timetable themes
 const IMAGE_TYPES = ['image/png', 'image/gif', 'image/bmp', 'image/jpeg'];
-// Darkmode Theme location
-const DARKMODE_CSS_URL = "https://services.stmichaels.vic.edu.au/_dmode/darkmode.css?v=1.10.0";
-// Confetti JS location (canvas-confetti)
-const CONFETTI_JS_URL = "https://docs.robotics.smgs.baj810.com/private/scholext/confetti/js";
+// Link to files
+const FILE_URL = "https://schol.baj810.com/files/"
 
 const DEFAULT_CONFIG = {
     "theme" : {},
@@ -81,7 +77,7 @@ let darkmodeCSSDom;
 function applyDark() {
     darkmodeCSSDom = document.createElement('link');
     darkmodeCSSDom.rel = "stylesheet";
-    darkmodeCSSDom.href = DARKMODE_CSS_URL;
+    darkmodeCSSDom.href = (FILE_URL + "/darkMode/darkmode.css?v=1.10.1");
 
     document.styleSheets[1] && (document.styleSheets[1].disabled = false);
 
@@ -1037,7 +1033,7 @@ function colourEDiaryList() {
 function confettiGrades() {
     if (schoolboxUser.role.student === true) { // Only run confetti for students
         const confettiGrades = document.createElement("script");
-        confettiGrades.src = CONFETTI_JS_URL;
+        confettiGrades.src = (FILE_URL + "/confetti/confetti.js");
         
         confettiGrades.onload = async () => {
             let attempts = 0;
@@ -1101,7 +1097,7 @@ function confettiGrades() {
             });
         };
         confettiGrades.onerror = () => {
-            console.error("Failed to load confetti script from", CONFETTI_JS_URL);
+            console.error("Failed to load confetti script from", (FILE_URL + "/confetti/confetti.js"));
         };
         document.head.appendChild(confettiGrades);
     }
@@ -1172,7 +1168,7 @@ function assessments() {
             const rows = document.querySelectorAll(".row");
             rows[rows.length - 1].insertAdjacentHTML("beforeend", `<div class="small-12 island">
                 <section style="text-align: center; padding-bottom: 10px">
-                    <img src="${ACHIEVEMENT_IMG}">
+                    <img src="${FILE_URL}/achievement/achievement.webp">
                 </section>
             </div>`)
         }
@@ -1304,16 +1300,16 @@ async function mainPage() {
             border-color: #78be20 !important;
         }
         .PTVIcon.tram .icon {
-            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/tram.png");
-            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/tram.svg");
+            background-image: url("${FILE_URL}/ptv/tram.png");
+            background-image: url("${FILE_URL}/ptv//tram.svg");
         }
 
         .PTVIcon.train .route-lock-up {
             border-color: #0072ce !important;
         }
         .PTVIcon.train .icon {
-            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/train.png");
-            background-image: url("https://www.ptv.vic.gov.au/resources/themes/ptv-mpw/public/images/icons/train.svg");
+            background-image: url("${FILE_URL}/ptv/train.png");
+            background-image: url("${FILE_URL}/ptv/train.svg");
         }
     </style>
     <div class="component-container">
