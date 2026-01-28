@@ -414,24 +414,27 @@ function rgbsFromHexes(url) {
 async function allPages() {
     // Search bar
     if (document.getElementById("message-list").children[1]) {
-        const searchbar = document.createElement('input')
-        searchbar.placeholder = "Type to search"
-        searchbar.addEventListener('keyup', () => {
-            if (document.activeElement === searchbar) {
-                const text = searchbar.value.toLowerCase();
-                const notifications = document.getElementById("msg-content").querySelectorAll("li")
-                for (const notif of notifications) {
-                    //Check if text contains other text, it is index since contains/includes did not work at that moment
-                    if (notif.textContent.toLocaleLowerCase().trim().indexOf(text) == -1) {
-                        notif.style.display = "none";
-                    } else {
-                        //To allow filter clearing
-                        notif.style.display = "block";
+        const container = document.getElementById("message-list").children[1];
+        if (!container.querySelector('input[placeholder="Type to search"]')) {
+            const searchbar = document.createElement('input')
+            searchbar.placeholder = "Type to search"
+            searchbar.className = "notification-searchbar"
+            searchbar.style.margin = "0px"
+            searchbar.addEventListener('keyup', () => {
+                if (document.activeElement === searchbar) {
+                    const text = searchbar.value.toLowerCase();
+                    const notifications = document.getElementById("msg-content").querySelectorAll("li")
+                    for (const notif of notifications) {
+                        if (notif.textContent.toLocaleLowerCase().trim().indexOf(text) == -1) {
+                            notif.style.display = "none";
+                        } else {
+                            notif.style.display = "block";
+                        }
                     }
                 }
-            }
-        });
-        document.getElementById("message-list").children[1].appendChild(searchbar)
+            });
+            container.appendChild(searchbar)
+        }
     }
     // Fix "days remaining" on due work items to a more friendly value
     for (let item of document.querySelectorAll("time")) {
