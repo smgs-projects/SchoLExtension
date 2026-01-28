@@ -18,7 +18,7 @@
 const REGEXP = /\(([^)]+)\)/;
 const REGEXP2 = /\[([^)]+)\]/;
 // Timetable rows NOT to remove if all blank
-const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6"]
+const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 5 (House Period)", "Period 6"]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
