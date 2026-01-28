@@ -711,11 +711,9 @@ async function loadSettings() {
             <div id=customStuff>
             </div>
 
-            <div class="component-action" style="margin-top: 20px; margin-bottom: 20px;">
-                <span style="font-size: 12px; color: #AAA;">
-                    Additional features developed by Billy (M2026), Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
-                </span>
-            </div>
+            <ul class="meta" style="font-size: 12px; color: #AAA; margin-top: 20px; font-style: normal;">
+                Additional features developed by Billy (M2026), Yuma (M2024), Sebastien (H2023), Max (S2024), and Zac (H2022).
+            </ul>
 
             <ul class="meta" style="font-size: 12px">
                 SchoL features and profile settings are managed by the School Leadership Team and the St Michael's ICT Steering Committee. Feedback and future suggestions for the improvement of SchoL can be directed to: <a href="mailto:scholfeedback@stmichaels.vic.edu.au">scholfeedback@stmichaels.vic.edu.au</a>. <!-- rip dead name remover :( -->
