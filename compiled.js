@@ -47,6 +47,9 @@ let PTVDepatureUpdate = true;
 let extConfigSvr;
 let extConfig;
 
+// Check if running as valid extension
+const isExtension = document.currentScript && document.currentScript.src && document.currentScript.src.startsWith("chrome-extension://");
+
 // ----- RGB CONTRAST STUFF -----
 
 const RED = 0.2126;
@@ -168,7 +171,7 @@ async function updateTheme(theme) {
 // Try to push out darkmode early to prevent light mode flash
 // Check for extConfig existence early to get dark mode theme setting ASAP
 // Also disable if being overrided by dev ScholExt 
-if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") && localStorage.getItem("extConfig") !== null) {
+if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined" && !isExtension) && localStorage.getItem("extConfig") !== null) {
     try {
         let earlyExtConfig = JSON.parse(localStorage.getItem("extConfig"));
         if (earlyExtConfig.darkmodetheme) updateTheme(earlyExtConfig.darkmodetheme);
@@ -192,7 +195,7 @@ headerImgTag.innerHTML = `
 document.head.appendChild(headerImgTag);
 
 async function load() {
-    if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined") return; // Allow disabling of QOL features (mainly for testing)
+    if (localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined" && !isExtension) return; // Allow disabling of QOL features (mainly for testing)
     if (typeof schoolboxUser == "undefined") return;
 
     if (schoolboxUser.id != localStorage.getItem("lastUser")) {
@@ -1522,7 +1525,7 @@ async function postConfig() {
     });
 }
 
-if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined")) {
+if (!(localStorage.getItem("disableQOL") != undefined && typeof forceEnableQOL == "undefined" && !isExtension)) {
 
     // const splashList = [
     //     "Ducks are pretty cool",
