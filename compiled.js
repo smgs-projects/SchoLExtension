@@ -600,7 +600,8 @@ async function loadSettings() {
 
     const settings = {
         "colourduework": ["Coloured Due Work", "Add colours to due work items based on the timetable"],
-        "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"]
+        "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"],
+        "enhancedtimetable": ["Enhanced Timetable", "Use enhanced desktop timetable layout. Please note: this feature is in Beta."],
     }
     let settingselems = ""
     for (const setting in settings) {
