@@ -17,8 +17,21 @@
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
 const REGEXP2 = /\[([^)]+)\]/;
-// Timetable rows NOT to remove if all blank
-const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 5 (House Period)", "Period 6"]
+// Period name constants
+const PERIODS = {
+    P1: "Period 1",
+    P2: "Period 2",
+    P3: "Period 3",
+    P4: "Period 4",
+    LUNCH: "Lunch",
+    P5: "Period 5",
+    P5_HOUSE: "Period 5 (House Period)",
+    P6: "Period 6",
+    P5_6_MERGED: "Period 5-6"
+}
+
+// Timetable rows NOT to remove if all blank (derived from PERIODS)
+const TIMETABLE_WHITELIST = [PERIODS.P1, PERIODS.P2, PERIODS.P3, PERIODS.P4, PERIODS.P5, PERIODS.P5_HOUSE, PERIODS.P6]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
