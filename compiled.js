@@ -47,7 +47,7 @@ const DEFAULT_CONFIG = {
     "theme" : {},
     "themedefault" : {},
     "darkmodetheme" : "light",
-    "settings" : {"colourduework":1,"compacttimetable":1},
+    "settings" : {"colourduework":1,"compacttimetable":1,"enhancedtimetable":0},
     "pronouns" : {"selected":[],"show":[1,1,1]},
     "updated" : 0,
     "version" : 2
