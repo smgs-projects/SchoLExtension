@@ -1397,8 +1397,10 @@ async function mainPage() {
 function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
-        <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
-        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+        <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; margin-left: 10px; float: right; display: inline-block">Customise Timetable</a>
+        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Timetable</a>
+        <a class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Print</a>
+        <a class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Print</a>
     `)
 
     if (extConfig.settings.compacttimetable) {
