@@ -11,8 +11,6 @@
 //     \____)
 // 
 
-// Last updated 01-02-2025
-
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
