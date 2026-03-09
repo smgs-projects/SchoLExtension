@@ -1226,18 +1226,13 @@ async function mainPage() {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
             .then(r => r.json())
             .then(r => {
-                const fullText = r.text;
-                const matchResult = fullText.match(/Week\s*\d+\s*Day\s*\d+/);
-                const weekDayText = matchResult ? matchResult[0] : null;
-                const dayWeekText = weekDayText ? weekDayText.replace(/(Week\s*\d+)\s*(Day\s*\d+)/, '$2 $1') : null;
-    
-                if (document.querySelector(".island") && dayWeekText) {
+                const dayWeekText = `Day ${r.D} Week ${r.W}`;
+                
+                if (document.querySelector(".island")) {
                     document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
-                } else if (weekDayText) {
-                    timetableHeader.textContent = r.text;
                 }
-    
-                timetableHeader.style.display = weekDayText ? "none" : "block";
+                
+                timetableHeader.style.display = "none";
             })
             .catch(error => {
                 console.error("Failed to fetch services dwi info", error);
@@ -1246,7 +1241,7 @@ async function mainPage() {
     } else {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
             .then(r => r.json())
-            .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`));
+            .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">Day ${r.D} Week ${r.W}</h2>`));
     }
 
     // compact timetable
