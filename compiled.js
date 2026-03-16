@@ -1226,12 +1226,17 @@ async function mainPage() {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
             .then(r => r.json())
             .then(r => {
-                const dayWeekText = `Day ${r.D} Week ${r.W}`;
-                
+                let dayWeekText;
+                if (r.D === "0" && r.W === "0" && r.text) {
+                    dayWeekText = r.text;
+                } else {
+                    dayWeekText = `Day ${r.D} Week ${r.W}`;
+                }
+
                 if (document.querySelector(".island")) {
                     document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
                 }
-                
+
                 timetableHeader.style.display = "none";
             })
             .catch(error => {
@@ -1241,7 +1246,15 @@ async function mainPage() {
     } else {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
             .then(r => r.json())
-            .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">Day ${r.D} Week ${r.W}</h2>`));
+            .then(r => {
+                let dayWeekText;
+                if (r.D === "0" && r.W === "0" && r.text) {
+                    dayWeekText = r.text;
+                } else {
+                    dayWeekText = `Day ${r.D} Week ${r.W}`;
+                }
+                document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
+            });
     }
 
     // compact timetable
