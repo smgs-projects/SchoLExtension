@@ -1275,6 +1275,17 @@ async function mainPage() {
             });
     }
 
+    // Add "My Learning" news tab
+    const newsComponent = document.getElementById("news-component");
+    if (newsComponent) {
+        const tabs = newsComponent.querySelector(".tabs");
+        if (tabs && !tabs.innerHTML.includes("My Learning")) {
+            const myLearningTab = document.createElement("dd");
+            myLearningTab.innerHTML = `<a>My Learning</a>`;
+            tabs.appendChild(myLearningTab);
+        }
+    }
+
     // compact timetable
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
