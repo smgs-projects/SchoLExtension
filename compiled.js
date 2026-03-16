@@ -410,9 +410,16 @@ function getContrast(f, b) {
 }
 
 function getTextColor(bgColor) {
-    const whiteContrast = getContrast(bgColor, '#ffffff')
-    const blackContrast = getContrast(bgColor, '#000000')
-    return whiteContrast > blackContrast ? '#ffffff' : '#000000'
+    if (!bgColor) return '#000000';
+    const rgb = bgColor.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+        const r = parseInt(rgb[0]);
+        const g = parseInt(rgb[1]);
+        const b = parseInt(rgb[2]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness > 150 ? '#000000' : '#ffffff';
+    }
+    return '#000000';
 }
 function rgbsFromHexes(url) {
     const matches = [...url.matchAll(/(?:[0-9a-fA-F]{6})/g)]
