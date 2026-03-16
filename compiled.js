@@ -698,7 +698,7 @@ async function loadSettings() {
                     </div>
                 </fieldset>
             </section>
-            <h2 class="subheader">Timetable Theme</h2>
+            <h2 class="subheader"> </h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
                     <tr role="row">
