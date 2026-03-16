@@ -328,8 +328,19 @@ async function timetableCache(forcePush) {
             let parser = new DOMParser();
             const timetable = parser.parseFromString(result, 'text/html')
             for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
-                if (!REGEXP.exec(subject.innerText)) continue
-                defaultTheme[REGEXP.exec(subject.innerText)[1]] = {color: subject.parentNode.style.backgroundColor, image: null, current: "color"}
+                const match = REGEXP.exec(subject.innerText) || REGEXP2.exec(subject.innerText);
+                if (!match) continue;
+                
+                const fullText = subject.innerText.trim();
+                const subjectCode = match[1];
+                const subjectName = fullText.replace(match[0], '').trim();
+                
+                defaultTheme[subjectCode] = {
+                    color: subject.parentNode.style.backgroundColor, 
+                    image: null, 
+                    current: "color",
+                    name: subjectName
+                }
             }
             for (const subject in defaultTheme) {
                 if (timetableTheme[subject] === undefined) {
