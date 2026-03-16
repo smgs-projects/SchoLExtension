@@ -314,6 +314,7 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/grades")) feedback();
     if (window.location.pathname.startsWith("/learning/assessments/")) assessments();
     if (window.location.pathname.startsWith("/timetable")) timetable();
+    if (window.location.pathname === "/news") myLearningTab();
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
     if (window.location.pathname.startsWith("/settings/notifications")) await loadSettings();
