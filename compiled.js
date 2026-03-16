@@ -1528,15 +1528,7 @@ async function mainPage() {
     }
 
     // Add "My Learning" news tab
-    const newsComponent = document.getElementById("news-component");
-    if (newsComponent) {
-        const tabs = newsComponent.querySelector(".tabs");
-        if (tabs && !tabs.innerHTML.includes("My Learning")) {
-            const myLearningTab = document.createElement("dd");
-            myLearningTab.innerHTML = `<a>My Learning</a>`;
-            tabs.appendChild(myLearningTab);
-        }
-    }
+    myLearningTab();
 
     // compact timetable
     if (extConfig.settings.compacttimetable) {
