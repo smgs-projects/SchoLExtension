@@ -1049,6 +1049,257 @@ function dueWork() {
     }
 }
 
+async function myLearningTab() {
+    let myLearningContent;
+    let myLearningLoaded = false;
+    let myLearningTabEl;
+    let setMyLearningView;
+
+    const renderEmptyState = msg => `
+            <div class="empty-state no-margin">
+                <i class="icon-news"></i>
+                <p>${msg}</p>
+            </div>`;
+
+    function timeSince(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        const intervals = [
+            { limit: 31536000, label: 'year' },
+            { limit: 2592000, label: 'month' },
+            { limit: 86400, label: 'day' },
+            { limit: 3600, label: 'hour' },
+            { limit: 60, label: 'minute' }
+        ];
+        for (let i of intervals) {
+            const count = Math.floor(seconds / i.limit);
+            if (count >= 1) return `${count} ${i.label}${count !== 1 ? 's' : ''} ago`;
+        }
+        return "just now";
+    }
+
+    function renderNewsArticle(article, savedIds) {
+        const pubDate = new Date(article.publishAt);
+        
+        const timeTitle = pubDate.toLocaleDateString("en-AU", { 
+            day: "2-digit", month: "2-digit", year: "numeric" 
+        }) + " " + pubDate.toLocaleTimeString("en-AU", {
+            hour: "numeric", minute: "2-digit", hour12: true 
+        }).replace(" ", "").toLowerCase();
+        
+        const timeAgoStr = timeSince(pubDate);
+
+        let imageHtml = "";
+        if (article.featureImage?.hash) {
+            const hash = article.featureImage.hash;
+            imageHtml = `<a href="/news/${article.id}?ref=dashboard"><img srcset="/storage/image.php?hash=${hash}&amp;size=constrain200, /storage/image.php?hash=${hash}&amp;size=constrain300 1.5x" src="/storage/image.php?hash=${hash}&amp;size=constrain200" alt="feature image"></a>`;
+        } else if (article.author?._links?.avatar?.href) {
+            imageHtml = `<div class="card-feature-avatar"><a href="/news/${article.id}?ref=dashboard"><img src="${article.author._links.avatar.href}&amp;size=square64" alt="author portrait"></a></div>`;
+        }
+
+        const authorHref = article.author?._links?.profile?.href || "#";
+        const authorName = article.author?.fullname || "Unknown Author";
+
+        let topicsHtml = "";
+        if (article.topics?.length) {
+            const topicsList = article.topics.map(t => `<a href="/news?topic=${t.slug}">${t.name}</a>`).join(", ");
+            topicsHtml = ` <span>in ${topicsList}</span>`;
+        }
+
+        const attachmentsHtml = article.attachments ? ` <span>| <a href="/news/${article.id}?ref=dashboard#article-attachments">${article.attachments} attachments</a></span>` : "";
+        
+        const isSaved = savedIds.includes(article.id);
+        const favClass = isSaved ? 'icon-favourite' : 'icon-favourite-hollow';
+        const favTitle = isSaved ? 'Remove from saved' : 'Save for later';
+        
+        return `
+        <li class="actions-small-1 read">
+            <div class="list-item">
+                <div class="small-12 card wrap-down">
+                    ${imageHtml}
+                    <h3><a href="/news/${article.id}?ref=dashboard">${article.title}</a></h3> 
+                    <p class="meta">
+                        <span>By  <a href="${authorHref}">${authorName}</a></span> 
+                        <span>— <time title="${timeTitle}">${timeAgoStr}</time></span> 
+                        ${topicsHtml}
+                        ${attachmentsHtml}
+                    </p> 
+                    <article>
+                        <div>${article.blurb || ''}</div> 
+                        <div class="article-read-more"><a href="/news/${article.id}?ref=dashboard">Click here to read the full article...</a></div>
+                    </article>
+                </div>
+            </div> 
+            <nav>
+                <a class="save-for-later-btn ${favClass}" data-id="${article.id}" title="${favTitle}" style="cursor: pointer;"></a>
+            </nav>
+        </li>
+        `;
+    }
+
+    async function fetchMyLearningFeed() {
+        const subjectCodes = extConfig?.theme ? Object.keys(extConfig.theme) : [];
+        if (!subjectCodes.length) return { matchedArticles: [], savedIds: [] };
+
+        const [feedRes, savedRes] = await Promise.all([
+            fetch("https://learning.stmichaels.vic.edu.au/news/lists/feed"),
+            fetch("https://learning.stmichaels.vic.edu.au/news/saved", {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+        ]);
+
+        if (!feedRes.ok) throw new Error("Could not fetch feed");
+        const feedData = await feedRes.json();
+        
+        const savedIds = savedRes.ok ? await savedRes.json().catch(() => []) : [];
+
+        const matchedArticles = [];
+
+        await Promise.all(feedData.map(async (article) => {
+            try {
+                const articleRes = await fetch(`https://learning.stmichaels.vic.edu.au/news/${article.id}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!articleRes.ok) return;
+                const htmlText = await articleRes.text();
+                
+                const audienceIdx = htmlText.indexOf("audienceSegments");
+                if (audienceIdx !== -1) {
+                    const relevantText = htmlText.substring(audienceIdx, audienceIdx + 4000);
+                    if (subjectCodes.some(sc => relevantText.includes(sc))) {
+                        matchedArticles.push(article);
+                    }
+                }
+            } catch (err) {
+                console.error(`Failed reading article ${article.id}`, err);
+            }
+        }));
+
+        matchedArticles.sort((a, b) => new Date(b.publishAt) - new Date(a.publishAt));
+        return { matchedArticles, savedIds };
+    }
+
+    async function handleSaveForLater(btn) {
+        const id = btn.getAttribute('data-id');
+        const isSaved = btn.classList.contains('icon-favourite');
+        const action = isSaved ? 'remove' : 'add';
+        const url = `https://learning.stmichaels.vic.edu.au/news/saved/${id}/${action}`;
+        
+        btn.classList.toggle('icon-favourite');
+        btn.classList.toggle('icon-favourite-hollow');
+        btn.title = isSaved ? "Save for later" : "Remove from saved";
+
+        try {
+            const res = await fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) throw new Error("Failed to update saved state");
+        } catch (err) {
+            console.error("Failed to toggle favourite", err);
+            btn.classList.toggle('icon-favourite');
+            btn.classList.toggle('icon-favourite-hollow');
+            btn.title = isSaved ? "Remove from saved" : "Save for later";
+        }
+    }
+
+    async function loadMyLearning() {
+        myLearningLoaded = true;
+        myLearningContent.innerHTML = renderEmptyState("Loading My Learning...");
+
+        try {
+            const { matchedArticles, savedIds } = await fetchMyLearningFeed();
+
+            if (matchedArticles.length > 0) {
+                myLearningContent.innerHTML = `<ul class="information-list">` + 
+                    matchedArticles.map(article => renderNewsArticle(article, savedIds)).join("") + 
+                    `</ul>`;
+
+                myLearningContent.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.save-for-later-btn');
+                    if (btn) {
+                        e.preventDefault();
+                        await handleSaveForLater(btn);
+                    }
+                });
+            } else {
+                myLearningContent.innerHTML = renderEmptyState("No My Learning news to view at this time.");
+            }
+        } catch (error) {
+            console.error("Failed to load My Learning news", error);
+            myLearningContent.innerHTML = renderEmptyState("Failed to load My Learning news.");
+            myLearningLoaded = false;
+        }
+    }
+
+    // Now loop to find the tabs
+    let attempts = 0;
+    const interval = setInterval(() => {
+        let newsComponent = document.getElementById("news-component");
+        let tabs, tabsContent;
+
+        if (newsComponent) {
+            tabs = newsComponent.querySelector(".tabs");
+            tabsContent = newsComponent.querySelector(".tabs-content");
+        } else {
+            // On /news page
+            tabsContent = document.querySelector(".tabs-content");
+            if (tabsContent && tabsContent.previousElementSibling && tabsContent.previousElementSibling.classList.contains("tabs")) {
+                tabs = tabsContent.previousElementSibling;
+            } else {
+                tabs = document.querySelector("dl.tabs, ul.tabs, .tabs");
+            }
+            newsComponent = document; // fallback
+        }
+
+        if (tabs && tabsContent) {
+            clearInterval(interval);
+            if (!tabs.innerHTML.includes("My Learning")) {
+                const componentAction = newsComponent !== document ? newsComponent.querySelector(".component-action") : null;
+                
+                myLearningContent = document.createElement("div");
+                myLearningContent.className = "tabs-content no-margin";
+                myLearningContent.style.display = "none";
+                myLearningContent.innerHTML = renderEmptyState("No news to view at this time.");
+                tabsContent.insertAdjacentElement("afterend", myLearningContent);
+
+                setMyLearningView = (enabled) => {
+                    tabsContent.style.display = enabled ? "none" : "";
+                    myLearningContent.style.display = enabled ? "" : "none";
+                    if (componentAction) componentAction.style.display = enabled ? "none" : "";
+                };
+
+                myLearningTabEl = document.createElement("dd");
+                myLearningTabEl.className = "my-learning-tab";
+                myLearningTabEl.innerHTML = `<a>My Learning</a>`;
+                tabs.appendChild(myLearningTabEl);
+                
+                // Event delegation
+                tabs.addEventListener("click", async (e) => {
+                    const clickedTab = e.target.closest("dd, li, .tab-item"); // Be flexible with tab container types
+                    if (!clickedTab) return;
+
+                    if (clickedTab === myLearningTabEl || myLearningTabEl.contains(clickedTab)) {
+                        e.preventDefault();
+                        tabs.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
+                        myLearningTabEl.classList.add("active");
+                        setMyLearningView(true);
+
+                        if (!myLearningLoaded) {
+                            await loadMyLearning();
+                        }
+                    } else if (myLearningTabEl.classList.contains("active")) {
+                        myLearningTabEl.classList.remove("active");
+                        setMyLearningView(false);
+                    }
+                });
+            }
+        }
+        
+        attempts++;
+        if (attempts > 20) { // Gives up after ~10 seconds
+            clearInterval(interval);
+            console.warn("[SCHOLEXT] Could not find .tabs or .tabs-content for My Learning tab on /news.");
+        }
+    }, 500);
+}
+
 function colourEDiaryList() {
     if (document.querySelector("div[id='calender']") && document.querySelector("div[id='calender']").querySelector("div.empty-state > p").textContent === "There are no upcoming calendar events") return;
     if (document.querySelectorAll(".fc-list-event").length === 0) {setTimeout(colourEDiaryList, 500); return}
