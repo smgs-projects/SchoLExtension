@@ -1527,9 +1527,6 @@ async function mainPage() {
             });
     }
 
-    // Add "My Learning" news tab
-    myLearningTab();
-
     // compact timetable
     if (extConfig.settings.compacttimetable) {
         // Timetable - remove any blank spots such as "After School Sport" if there is nothing there
@@ -1686,6 +1683,10 @@ async function mainPage() {
 
     // eDiary list recolour
     colourEDiaryList()
+
+    // Add "My Learning" news tab
+    myLearningTab();
+
 }
 
 function timetable() {
