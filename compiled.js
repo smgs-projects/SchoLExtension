@@ -1548,7 +1548,7 @@ async function mainPage() {
         await fetch("https://print.stmichaels.vic.edu.au/js/refresh.js", { mode: 'no-cors' })
     } catch (error) {
         if (error.name === 'TypeError') {
-            const papercut = document.getElementById("component63192");
+            const papercut = document.querySelector(".Component_Dashboard_PapercutController");
             if (papercut) papercut.style.display = "none";
         }
     }
