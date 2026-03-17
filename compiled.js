@@ -1704,6 +1704,32 @@ function timetable() {
         <a class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Print</a>
     `)
 
+    // Add custom styles for the enhanced timetable
+    if (!document.getElementById("schol-timetable-styles")) {
+        const style = document.createElement("style");
+        style.id = "schol-timetable-styles";
+        style.innerHTML = `
+            .timetable-enhanced-wrapper {
+                overflow-y: hidden !important;
+                scrollbar-width: thin; /* Firefox */
+            }
+            .timetable-enhanced-wrapper::-webkit-scrollbar:vertical {
+                display: none !important;
+                width: 0 !important;
+            }
+            .timetable-enhanced-wrapper::-webkit-scrollbar:horizontal {
+                height: 8px !important;
+                display: block !important;
+            }
+            .timetable-enhanced-wrapper::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 4px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+
     if (extConfig.settings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
         for (const row of rows) {
