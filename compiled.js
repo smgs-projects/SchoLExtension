@@ -540,6 +540,12 @@ function colourTimetable() {
             subject.parentNode.style.color = textcol
             if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
 
+            // Apply contrast to child divs
+            subject.parentNode.querySelectorAll("div").forEach(div => {
+                div.style.backgroundColor = theme["color"]
+                div.style.color = textcol
+            })
+
             if (theme.current == "image" && theme.image) {
                 subject.parentNode.style.backgroundImage = "url(" + theme.image + ")"
                 subject.parentNode.style.backgroundSize = `100% 100%`
