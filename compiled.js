@@ -11,14 +11,25 @@
 //     \____)
 // 
 
-// Last updated 01-02-2025
-
 // Regex to find subject codes inside a subject string e.g. "12 PHYSICS 01 (12SC-PHYSI01)" -> "12SC-PHYSI01"
 // Regex2 to find subject codes inside a subject string e.g. "12 PHYSICS 01 [12SC-PHYSI01]" -> "12SC-PHYSI01"
 const REGEXP = /\(([^)]+)\)/;
 const REGEXP2 = /\[([^)]+)\]/;
-// Timetable rows NOT to remove if all blank
-const TIMETABLE_WHITELIST = ["Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 5 (House Period)", "Period 6"]
+// Period name constants
+const PERIODS = {
+    P1: "Period 1",
+    P2: "Period 2",
+    P3: "Period 3",
+    P4: "Period 4",
+    LUNCH: "Lunch",
+    P5: "Period 5",
+    P5_HOUSE: "Period 5 (House Period)",
+    P6: "Period 6",
+    P5_6_MERGED: "Period 5-6"
+}
+
+// Timetable rows NOT to remove if all blank (derived from PERIODS)
+const TIMETABLE_WHITELIST = [PERIODS.P1, PERIODS.P2, PERIODS.P3, PERIODS.P4, PERIODS.P5, PERIODS.P5_HOUSE, PERIODS.P6]
 // Conditions where "Click to view marks" will appear on feedback (uses str.includes())
 const SHOW_FEEDBACKS = ["(00", "[00", "(01", "[01", "(02", "[02", "(03", "[03", "(04", "[04", "(05", "[05", "(06", "[06", "(12", "[12"];
 // Theme API location
@@ -36,7 +47,7 @@ const DEFAULT_CONFIG = {
     "theme" : {},
     "themedefault" : {},
     "darkmodetheme" : "light",
-    "settings" : {"colourduework":1,"compacttimetable":1},
+    "settings" : {"colourduework":1,"compacttimetable":1,"enhancedtimetable":0},
     "pronouns" : {"selected":[],"show":[1,1,1]},
     "updated" : 0,
     "version" : 2
@@ -303,6 +314,7 @@ async function load() {
     if (window.location.pathname.startsWith("/learning/grades")) feedback();
     if (window.location.pathname.startsWith("/learning/assessments/")) assessments();
     if (window.location.pathname.startsWith("/timetable")) timetable();
+    if (window.location.pathname === "/news") myLearningTab();
     if (window.location.pathname.startsWith("/search/user")) profilePage();
     if (window.location.pathname.startsWith("/search/user/") && window.location.pathname.endsWith(schoolboxUser.id)) await loadSettings();
     if (window.location.pathname.startsWith("/settings/notifications")) await loadSettings();
@@ -317,8 +329,19 @@ async function timetableCache(forcePush) {
             let parser = new DOMParser();
             const timetable = parser.parseFromString(result, 'text/html')
             for (const subject of timetable.querySelectorAll(".timetable-subject[style*='background-color'] div")) {
-                if (!REGEXP.exec(subject.innerText)) continue
-                defaultTheme[REGEXP.exec(subject.innerText)[1]] = {color: subject.parentNode.style.backgroundColor, image: null, current: "color"}
+                const match = REGEXP.exec(subject.innerText) || REGEXP2.exec(subject.innerText);
+                if (!match) continue;
+                
+                const fullText = subject.innerText.trim();
+                const subjectCode = match[1];
+                const subjectName = fullText.replace(match[0], '').trim();
+                
+                defaultTheme[subjectCode] = {
+                    color: subject.parentNode.style.backgroundColor, 
+                    image: null, 
+                    current: "color",
+                    name: subjectName
+                }
             }
             for (const subject in defaultTheme) {
                 if (timetableTheme[subject] === undefined) {
@@ -399,9 +422,16 @@ function getContrast(f, b) {
 }
 
 function getTextColor(bgColor) {
-    const whiteContrast = getContrast(bgColor, '#ffffff')
-    const blackContrast = getContrast(bgColor, '#000000')
-    return whiteContrast > blackContrast ? '#ffffff' : '#000000'
+    if (!bgColor) return '#000000';
+    const rgb = bgColor.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+        const r = parseInt(rgb[0]);
+        const g = parseInt(rgb[1]);
+        const b = parseInt(rgb[2]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness > 150 ? '#000000' : '#ffffff';
+    }
+    return '#000000';
 }
 function rgbsFromHexes(url) {
     const matches = [...url.matchAll(/(?:[0-9a-fA-F]{6})/g)]
@@ -510,6 +540,12 @@ function colourTimetable() {
             subject.parentNode.style.color = textcol
             if (textcol != "#000000") subject.parentNode.querySelectorAll("a").forEach(e => e.style.color = "#b0e1ff" )
 
+            // Apply contrast to child divs
+            subject.parentNode.querySelectorAll("div").forEach(div => {
+                div.style.backgroundColor = theme["color"]
+                div.style.color = textcol
+            })
+
             if (theme.current == "image" && theme.image) {
                 subject.parentNode.style.backgroundImage = "url(" + theme.image + ")"
                 subject.parentNode.style.backgroundSize = `100% 100%`
@@ -600,7 +636,8 @@ async function loadSettings() {
 
     const settings = {
         "colourduework": ["Coloured Due Work", "Add colours to due work items based on the timetable"],
-        "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"]
+        "compacttimetable": ["Compact Timetable", "Remove empty items/rows from the timetable on the dashboard and timetable page"],
+        "enhancedtimetable": ["Enhanced Timetable", "Use enhanced desktop timetable layout. Please note: this feature is in Beta."],
     }
     let settingselems = ""
     for (const setting in settings) {
@@ -667,7 +704,7 @@ async function loadSettings() {
                     </div>
                 </fieldset>
             </section>
-            <h2 class="subheader">Timetable Theme</h2>
+            <h2 class="subheader"> </h2>
             <table class="dataTable no-footer" role="grid">
                 <thead>
                     <tr role="row">
@@ -1019,6 +1056,257 @@ function dueWork() {
     }
 }
 
+async function myLearningTab() {
+    let myLearningContent;
+    let myLearningLoaded = false;
+    let myLearningTabEl;
+    let setMyLearningView;
+
+    const renderEmptyState = msg => `
+            <div class="empty-state no-margin">
+                <i class="icon-news"></i>
+                <p>${msg}</p>
+            </div>`;
+
+    function timeSince(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        const intervals = [
+            { limit: 31536000, label: 'year' },
+            { limit: 2592000, label: 'month' },
+            { limit: 86400, label: 'day' },
+            { limit: 3600, label: 'hour' },
+            { limit: 60, label: 'minute' }
+        ];
+        for (let i of intervals) {
+            const count = Math.floor(seconds / i.limit);
+            if (count >= 1) return `${count} ${i.label}${count !== 1 ? 's' : ''} ago`;
+        }
+        return "just now";
+    }
+
+    function renderNewsArticle(article, savedIds) {
+        const pubDate = new Date(article.publishAt);
+        
+        const timeTitle = pubDate.toLocaleDateString("en-AU", { 
+            day: "2-digit", month: "2-digit", year: "numeric" 
+        }) + " " + pubDate.toLocaleTimeString("en-AU", {
+            hour: "numeric", minute: "2-digit", hour12: true 
+        }).replace(" ", "").toLowerCase();
+        
+        const timeAgoStr = timeSince(pubDate);
+
+        let imageHtml = "";
+        if (article.featureImage?.hash) {
+            const hash = article.featureImage.hash;
+            imageHtml = `<a href="/news/${article.id}?ref=dashboard"><img srcset="/storage/image.php?hash=${hash}&amp;size=constrain200, /storage/image.php?hash=${hash}&amp;size=constrain300 1.5x" src="/storage/image.php?hash=${hash}&amp;size=constrain200" alt="feature image"></a>`;
+        } else if (article.author?._links?.avatar?.href) {
+            imageHtml = `<div class="card-feature-avatar"><a href="/news/${article.id}?ref=dashboard"><img src="${article.author._links.avatar.href}&amp;size=square64" alt="author portrait"></a></div>`;
+        }
+
+        const authorHref = article.author?._links?.profile?.href || "#";
+        const authorName = article.author?.fullname || "Unknown Author";
+
+        let topicsHtml = "";
+        if (article.topics?.length) {
+            const topicsList = article.topics.map(t => `<a href="/news?topic=${t.slug}">${t.name}</a>`).join(", ");
+            topicsHtml = ` <span>in ${topicsList}</span>`;
+        }
+
+        const attachmentsHtml = article.attachments ? ` <span>| <a href="/news/${article.id}?ref=dashboard#article-attachments">${article.attachments} attachments</a></span>` : "";
+        
+        const isSaved = savedIds.includes(article.id);
+        const favClass = isSaved ? 'icon-favourite' : 'icon-favourite-hollow';
+        const favTitle = isSaved ? 'Remove from saved' : 'Save for later';
+        
+        return `
+        <li class="actions-small-1 read">
+            <div class="list-item">
+                <div class="small-12 card wrap-down">
+                    ${imageHtml}
+                    <h3><a href="/news/${article.id}?ref=dashboard">${article.title}</a></h3> 
+                    <p class="meta">
+                        <span>By  <a href="${authorHref}">${authorName}</a></span> 
+                        <span>— <time title="${timeTitle}">${timeAgoStr}</time></span> 
+                        ${topicsHtml}
+                        ${attachmentsHtml}
+                    </p> 
+                    <article>
+                        <div>${article.blurb || ''}</div> 
+                        <div class="article-read-more"><a href="/news/${article.id}?ref=dashboard">Click here to read the full article...</a></div>
+                    </article>
+                </div>
+            </div> 
+            <nav>
+                <a class="save-for-later-btn ${favClass}" data-id="${article.id}" title="${favTitle}" style="cursor: pointer;"></a>
+            </nav>
+        </li>
+        `;
+    }
+
+    async function fetchMyLearningFeed() {
+        const subjectCodes = extConfig?.theme ? Object.keys(extConfig.theme) : [];
+        if (!subjectCodes.length) return { matchedArticles: [], savedIds: [] };
+
+        const [feedRes, savedRes] = await Promise.all([
+            fetch("https://learning.stmichaels.vic.edu.au/news/lists/feed"),
+            fetch("https://learning.stmichaels.vic.edu.au/news/saved", {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+        ]);
+
+        if (!feedRes.ok) throw new Error("Could not fetch feed");
+        const feedData = await feedRes.json();
+        
+        const savedIds = savedRes.ok ? await savedRes.json().catch(() => []) : [];
+
+        const matchedArticles = [];
+
+        await Promise.all(feedData.map(async (article) => {
+            try {
+                const articleRes = await fetch(`https://learning.stmichaels.vic.edu.au/news/${article.id}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!articleRes.ok) return;
+                const htmlText = await articleRes.text();
+                
+                const audienceIdx = htmlText.indexOf("audienceSegments");
+                if (audienceIdx !== -1) {
+                    const relevantText = htmlText.substring(audienceIdx, audienceIdx + 4000);
+                    if (subjectCodes.some(sc => relevantText.includes(sc))) {
+                        matchedArticles.push(article);
+                    }
+                }
+            } catch (err) {
+                console.error(`Failed reading article ${article.id}`, err);
+            }
+        }));
+
+        matchedArticles.sort((a, b) => new Date(b.publishAt) - new Date(a.publishAt));
+        return { matchedArticles, savedIds };
+    }
+
+    async function handleSaveForLater(btn) {
+        const id = btn.getAttribute('data-id');
+        const isSaved = btn.classList.contains('icon-favourite');
+        const action = isSaved ? 'remove' : 'add';
+        const url = `https://learning.stmichaels.vic.edu.au/news/saved/${id}/${action}`;
+        
+        btn.classList.toggle('icon-favourite');
+        btn.classList.toggle('icon-favourite-hollow');
+        btn.title = isSaved ? "Save for later" : "Remove from saved";
+
+        try {
+            const res = await fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) throw new Error("Failed to update saved state");
+        } catch (err) {
+            console.error("Failed to toggle favourite", err);
+            btn.classList.toggle('icon-favourite');
+            btn.classList.toggle('icon-favourite-hollow');
+            btn.title = isSaved ? "Remove from saved" : "Save for later";
+        }
+    }
+
+    async function loadMyLearning() {
+        myLearningLoaded = true;
+        myLearningContent.innerHTML = renderEmptyState("Loading My Learning...");
+
+        try {
+            const { matchedArticles, savedIds } = await fetchMyLearningFeed();
+
+            if (matchedArticles.length > 0) {
+                myLearningContent.innerHTML = `<ul class="information-list">` + 
+                    matchedArticles.map(article => renderNewsArticle(article, savedIds)).join("") + 
+                    `</ul>`;
+
+                myLearningContent.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.save-for-later-btn');
+                    if (btn) {
+                        e.preventDefault();
+                        await handleSaveForLater(btn);
+                    }
+                });
+            } else {
+                myLearningContent.innerHTML = renderEmptyState("No My Learning news to view at this time.");
+            }
+        } catch (error) {
+            console.error("Failed to load My Learning news", error);
+            myLearningContent.innerHTML = renderEmptyState("Failed to load My Learning news.");
+            myLearningLoaded = false;
+        }
+    }
+
+    // Now loop to find the tabs
+    let attempts = 0;
+    const interval = setInterval(() => {
+        let newsComponent = document.getElementById("news-component");
+        let tabs, tabsContent;
+
+        if (newsComponent) {
+            tabs = newsComponent.querySelector(".tabs");
+            tabsContent = newsComponent.querySelector(".tabs-content");
+        } else {
+            // On /news page
+            tabsContent = document.querySelector(".tabs-content");
+            if (tabsContent && tabsContent.previousElementSibling && tabsContent.previousElementSibling.classList.contains("tabs")) {
+                tabs = tabsContent.previousElementSibling;
+            } else {
+                tabs = document.querySelector("dl.tabs, ul.tabs, .tabs");
+            }
+            newsComponent = document; // fallback
+        }
+
+        if (tabs && tabsContent) {
+            clearInterval(interval);
+            if (!tabs.innerHTML.includes("My Learning")) {
+                const componentAction = newsComponent !== document ? newsComponent.querySelector(".component-action") : null;
+                
+                myLearningContent = document.createElement("div");
+                myLearningContent.className = "tabs-content no-margin";
+                myLearningContent.style.display = "none";
+                myLearningContent.innerHTML = renderEmptyState("No news to view at this time.");
+                tabsContent.insertAdjacentElement("afterend", myLearningContent);
+
+                setMyLearningView = (enabled) => {
+                    tabsContent.style.display = enabled ? "none" : "";
+                    myLearningContent.style.display = enabled ? "" : "none";
+                    if (componentAction) componentAction.style.display = enabled ? "none" : "";
+                };
+
+                myLearningTabEl = document.createElement("dd");
+                myLearningTabEl.className = "my-learning-tab";
+                myLearningTabEl.innerHTML = `<a>My Learning</a>`;
+                tabs.appendChild(myLearningTabEl);
+                
+                // Event delegation
+                tabs.addEventListener("click", async (e) => {
+                    const clickedTab = e.target.closest("dd, li, .tab-item"); // Be flexible with tab container types
+                    if (!clickedTab) return;
+
+                    if (clickedTab === myLearningTabEl || myLearningTabEl.contains(clickedTab)) {
+                        e.preventDefault();
+                        tabs.querySelectorAll(".active").forEach(el => el.classList.remove("active"));
+                        myLearningTabEl.classList.add("active");
+                        setMyLearningView(true);
+
+                        if (!myLearningLoaded) {
+                            await loadMyLearning();
+                        }
+                    } else if (myLearningTabEl.classList.contains("active")) {
+                        myLearningTabEl.classList.remove("active");
+                        setMyLearningView(false);
+                    }
+                });
+            }
+        }
+        
+        attempts++;
+        if (attempts > 20) { // Gives up after ~10 seconds
+            clearInterval(interval);
+            console.warn("[SCHOLEXT] Could not find .tabs or .tabs-content for My Learning tab on /news.");
+        }
+    }, 500);
+}
+
 function colourEDiaryList() {
     if (document.querySelector("div[id='calender']") && document.querySelector("div[id='calender']").querySelector("div.empty-state > p").textContent === "There are no upcoming calendar events") return;
     if (document.querySelectorAll(".fc-list-event").length === 0) {setTimeout(colourEDiaryList, 500); return}
@@ -1364,18 +1652,18 @@ async function mainPage() {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
             .then(r => r.json())
             .then(r => {
-                const fullText = r.text;
-                const matchResult = fullText.match(/Week\s*\d+\s*Day\s*\d+/);
-                const weekDayText = matchResult ? matchResult[0] : null;
-                const dayWeekText = weekDayText ? weekDayText.replace(/(Week\s*\d+)\s*(Day\s*\d+)/, '$2 $1') : null;
-    
-                if (document.querySelector(".island") && dayWeekText) {
-                    document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
-                } else if (weekDayText) {
-                    timetableHeader.textContent = r.text;
+                let dayWeekText;
+                if (r.D === "0" && r.W === "0" && r.text) {
+                    dayWeekText = r.text;
+                } else {
+                    dayWeekText = `Day ${r.D} Week ${r.W}`;
                 }
-    
-                timetableHeader.style.display = weekDayText ? "none" : "block";
+
+                if (document.querySelector(".island")) {
+                    document.querySelector(".island").insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
+                }
+
+                timetableHeader.style.display = "none";
             })
             .catch(error => {
                 console.error("Failed to fetch services dwi info", error);
@@ -1384,7 +1672,15 @@ async function mainPage() {
     } else {
         fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
             .then(r => r.json())
-            .then(r => document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${r.text}</h2>`));
+            .then(r => {
+                let dayWeekText;
+                if (r.D === "0" && r.W === "0" && r.text) {
+                    dayWeekText = r.text;
+                } else {
+                    dayWeekText = `Day ${r.D} Week ${r.W}`;
+                }
+                document.querySelector(".island")?.insertAdjacentHTML("afterbegin", `<h2 class="subheader">${dayWeekText}</h2>`);
+            });
     }
 
     // compact timetable
@@ -1405,7 +1701,8 @@ async function mainPage() {
         await fetch("https://print.stmichaels.vic.edu.au/js/refresh.js", { mode: 'no-cors' })
     } catch (error) {
         if (error.name === 'TypeError') {
-            document.getElementById("component63192").style.display = "none";
+            const papercut = document.querySelector(".Component_Dashboard_PapercutController");
+            if (papercut) papercut.style.display = "none";
         }
     }
  
@@ -1542,14 +1839,46 @@ async function mainPage() {
 
     // eDiary list recolour
     colourEDiaryList()
+
+    // Add "My Learning" news tab
+    myLearningTab();
+
 }
 
 function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
-        <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Customise Colours</a>
-        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Colours</a>
+        <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; margin-left: 10px; float: right; display: inline-block">Customise Timetable</a>
+        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Timetable</a>
+        <a class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Print</a>
+        <a class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Print</a>
     `)
+
+    // Add custom styles for the enhanced timetable
+    if (!document.getElementById("schol-timetable-styles")) {
+        const style = document.createElement("style");
+        style.id = "schol-timetable-styles";
+        style.innerHTML = `
+            .timetable-enhanced-wrapper {
+                overflow-y: hidden !important;
+                scrollbar-width: thin; /* Firefox */
+            }
+            .timetable-enhanced-wrapper::-webkit-scrollbar:vertical {
+                display: none !important;
+                width: 0 !important;
+            }
+            .timetable-enhanced-wrapper::-webkit-scrollbar:horizontal {
+                height: 8px !important;
+                display: block !important;
+            }
+            .timetable-enhanced-wrapper::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 4px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
 
     if (extConfig.settings.compacttimetable) {
         const rows = document.querySelectorAll(".timetable tbody tr")
@@ -1599,6 +1928,832 @@ function timetable() {
             }).catch(error => {
                 console.error("Error fetching dwi data:", error);
             });
+    }
+
+    // Mobile timetable time fixes
+    if (window.innerWidth <= 640) {
+        const timetable = document.querySelector(".timetable-small");
+        if (timetable) {
+            for (const table of timetable.querySelectorAll("table.no-hover")) {
+                const dayText = table.previousElementSibling?.innerText;
+                for (const row of table.querySelectorAll("tr")) {
+                    const periodText = row.querySelector("th")?.innerText;
+                    const cell = row.querySelector("td > div > div.timetable-subject");
+                    
+                    if (cell) {
+                        console.log(dayText, periodText, cell.innerText);
+                    }
+                }
+            }
+        }
+    }
+
+    // Desktop timetable time fixes
+    if (window.innerWidth > 640) {
+        if (!extConfig?.settings?.enhancedtimetable) return;
+        const originalTable = document.querySelector("table.timetable");
+        if (originalTable) {
+            
+            const getStudentYear = () => {
+                if (typeof schoolboxUser !== 'undefined' && schoolboxUser.yearLevel) return schoolboxUser.yearLevel;
+                return 0;
+            }
+            const studentYear = getStudentYear();
+
+            const days = []; 
+            const colHeaders = Array.from(originalTable.querySelectorAll("thead th"));
+            
+            // Initialize days
+            for (let i = 1; i < colHeaders.length; i++) {
+                days.push({ 
+                    header: colHeaders[i].innerText.trim(), 
+                    periods: {},
+                    dayNum: parseInt(colHeaders[i].innerText.replace(/\D/g, '') || "0")
+                });
+            }
+            
+            // Map rows to original period names
+            const rows = originalTable.querySelectorAll("tbody tr");
+            rows.forEach(row => {
+                const rowHeader = row.querySelector("th")?.innerText.trim().split("\n")[0]; 
+                if (!rowHeader) return;
+                
+                const cells = row.querySelectorAll("td");
+                cells.forEach((cell, index) => {
+                    if (days[index]) {
+                        days[index].periods[rowHeader] = cell.innerHTML;
+                    }
+                });
+            });
+
+            // Times in minutes from 00:00
+            const timeToMin = (h, m) => h*60 + m;
+            
+            const getPeriodTimes = (dayNum, periodName, year) => {
+                 const cycleDay = (dayNum - 1) % 5; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
+                 
+                 let start = 0, end = 0;
+                 
+                 if (cycleDay === 0) { // Monday
+                     if (periodName.includes(PERIODS.P1)) { start = timeToMin(8,30); end = timeToMin(9,35); }
+                     else if (periodName.includes(PERIODS.P2)) { start = timeToMin(9,35); end = timeToMin(10,40); }
+                     else if (periodName.includes(PERIODS.P3)) { start = timeToMin(11,5); end = timeToMin(12,15); }
+                     else if (periodName.includes(PERIODS.P4)) { start = timeToMin(12,15); end = timeToMin(13,25); }
+                     else if (periodName.includes("Lunch (Yr 12 Period 5)")) {
+                         start = timeToMin(14,5); end = timeToMin(14,25);
+                     }
+                     else if (periodName.includes(PERIODS.LUNCH)) { 
+                         // Lunch Options
+                         start = timeToMin(13,25);
+                         end = timeToMin(14,5);
+                     }
+                     else if (periodName.includes(PERIODS.P5_6_MERGED)) { // merged P5+P6 on Monday
+                        start = timeToMin(14,5); end = timeToMin(15,30);
+                     }
+                     else if (periodName.includes(PERIODS.P5) && periodName.includes("House")) {
+                         // Mon House Period logic - 20 minute house period should be visible for all years
+                         start = timeToMin(14,5); end = timeToMin(14,25);
+                     }
+                     else if (periodName.includes(PERIODS.P5) && !periodName.includes("House")) {
+                         // Standard Period 5 on Monday is 14:05-14:25
+                         start = timeToMin(14,5); end = timeToMin(14,25);
+                     }
+                     else if (periodName.includes(PERIODS.P6)) {
+                         // Period 6 remains 14:25-15:30
+                         start = timeToMin(14,25); end = timeToMin(15,30);
+                     }
+                 } else { // Tue - Fri
+                     if (periodName.includes(PERIODS.P1)) { start = timeToMin(8,30); end = timeToMin(9,35); }
+                     else if (periodName.includes(PERIODS.P2)) { start = timeToMin(9,35); end = timeToMin(10,40); }
+                     else if (periodName.includes(PERIODS.P3)) { start = timeToMin(11,5); end = timeToMin(12,10); }
+                     else if (periodName.includes(PERIODS.P4)) {
+                        start = timeToMin(12,10);
+                        let isEarly = false;
+                        if (cycleDay === 1 && year === 7) isEarly = true; // Tue
+                        if (cycleDay === 2 && year >= 10 && year <= 12) isEarly = true; // Wed
+                        if (cycleDay === 3 && year >= 8 && year <= 9) isEarly = true; // Thu
+                        end = isEarly ? timeToMin(12,45) : timeToMin(13,15);
+                     }
+                     else if (periodName.includes("Lunch (Yr 12 Period 5)")) { start = timeToMin(14,5); end = timeToMin(14,25); }
+                     else if (periodName.includes(PERIODS.LUNCH)) { start = timeToMin(13,15); end = timeToMin(14,5); }
+                     else if (periodName.includes(PERIODS.P5)) { start = timeToMin(14,5); end = timeToMin(14,25); }
+                     else if (periodName.includes(PERIODS.P6)) { start = timeToMin(14,25); end = timeToMin(15,30); }
+                 }
+                 return { start, end };
+            };
+            
+            // Build New DOM
+            const pxPerMin = 2.2;
+            const startTime = timeToMin(8,30);
+            const endTime = timeToMin(15,30);
+            const totalHeight = (endTime - startTime) * pxPerMin;
+             
+            // Wrapper Table
+            const newTable = document.createElement("table");
+            newTable.className = "timetable";
+            newTable.style.width = "100%";
+            newTable.style.tableLayout = "fixed";
+            
+            // Horizontal scroll support for screens
+            const scrollWrapper = document.createElement("div");
+            scrollWrapper.className = "timetable-enhanced-wrapper";
+            scrollWrapper.style.overflowX = "auto";
+            scrollWrapper.style.overflowY = "hidden";
+            scrollWrapper.style.width = "100%";
+            scrollWrapper.style.height = "auto"; 
+             
+            const updateTableWidth = () => {
+                if (window.innerWidth < 1600) {
+                    newTable.style.minWidth = "1300px";
+                } else {
+                    newTable.style.minWidth = "auto";
+                }
+            };
+             
+            updateTableWidth();
+            window.addEventListener("resize", updateTableWidth);
+            
+            const thead = document.createElement("thead");
+            thead.innerHTML = `<tr><th style="width:60px"></th>${days.map(d => `<th style="color: var(--accent-foreground);">${d.header}</th>`).join("")}</tr>`;
+            newTable.appendChild(thead);
+            
+            const tbody = document.createElement("tbody");
+            const tr = document.createElement("tr");
+            
+            // Time Column
+            const timeTd = document.createElement("td");
+            timeTd.style.verticalAlign = "top";
+            timeTd.style.padding = "0";
+            timeTd.style.borderRight = "1px solid #ddd";
+            const timeCol = document.createElement("div");
+            timeCol.style.position = "relative";
+            timeCol.style.height = totalHeight + "px";
+            
+            for (let t = startTime; t <= endTime; t += 30) {
+                // Skip 8:30 and 3:30 labels
+                if (t === startTime || t === endTime) continue;
+                
+                const label = document.createElement("div");
+                let h = Math.floor(t/60);
+                let m = t%60;
+                let ampm = h >= 12 ? "pm" : "am";
+                let disph = h > 12 ? h - 12 : h;
+                label.innerText = `${String(disph).padStart(2, '0')}:${String(m).padStart(2, '0')}${ampm}`;
+                
+                label.style.position = "absolute";
+                label.style.top = (t - startTime) * pxPerMin + "px";
+                label.style.fontSize = "10px";
+                label.style.width = "100%";
+                label.style.textAlign = "right";
+                label.style.paddingRight = "5px";
+                label.style.transform = "translateY(-50%)";
+                label.style.color = "var(--body-foreground, #888)"; // Use theme variable if available
+                timeCol.appendChild(label);
+            }
+            timeTd.appendChild(timeCol);
+            tr.appendChild(timeTd);
+            
+            // Day Cells
+            days.forEach(day => {
+            // If this day is a Monday (cycleDay===0) and Period 5 and Period 6 have identical content,
+            // merge them into a single entry so it'll be rendered as one block spanning 14:05-15:30.
+            try {
+                const cycleDay = (day.dayNum - 1) % 5;
+                if (cycleDay === 0) {
+                    const keys = Object.keys(day.periods);
+                    const p5Regex = new RegExp("\\b" + PERIODS.P5.replace(/\s+/g, "\\s*") + "\\b", "i");
+                    const p6Regex = new RegExp("\\b" + PERIODS.P6.replace(/\s+/g, "\\s*") + "\\b", "i");
+                    const p5Key = keys.find(k => p5Regex.test(k) && !/House/i.test(k));
+                    const p6Key = keys.find(k => p6Regex.test(k));
+                    if (p5Key && p6Key) {
+                        const tmp1 = document.createElement('div'); tmp1.innerHTML = day.periods[p5Key] || '';
+                        const tmp2 = document.createElement('div'); tmp2.innerHTML = day.periods[p6Key] || '';
+                        const t1 = (tmp1.textContent || '').replace(/\s+/g, ' ').trim();
+                        const t2 = (tmp2.textContent || '').replace(/\s+/g, ' ').trim();
+                        if (t1 && t1 === t2) {
+                            // Keep the P5 HTML (it's representative) but set a merged key.
+                            day.periods[PERIODS.P5_6_MERGED] = day.periods[p5Key];
+                            delete day.periods[p5Key];
+                            delete day.periods[p6Key];
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error while attempting to merge P5+P6:', e);
+            }
+                const td = document.createElement("td");
+                td.setAttribute("data-day", day.dayNum);
+                td.style.verticalAlign = "top";
+                td.style.padding = "0";
+                td.style.position = "relative";
+                td.style.height = totalHeight + "px";
+                
+                // Add a slightly visible line between week 1 (Day 5) and week 2 (Day 6)
+                if (day.dayNum === 5) {
+                    td.style.borderRight = "1px solid #ccc";
+                }
+                
+                // Grid lines
+                for (let t = startTime; t <= endTime; t += 30) {
+                    const line = document.createElement("div");
+                    line.style.position = "absolute";
+                    line.style.top = (t - startTime) * pxPerMin + "px";
+                    line.style.left = "0";
+                    line.style.right = "0";
+                    line.style.borderTop = "1px solid #f9f9f9";
+                    line.style.zIndex = "0";
+                    td.appendChild(line);
+                }
+                
+                const periodEntries = Object.entries(day.periods);
+                // Compute latest end time for the day to detect "last" period more reliably
+                const _periodEndTimes = periodEntries.map(e => {
+                    try { return getPeriodTimes(day.dayNum, e[0], studentYear).end; } catch { return 0; }
+                });
+                const dayMaxEnd = _periodEndTimes.length ? Math.max(..._periodEndTimes) : 0;
+                const skipStartTimeFor = new Set(); // Track periods that share end time with previous
+                
+                for (let entryIdx = 0; entryIdx < periodEntries.length; entryIdx++) {
+                    const entry = periodEntries[entryIdx];
+                    const periodName = entry[0];
+                    const html = entry[1];
+                    const times = getPeriodTimes(day.dayNum, periodName, studentYear);
+                    if (times.start === 0 && times.end === 0) continue;
+                    
+                    const tmpTextCheck = document.createElement("div");
+                    tmpTextCheck.innerHTML = html;
+                    if (!tmpTextCheck.textContent.trim()) continue;
+                    
+                    const isLunch = periodName.includes(PERIODS.LUNCH);
+                    
+                    const pDiv = document.createElement("div");
+                    pDiv.className = "timetable-period-absolute";
+                    pDiv.setAttribute("data-start", times.start);
+                    pDiv.setAttribute("data-end", times.end);
+                    pDiv.style.position = "absolute";
+                    pDiv.style.top = (times.start - startTime) * pxPerMin + "px";
+                    pDiv.style.height = (times.end - times.start) * pxPerMin + "px";
+                    pDiv.style.left = "0";
+                    pDiv.style.right = "0";
+                    pDiv.style.overflow = "hidden";
+                    pDiv.style.zIndex = "1";
+                    pDiv.style.padding = "2px";
+                    pDiv.innerHTML = html;
+                    
+                    // Add time labels for non-lunch periods
+                    if (!isLunch) {
+                        // Check if this period had its start time skipped (shared with previous period's end)
+                        const hasSharedStartTime = skipStartTimeFor.has(entryIdx);
+                        
+                        // Check if next period starts exactly when this ends
+                        const nextEntry = periodEntries[entryIdx + 1];
+                        let nextTimes = null;
+                        if (nextEntry) {
+                            const nextPeriodName = nextEntry[0];
+                            nextTimes = getPeriodTimes(day.dayNum, nextPeriodName, studentYear);
+                        }
+                        
+                        const isBackToBack = nextTimes && nextTimes.start === times.end && !nextEntry[0].includes(PERIODS.LUNCH);
+                        const durationMin = times.end - times.start;
+                        const isShort = durationMin < 30;
+                        
+                        // Only add start time if it wasn't shared with previous period's end and isn't 8:30
+                        if (!hasSharedStartTime && times.start !== startTime) {
+                            const startTimeLabel = document.createElement("div");
+                            let h = Math.floor(times.start/60);
+                            let m = times.start%60;
+                            let ampm = h >= 12 ? "pm" : "am";
+                            let disph = h > 12 ? h - 12 : h;
+                            startTimeLabel.innerText = `${String(disph).padStart(2, '0')}:${String(m).padStart(2, '0')}${ampm}`;
+                            startTimeLabel.classList.add("timetable-time-label");
+                            startTimeLabel.style.position = "absolute";
+                            startTimeLabel.style.top = "0";
+                            startTimeLabel.style.left = "0";
+                            startTimeLabel.style.right = "0";
+                            startTimeLabel.style.fontSize = "9px";
+                            startTimeLabel.style.padding = "1px 2px";
+                            startTimeLabel.style.backgroundColor = "rgba(0,0,0,0.3)";
+                            startTimeLabel.style.color = "#fff";
+                            startTimeLabel.style.textAlign = "center";
+                            startTimeLabel.style.zIndex = "10";
+                            startTimeLabel.style.fontWeight = "bold";
+                            pDiv.appendChild(startTimeLabel);
+                        }
+                        
+                        if (isBackToBack && times.end !== endTime && times.end !== startTime) {
+                            // Create shared time label in the middle between periods
+                            const midSize = 14; // Height of time label
+                            const sharedLabel = document.createElement("div");
+                            let h = Math.floor(times.end/60);
+                            let m = times.end%60;
+                            let ampm = h >= 12 ? "pm" : "am";
+                            let disph = h > 12 ? h - 12 : h;
+                            sharedLabel.innerText = `${String(disph).padStart(2, '0')}:${String(m).padStart(2, '0')}${ampm}`;
+                            sharedLabel.classList.add("timetable-time-label");
+                            sharedLabel.style.position = "absolute";
+                            sharedLabel.style.top = (times.end - startTime) * pxPerMin - midSize/2 + "px";
+                            sharedLabel.style.left = "0";
+                            sharedLabel.style.right = "0";
+                            sharedLabel.style.fontSize = "9px";
+                            sharedLabel.style.padding = "1px 2px";
+                            sharedLabel.style.backgroundColor = "rgba(0,0,0,0.3)";
+                            sharedLabel.style.color = "#fff";
+                            sharedLabel.style.textAlign = "center";
+                            sharedLabel.style.zIndex = "10";
+                            sharedLabel.style.fontWeight = "bold";
+                            sharedLabel.style.width = "100%";
+                            td.appendChild(sharedLabel);
+                            
+                            // Mark next period to skip its start time label
+                            skipStartTimeFor.add(entryIdx + 1);
+                        } else if (!isShort && times.end !== endTime) {
+                            // Add end time label only if not back-to-back and not 3:30
+                            const endTimeLabel = document.createElement("div");
+                            let h = Math.floor(times.end/60);
+                            let m = times.end%60;
+                            let ampm = h >= 12 ? "pm" : "am";
+                            let disph = h > 12 ? h - 12 : h;
+                            endTimeLabel.innerText = `${String(disph).padStart(2, '0')}:${String(m).padStart(2, '0')}${ampm}`;
+                            endTimeLabel.classList.add("timetable-time-label");
+                            endTimeLabel.style.position = "absolute";
+                            endTimeLabel.style.bottom = "0";
+                            endTimeLabel.style.left = "0";
+                            endTimeLabel.style.right = "0";
+                            endTimeLabel.style.fontSize = "9px";
+                            endTimeLabel.style.padding = "1px 2px";
+                            endTimeLabel.style.backgroundColor = "rgba(0,0,0,0.3)";
+                            endTimeLabel.style.color = "#fff";
+                            endTimeLabel.style.textAlign = "center";
+                            endTimeLabel.style.zIndex = "10";
+                            endTimeLabel.style.fontWeight = "bold";
+                            pDiv.appendChild(endTimeLabel);
+                        }
+                    }
+                    
+                    // Ensure direct children (wrappers) are full height/flex containers
+                    Array.from(pDiv.children).forEach(c => {
+                        if (!(c.classList && c.classList.contains("timetable-time-label"))) {
+                            c.style.height = "100%";
+                            c.style.display = "flex";
+                            c.style.flexDirection = "column";
+                        }
+                    });
+
+                    // Force subject divs to fill height and add rounded corners
+                    for (const s of pDiv.querySelectorAll(".timetable-subject")) {
+                        if (s.parentElement !== pDiv) {
+                            s.style.flex = "1"; 
+                            s.style.height = "auto";
+                        } else {
+                            s.style.width = "100%";
+                            // If direct child, height 100% was set by children loop
+                        }
+                        s.style.marginBottom = "0";
+                        s.style.marginTop = "0";
+                        s.style.paddingTop = "22px"; // Add padding to avoid time label at top
+                        s.style.paddingBottom = "16px"; // Add padding to avoid time label at bottom
+                        s.style.boxSizing = "border-box";
+                        s.style.borderRadius = "2px";
+                        s.style.overflow = "hidden";
+                        
+                        // Fix inner div layout if needed
+                        const innerDiv = s.querySelector("div");
+                        if (innerDiv) {
+                            innerDiv.style.borderRadius = "5px";
+                            innerDiv.style.height = "100%";
+                            innerDiv.style.width = "100%";
+                        }
+
+                        // Re-apply theme color and contrast fix to ensure readability in enhanced layout
+                        const matchText = (innerDiv ? innerDiv.textContent : s.textContent) || "";
+                        const subjectcodesMatch = REGEXP.exec(matchText);
+                        if (subjectcodesMatch) {
+                            const subjectcodes = subjectcodesMatch[1].split(",");
+                            for (const subjectcode of subjectcodes) {
+                                const theme = extConfig.theme[subjectcode.trim()];
+                                if (theme && theme.color) {
+                                        // Apply the background directly with !important so Schoolbox's
+                                        // contrast checker reads the correct final background colour.
+                                        s.style.setProperty('background-color', theme.color, 'important');
+                                        // Persist desired colours for later enforcement
+                                        s.dataset.scholBg = theme.color;
+                                        
+                                        // Use the more robust brightness detection
+                                        const finalTextCol = getTextColor(theme.color);
+                                        const isDarkText = finalTextCol === '#000000';
+                                        const textShadow = isDarkText ? '' : '';
+                                        
+                                        s.style.setProperty('color', finalTextCol, 'important');
+                                        s.dataset.scholFg = finalTextCol;
+                                        // Ensure the primary inner wrapper visually shares the same background
+                                        // so computed styles for children (and contrast checks) resolve correctly.
+                                        if (innerDiv) {
+                                            innerDiv.style.setProperty('background-color', theme.color, 'important');
+                                            innerDiv.dataset.scholBg = theme.color;
+                                            innerDiv.dataset.scholFg = finalTextCol;
+                                        }
+                                        // Apply to all children including the innerDiv and its children
+                                        s.querySelectorAll("div, div *, span, p").forEach(child => {
+                                            // Propagate background to descendants so the contrast checker
+                                            // evaluates text against the themed background instead of transparent/white.
+                                            child.style.setProperty('background-color', theme.color, 'important');
+                                            if (child.tagName !== 'A') {
+                                            child.style.setProperty('color', finalTextCol, 'important');
+                                                // If it's the description div, give it a subtle background for contrast
+                                            if (child === innerDiv) {
+                                                child.style.setProperty('border-radius', '3px', 'important');
+                                                child.style.setProperty('padding', '2px', 'important');
+                                            }
+                                            }
+                                            // Persist intended colours for observer-based enforcement
+                                            child.dataset.scholBg = theme.color;
+                                            child.dataset.scholFg = finalTextCol;
+                                        });
+                                        
+                                        // Link color: match computed text colour to maximise contrast
+                                        s.querySelectorAll("a").forEach(a => {
+                                            // Ensure links inherit the same background so Schoolbox
+                                            // contrast checks compare like-for-like colours.
+                                            a.style.setProperty('background-color', theme.color, 'important');
+                                            a.style.setProperty('color', finalTextCol, 'important');
+                                            a.style.setProperty('text-decoration', 'none', 'important');
+                                            a.dataset.scholBg = theme.color;
+                                            a.dataset.scholFg = finalTextCol;
+                                        });
+                                        break; // Only use first matching theme
+                                    }
+                                }
+                            }
+                        }
+                     
+                    // If this is the last period of Tue/Wed/Thu and it's a Sport class,
+                    // create an L-shape: Right-Half Top (Extension) + Full-Width Bottom (Base).
+                    let lShapeBg = null;
+                    try {
+                        const cycleDay = (day.dayNum - 1) % 5;
+                        const isLastEntry = times.end === dayMaxEnd;
+                        // Determine if Sport
+                        const tmpForSport = document.createElement('div'); tmpForSport.innerHTML = html || '';
+                        const plainText = (tmpForSport.textContent || '').toLowerCase();
+                        const isSport = /\bsport\b/i.test(plainText);
+
+                        if (isLastEntry && isSport && (cycleDay === 1 || cycleDay === 2 || cycleDay === 3)) {
+                            const start45 = timeToMin(12, 45);
+                            
+                            // Extract background color
+                            let bg = 'rgba(0,0,0,0.1)';
+                            const colorMatch = /background(?:-color)?:\s*([^;!"]+)/i.exec(html);
+                            if (colorMatch) bg = colorMatch[1];
+                            
+                            // Helper to create absolute bg blocks
+                            const createBlock = (cssParams) => {
+                                const d = document.createElement('div');
+                                d.style.position = 'absolute';
+                                d.style.background = bg;
+                                d.style.zIndex = '2'; // Above other subjects (z=1), behind Sport pDiv (z=3)
+                                for (let p in cssParams) d.style[p] = cssParams[p];
+                                return d;
+                            };
+
+                            const stemLabel = (timeVal) => {
+                                const lbl = document.createElement("div");
+                                let h = Math.floor(timeVal/60);
+                                let m = timeVal%60;
+                                let disph = h > 12 ? h - 12 : h;
+                                lbl.innerText = `${disph}:${String(m).padStart(2, '0')}`;
+                                lbl.classList.add("timetable-time-label");
+                                lbl.style.position = "absolute";
+                                lbl.style.top = "0";
+                                lbl.style.left = "0";
+                                lbl.style.right = "0";
+                                lbl.style.fontSize = "8px"; // slightly smaller for 30% width
+                                lbl.style.letterSpacing = "-0.2px";
+                                lbl.style.padding = "2px 0";
+                                lbl.style.backgroundColor = "rgba(0,0,0,0.3)";
+                                lbl.style.color = "#fff";
+                                lbl.style.textAlign = "center";
+                                lbl.style.zIndex = "10";
+                                lbl.style.fontWeight = "bold";
+                                lbl.style.borderTopLeftRadius = "4px";
+                                lbl.style.borderTopRightRadius = "4px";
+                                return lbl;
+                            };
+
+
+                            const ext_Y_start = times.start < start45 ? times.start : start45;
+                            const ext_Y_end = times.start < start45 ? start45 : times.start;
+                            
+                            // A short delay ensures previously added subjects are in the DOM (though they should be already)
+                            setTimeout(() => {
+                                td.querySelectorAll('.timetable-period-absolute').forEach(prevDiv => {
+                                    if (prevDiv === pDiv) return;
+                                    const pStart = parseInt(prevDiv.getAttribute('data-start'));
+                                    const pEnd = parseInt(prevDiv.getAttribute('data-end'));
+                                    
+                                    const overlapS = Math.max(pStart, ext_Y_start);
+                                    const overlapE = Math.min(pEnd, ext_Y_end);
+                                    
+                                    if (overlapS < overlapE) {
+                                        const overlapH = (overlapE - overlapS) * pxPerMin;
+                                        const marginTop = (overlapS - pStart) * pxPerMin;
+                                        const spacerHTML = `<div style="float: right; width: 0; height: ${marginTop}px; pointer-events: none;"></div><div style="float: right; clear: right; width: 30%; height: ${overlapH + 5}px; pointer-events: none;"></div>`;
+                                        
+                                        const subjDiv = prevDiv.querySelector('.timetable-subject');
+                                        if (subjDiv) {
+                                            subjDiv.style.display = 'block';
+                                            subjDiv.insertAdjacentHTML('afterbegin', spacerHTML);
+                                        }
+                                        
+                                        // Hide right-half background of overridden subjects so it doesn't leak out 
+                                        // (though setting Sport bg z-index=2 already covers it visually)
+                                    }
+                                });
+                            }, 0);
+
+                            if (times.start < start45) {
+                                // CASE A: Period starts EARLY (e.g. 12:10).
+                                // Shape: Top-Right Half (12:10-12:45) + Bottom Full (12:45-End).
+                                
+                                // 1. Make pDiv transparent so we can see our custom bg blocks
+                                // We iterate children and force bg transparent
+                                setTimeout(() => { // Delay to override applied styles
+                                    pDiv.querySelectorAll('.timetable-subject, .timetable-subject > div, a').forEach(el => {
+                                        el.style.setProperty('background-color', 'transparent', 'important');
+                                        el.style.setProperty('box-shadow', 'none', 'important');
+                                        el.style.setProperty('border', 'none', 'important');
+                                    });
+                                    // Remove the default time label span across whole block since it doesn't fit the L stem
+                                    const defaultLabel = pDiv.querySelector('.timetable-time-label');
+                                    if (defaultLabel && (defaultLabel.style.top === '0px' || defaultLabel.style.top === '0')) {
+                                        defaultLabel.style.display = 'none';
+                                    }
+                                }, 0);
+                                
+                                // 2. Create Background Blocks
+                                // Top Block (Right Half)
+                                const topH = (start45 - times.start) * pxPerMin;
+                                const topTop = (times.start - startTime) * pxPerMin;
+                                const topBlock = createBlock({
+                                    top: (topTop + 2) + 'px',   // +2px padding to match native subject boxes
+                                    left: '70%',
+                                    right: '2px',               // Inset 2px to perfectly align with native subjects margin
+                                    height: (topH - 2 + 1) + 'px', // +1px stretch down into bottom block to seal the gap
+                                });
+                                // Attach custom right-aligned stem label
+                                topBlock.appendChild(stemLabel(times.start));
+
+                                // Bottom Block (Full Width)
+                                const botH = (times.end - start45) * pxPerMin;
+                                const botTop = (start45 - startTime) * pxPerMin;
+                                const botBlock = createBlock({
+                                    top: botTop + 'px',         // Perfect alignment with 12:45 (seamless with topBlock overlap)
+                                    left: '2px',                // Standard padding
+                                    width: 'calc(100% - 4px)',  // Standard inner width
+                                    height: (botH - 2) + 'px',  // Standard padding
+                                    borderRadius: '4px 0 4px 4px'
+                                });
+                                // Add shoulder radius to bottom block (Top-Left)
+                                botBlock.style.borderTopLeftRadius = '4px'; 
+                                botBlock.style.borderTopRightRadius = '0';
+
+                                td.appendChild(topBlock);
+                                td.appendChild(botBlock);
+                                
+                                // 3. Text Wrapping
+                                // Inject a float:left spacer into the content to push text to right for the top section
+                                const spacerH = topH;
+                                const spacer = `<div style="float: left; width: 70%; height: ${spacerH}px; pointer-events: none;"></div>`;
+                                // Insert into the .timetable-subject div
+                                const subjectDiv = pDiv.querySelector('.timetable-subject');
+                                if (subjectDiv) {
+                                    subjectDiv.style.display = 'block'; 
+                                    subjectDiv.insertAdjacentHTML('afterbegin', spacer);
+                                }
+                                
+                            } else {
+                                // CASE B: Period starts LATE (e.g. 14:05).
+                                // Shape: Extension (12:45-Start, Right Half) + Base (pDiv, Full).
+                                
+                                // 1. Create Extension Block
+                                const extH = (times.start - start45) * pxPerMin;
+                                const extTop = (start45 - startTime) * pxPerMin;
+                                const extBlock = createBlock({
+                                    top: (extTop + 2) + 'px',       // Start with standard +2 offset
+                                    left: '70%',                    // Span right edge 30%
+                                    right: '2px',                   // Inner padding on right
+                                    height: (extH + 1) + 'px',      // Drop perfectly into the Base's +2px offset padding, 1px overlap seals gap
+                                    borderRadius: '4px 4px 0 4px'
+                                });
+                                extBlock.appendChild(stemLabel(start45));
+                                td.appendChild(extBlock);
+                                
+                                // 2. Modify pDiv (Base) to join nicely
+                                // Remove Top-Right radius to join with extension
+                                setTimeout(() => {
+                                    const subjectDiv = pDiv.querySelector('.timetable-subject');
+                                    if (subjectDiv) {
+                                        subjectDiv.style.borderTopRightRadius = '0';
+                                    }
+                                }, 0);
+                            }
+                        }
+                    } catch (e) {
+                         console.error('Sport L-shape render failed', e);
+                    }
+
+                    td.appendChild(pDiv);
+                 }
+                 tr.appendChild(td);
+             });
+            
+            tbody.appendChild(tr);
+            newTable.appendChild(tbody);
+            
+            originalTable.replaceWith(scrollWrapper);
+            scrollWrapper.appendChild(newTable);
+            
+            // Ensure any parent components don't restrict height and force scrolling
+            let parent = scrollWrapper.parentElement;
+            while (parent && parent !== document.body) {
+                if (getComputedStyle(parent).overflowY === 'auto' || getComputedStyle(parent).overflowY === 'scroll') {
+                    parent.style.overflowY = 'visible';
+                    parent.style.height = 'auto';
+                    parent.style.maxHeight = 'none';
+                }
+                parent = parent.parentElement;
+            }
+
+            // Smart text fitting logic
+            newTable.querySelectorAll(".timetable-subject").forEach(subjectDiv => {
+                // Reset styles to optimize space
+                subjectDiv.style.display = "flex";
+                subjectDiv.style.flexDirection = "column";
+                subjectDiv.style.justifyContent = "center";
+                // Preserve top/bottom padding reserved for time labels; only set horizontal padding
+                subjectDiv.style.paddingLeft = "2px";
+                subjectDiv.style.paddingRight = "2px";
+                subjectDiv.style.boxSizing = "border-box";
+                subjectDiv.style.textAlign = "center";
+                subjectDiv.style.overflow = "hidden";
+                subjectDiv.style.height = "100%";
+                subjectDiv.style.whiteSpace = "normal"; // Allow full words to wrap
+                subjectDiv.style.wordBreak = "normal"; // Prevent mid-word breaks
+                subjectDiv.style.overflowWrap = "normal"; // Prevent mid-word breaks
+                
+                // Remove default margins from children
+                Array.from(subjectDiv.children).forEach(c => {
+                    c.style.margin = "0";
+                    c.style.lineHeight = "1.1"; // Slightly tighter line height
+                    c.style.whiteSpace = "normal";
+                });
+
+                const link = subjectDiv.querySelector("a");
+                if (link) {
+                    link.style.fontWeight = "bold";
+                    link.style.display = "block"; 
+                    link.style.whiteSpace = "normal";
+                }
+
+                // Iteratively shrink font size to fit
+                let fontSize = 12;
+
+                // More consistent font sizes based on height
+                if (subjectDiv.clientHeight >= 120) fontSize = 16;
+                else if (subjectDiv.clientHeight >= 80) fontSize = 14;
+                else fontSize = 12; // Default for small boxes like House Period
+
+                subjectDiv.style.fontSize = `${fontSize}px`;
+                
+                // We allow valid font sizes down to 8px for extreme cases
+                // Check both height and width overflow
+                while ((subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) && fontSize > 8) {
+                    fontSize -= 0.5;
+                    subjectDiv.style.fontSize = `${fontSize}px`;
+                }
+
+                // If still overflowing or very small box, remove redundant info
+                if ((subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) || subjectDiv.clientHeight < 50) {
+                    subjectDiv.innerHTML = subjectDiv.innerHTML
+                    .replace(/\s*\([^)<>]*\)/g, '') // Remove (subject code)
+                    .replace(/\s*\[[^\]<>]*\]/g, '') // Remove [subject code]
+                    .replace(/<br[^>]*\/?>/gi, '') // Remove all br tags (including with attributes)
+                    .replace(/^\s*[\r\n]/gm, '');
+                    
+                    // Re-check size after removal
+                    while ((subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) && fontSize > 7) {
+                        fontSize -= 0.5;
+                        subjectDiv.style.fontSize = `${fontSize}px`;
+                    }
+                }
+                
+                // If still overflowing, apply scale transform as a last resort
+                if (subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) {
+                    const vScale = subjectDiv.clientHeight / subjectDiv.scrollHeight;
+                    const hScale = subjectDiv.clientWidth / subjectDiv.scrollWidth;
+                    const scale = Math.min(vScale, hScale) * 0.95;
+                    const wrapper = document.createElement('div');
+                    wrapper.style.transform = `scale(${Math.max(scale, 0.6)})`;
+                    wrapper.style.transformOrigin = 'center center';
+                    wrapper.style.width = '100%';
+                    wrapper.style.display = 'flex';
+                    wrapper.style.flexDirection = 'column';
+                    wrapper.style.alignItems = 'center';
+                    
+                    while (subjectDiv.firstChild) {
+                        wrapper.appendChild(subjectDiv.firstChild);
+                    }
+                    subjectDiv.appendChild(wrapper);
+                }
+            });
+             
+            let currentDayNum = 0;
+            fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
+                .then(r => r.json())
+                .then(r => {
+                    currentDayNum = parseInt(r.D);
+                    updateTimeLine();
+                }).catch(() => {});
+
+            const updateTimeLine = () => {
+                const now = new Date();
+                const mins = now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+                
+                let line = document.getElementById("timetable-timeline");
+                if (mins < startTime || mins > endTime) {
+                    if (line) line.style.display = "none";
+                } else {
+                    if (!line) {
+                        line = document.createElement("div");
+                        line.id = "timetable-timeline";
+                        line.style.cssText = "position: absolute; left: 60px; right: 0; border-top: 2px solid #ff4d4d; z-index: 100; pointer-events: none; transition: top 1s linear;";
+                        timeCol.appendChild(line);
+                        line.style.width = "200vw"; // Hack to span across
+                    }
+                    line.style.display = "block";
+                    line.style.top = (mins - startTime) * pxPerMin + "px";
+                }
+
+                // Highlight active subject
+                document.querySelectorAll(".timetable-subject-active").forEach(el => {
+                    el.classList.remove("timetable-subject-active");
+                    const subjectDiv = el.querySelector(".timetable-subject");
+                    if (subjectDiv) {
+                        subjectDiv.style.outline = "none";
+                        subjectDiv.style.boxShadow = "none";
+                        subjectDiv.style.zIndex = "";
+                    }
+                });
+
+                if (currentDayNum > 0) {
+                    const todayCell = newTable.querySelector(`td[data-day="${currentDayNum}"]`);
+                    if (todayCell) {
+                        const periods = todayCell.querySelectorAll(".timetable-period-absolute");
+                        periods.forEach(p => {
+                            const start = parseInt(p.getAttribute("data-start"));
+                            const end = parseInt(p.getAttribute("data-end"));
+                            if (mins >= start && mins < end) {
+                                p.classList.add("timetable-subject-active");
+                                // Add a nice outline
+                                const subjectDiv = p.querySelector(".timetable-subject");
+                                if (subjectDiv) {
+                                    subjectDiv.style.outline = "4px solid var(--accent-foreground, #0072ce)";
+                                    subjectDiv.style.outlineOffset = "-4px";
+                                    subjectDiv.style.boxShadow = "0 0 15px rgba(0, 114, 206, 0.6)";
+                                    subjectDiv.style.zIndex = "10";
+                                }
+                            }
+                        });
+                    }
+                }
+            };
+
+            updateTimeLine();
+            setInterval(updateTimeLine, 10000);
+
+            // Observe and revert any Schoolbox auto-contrast overrides on colour
+            try {
+                const reapplyColours = (el) => {
+                    if (!el || !el.dataset) return;
+                    const fg = el.dataset.scholFg;
+                    const bg = el.dataset.scholBg;
+                    if (bg) el.style.setProperty('background-color', bg, 'important');
+                    if (fg) el.style.setProperty('color', fg, 'important');
+                };
+                const mo = new MutationObserver((mutations) => {
+                    for (const m of mutations) {
+                        if (m.type === 'attributes' && (m.attributeName === 'style' || m.attributeName === 'class')) {
+                            const t = m.target;
+                            if (t && t.dataset && (t.dataset.scholFg || t.dataset.scholBg)) {
+                                reapplyColours(t);
+                            }
+                        }
+                    }
+                });
+                mo.observe(newTable, { subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+            } catch (e) {
+                console.warn('Colour enforcement observer failed:', e);
+            }
+        }
     }
 }
 
