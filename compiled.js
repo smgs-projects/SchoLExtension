@@ -1178,7 +1178,157 @@ function assessments() {
         }
         break
     }
+
+    // Print Rubric
+    const markable = document.querySelector("table.markable") || document.querySelector(".markable");
+    if (!markable) return;
+
+    if (!document.querySelector("#print-rubric-button-landscape")) {
+        markable.insertAdjacentHTML("beforebegin", `
+            <a id="print-rubric-button-landscape" class="button show-for-landscape print-rubric-btn" style="margin-top: 0; float: right; display: inline-block">Print Rubric</a>
+            <a id="print-rubric-button-portrait" class="button show-for-portrait print-rubric-btn" style="margin-top: 10px; display: inline-block">Print Rubric</a>
+        `);
+    }
+
+    function buildRubricPrintHtml(markableEl, details) {
+        // Determine if we should use landscape or portrait based on table dimensions
+        let orientation = 'landscape'; // default
+        
+        // Count columns and rows to determine orientation
+        const table = markableEl.querySelector('table');
+        if (table) {
+            const numRows = table.querySelectorAll('tr').length;
+            const numCols = table.querySelector('tr')?.querySelectorAll('th, td').length || 0;
+            
+            // If more rows than columns (tall table), use portrait
+            if (numRows > numCols * 1.5) {
+                orientation = 'portrait';
+            }
+        }
+        
+        return `
+        <!DOCTYPE html>
+        <html>
+            <head>
+            <meta charset="utf-8">
+            <title>${details.title} - Rubric</title>
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <style>
+                @page {
+                    size: ${orientation};
+                    margin: 15mm;
+                }
+                html,body {
+                    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+                    line-height:1.35;
+                    color:#222;
+                }
+                body {
+                    margin:0;
+                    padding:0;
+                }
+                h1 {
+                    font-size: 1.5em;
+                    margin:0 0 .5em;
+                }
+                h2,h3,h4 {
+                    margin:1.2em 0 .5em;
+                    line-height:1.2;
+                }
+                .assessment-details ul {
+                    list-style-type: none;
+                    padding: 0;
+                    margin-bottom: 20px;
+                }
+                .assessment-details ul li {
+                    margin-bottom: 5px;
+                }
+                table {
+                    width:100%;
+                    border-collapse:collapse;
+                    margin:12px 0;
+                    font-size:13px;
+                }
+                th,td {
+                    border:1px solid #cfcfcf;
+                    padding:6px 8px;
+                    vertical-align:top;
+                    background:#fff;
+                }
+                th {
+                background:#f5f5f5;
+                }
+                tr {
+                    page-break-inside: avoid;
+                }
+                .print-meta {
+                    font-size:11px;
+                    color:#555;
+                    margin:10px 0;
+                }
+                .markable table {
+                    page-break-inside:avoid;
+                }
+                td, td * {
+                    color:#222 !important;
+                }
+            </style>
+            </head>
+        <body>
+            <div class="assessment-details">
+                <h1>${details.title}</h1>
+                <ul>
+                    <li><strong>Due:</strong> ${details.due}</li>
+                    <li><strong>Weighting:</strong> ${details.weighting}</li>
+                </ul>
+            </div>
+            ${markableEl.outerHTML}
+            <script>
+                window.addEventListener('load', function(){
+                    setTimeout(function(){ 
+                        try { window.print(); } catch(e) {}
+                    }, 50);
+                });
+                window.onafterprint = function(){
+                    setTimeout(function(){
+                        try { window.close(); } catch(e) {}
+                    }, 100);
+                };
+            </script>
+        </body>
+        </html>
+        `;
+        }
+
+        function openRubricPrint() {
+            const source = document.querySelector("table.markable") || document.querySelector(".markable");
+            if (!source) return;
+
+            const clone = source.cloneNode(true);
+
+            clone.querySelectorAll(".hide-on-print").forEach(e => e.remove());
+
+            const details = {
+                title: document.querySelector(".small-12.columns h1")?.innerText || 'Assessment',
+                due: document.querySelector(".small-12.columns .icon-calendar span")?.title || 'N/A',
+                weighting: document.querySelector(".small-12.columns .icon-due-work")?.innerText.match(/Weighting:\s*(\d+)/)?.[1] || 'N/A'
+            };
+
+            const html = buildRubricPrintHtml(clone, details);
+            const blob = new Blob([html], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+
+            const w = window.open(url, "_blank");
+            if (!w) return;
+        }
+
+        document.addEventListener("click", (e) => {
+            if (e.target && e.target.classList.contains("print-rubric-btn")) {
+                openRubricPrint();
+            }
+        });
 }
+
 function eDiary() {
     const page = document.querySelector(".fc-button-group .fc-button-active").innerText
 
