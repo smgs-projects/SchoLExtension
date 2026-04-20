@@ -369,21 +369,21 @@ async function timetableCache(forcePush) {
 window.Clipboard = (function(window, document, navigator) {
     var textArea, copy, range, selection;
     copy = function(text) {
-      textArea = document.createElement('textArea');
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      if (navigator.userAgent.match(/ipad|iphone/i)) {
-          range = document.createRange();
-          range.selectNodeContents(textArea);
-          selection = window.getSelection();
-          selection.removeAllRanges();
-          selection.addRange(range);
-          textArea.setSelectionRange(0, 999999);
-      } else {
-          textArea.select();
-      }
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
+        textArea = document.createElement('textArea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        if (navigator.userAgent.match(/ipad|iphone/i)) {
+            range = document.createRange();
+            range.selectNodeContents(textArea);
+            selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            textArea.setSelectionRange(0, 999999);
+        } else {
+            textArea.select();
+        }
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
     };
     return { copy: copy };
 })(window, document, navigator);
@@ -405,8 +405,8 @@ function getRGB(c) {
 }
 function getsRGB(c) {
     return getRGB(c) / 255 <= 0.03928
-      ? getRGB(c) / 255 / 12.92
-      : Math.pow((getRGB(c) / 255 + 0.055) / 1.055, 2.4)
+    ? getRGB(c) / 255 / 12.92
+    : Math.pow((getRGB(c) / 255 + 0.055) / 1.055, 2.4)
 }
 function getLuminance(hexColor) {
     return (
@@ -611,19 +611,18 @@ async function loadSettings() {
         { value: 'defaults', label: 'System Defaults' },
         { value: 'light', label: 'Light' },
         { value: 'dark', label: 'Dark' },
-      ];
-      
-      function generateDropdown(options) {
+    ];
+    
+    function generateDropdown(options) {
         let dropdownHtml = '<option disabled="" selected="">Click to select a theme</option>';
-      
+
         options.forEach(option => {
-          dropdownHtml += `<option value="${option.value}">${option.label}</option>`;
+            dropdownHtml += `<option value="${option.value}">${option.label}</option>`;
         });
-      
+    
         return dropdownHtml;
-      }
-      
-      const darkOptions = generateDropdown(darkModeOptions);
+    }
+    const darkOptions = generateDropdown(darkModeOptions);
 
     let themeoptions = ""
     const themes = await getThemes()
@@ -1991,55 +1990,55 @@ function timetable() {
             
             const getPeriodTimes = (dayNum, periodName, year) => {
                  const cycleDay = (dayNum - 1) % 5; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
-                 
-                 let start = 0, end = 0;
-                 
-                 if (cycleDay === 0) { // Monday
-                     if (periodName.includes(PERIODS.P1)) { start = timeToMin(8,30); end = timeToMin(9,35); }
-                     else if (periodName.includes(PERIODS.P2)) { start = timeToMin(9,35); end = timeToMin(10,40); }
-                     else if (periodName.includes(PERIODS.P3)) { start = timeToMin(11,5); end = timeToMin(12,15); }
-                     else if (periodName.includes(PERIODS.P4)) { start = timeToMin(12,15); end = timeToMin(13,25); }
-                     else if (periodName.includes("Lunch (Yr 12 Period 5)")) {
-                         start = timeToMin(14,5); end = timeToMin(14,25);
-                     }
-                     else if (periodName.includes(PERIODS.LUNCH)) { 
-                         // Lunch Options
-                         start = timeToMin(13,25);
-                         end = timeToMin(14,5);
-                     }
-                     else if (periodName.includes(PERIODS.P5_6_MERGED)) { // merged P5+P6 on Monday
-                        start = timeToMin(14,5); end = timeToMin(15,30);
-                     }
-                     else if (periodName.includes(PERIODS.P5) && periodName.includes("House")) {
-                         // Mon House Period logic - 20 minute house period should be visible for all years
-                         start = timeToMin(14,5); end = timeToMin(14,25);
-                     }
-                     else if (periodName.includes(PERIODS.P5) && !periodName.includes("House")) {
-                         // Standard Period 5 on Monday is 14:05-14:25
-                         start = timeToMin(14,5); end = timeToMin(14,25);
-                     }
-                     else if (periodName.includes(PERIODS.P6)) {
-                         // Period 6 remains 14:25-15:30
-                         start = timeToMin(14,25); end = timeToMin(15,30);
-                     }
+                
+                let start = 0, end = 0;
+                
+                if (cycleDay === 0) { // Monday
+                    if (periodName.includes(PERIODS.P1)) { start = timeToMin(8,30); end = timeToMin(9,35); }
+                    else if (periodName.includes(PERIODS.P2)) { start = timeToMin(9,35); end = timeToMin(10,40); }
+                    else if (periodName.includes(PERIODS.P3)) { start = timeToMin(11,5); end = timeToMin(12,15); }
+                    else if (periodName.includes(PERIODS.P4)) { start = timeToMin(12,15); end = timeToMin(13,25); }
+                    else if (periodName.includes("Lunch (Yr 12 Period 5)")) {
+                        start = timeToMin(14,5); end = timeToMin(14,25);
+                    }
+                    else if (periodName.includes(PERIODS.LUNCH)) { 
+                        // Lunch Options
+                        start = timeToMin(13,25);
+                        end = timeToMin(14,5);
+                    }
+                    else if (periodName.includes(PERIODS.P5_6_MERGED)) { // merged P5+P6 on Monday
+                    start = timeToMin(14,5); end = timeToMin(15,30);
+                    }
+                    else if (periodName.includes(PERIODS.P5) && periodName.includes("House")) {
+                        // Mon House Period logic - 20 minute house period should be visible for all years
+                        start = timeToMin(14,5); end = timeToMin(14,25);
+                    }
+                    else if (periodName.includes(PERIODS.P5) && !periodName.includes("House")) {
+                        // Standard Period 5 on Monday is 14:05-14:25
+                        start = timeToMin(14,5); end = timeToMin(14,25);
+                    }
+                    else if (periodName.includes(PERIODS.P6)) {
+                        // Period 6 remains 14:25-15:30
+                        start = timeToMin(14,25); end = timeToMin(15,30);
+                    }
                  } else { // Tue - Fri
-                     if (periodName.includes(PERIODS.P1)) { start = timeToMin(8,30); end = timeToMin(9,35); }
-                     else if (periodName.includes(PERIODS.P2)) { start = timeToMin(9,35); end = timeToMin(10,40); }
-                     else if (periodName.includes(PERIODS.P3)) { start = timeToMin(11,5); end = timeToMin(12,10); }
-                     else if (periodName.includes(PERIODS.P4)) {
+                    if (periodName.includes(PERIODS.P1)) { start = timeToMin(8,30); end = timeToMin(9,35); }
+                    else if (periodName.includes(PERIODS.P2)) { start = timeToMin(9,35); end = timeToMin(10,40); }
+                    else if (periodName.includes(PERIODS.P3)) { start = timeToMin(11,5); end = timeToMin(12,10); }
+                    else if (periodName.includes(PERIODS.P4)) {
                         start = timeToMin(12,10);
                         let isEarly = false;
                         if (cycleDay === 1 && year === 7) isEarly = true; // Tue
                         if (cycleDay === 2 && year >= 10 && year <= 12) isEarly = true; // Wed
                         if (cycleDay === 3 && year >= 8 && year <= 9) isEarly = true; // Thu
                         end = isEarly ? timeToMin(12,45) : timeToMin(13,15);
-                     }
-                     else if (periodName.includes("Lunch (Yr 12 Period 5)")) { start = timeToMin(14,5); end = timeToMin(14,25); }
-                     else if (periodName.includes(PERIODS.LUNCH)) { start = timeToMin(13,15); end = timeToMin(14,5); }
-                     else if (periodName.includes(PERIODS.P5)) { start = timeToMin(14,5); end = timeToMin(14,25); }
-                     else if (periodName.includes(PERIODS.P6)) { start = timeToMin(14,25); end = timeToMin(15,30); }
-                 }
-                 return { start, end };
+                    }
+                    else if (periodName.includes("Lunch (Yr 12 Period 5)")) { start = timeToMin(14,5); end = timeToMin(14,25); }
+                    else if (periodName.includes(PERIODS.LUNCH)) { start = timeToMin(13,15); end = timeToMin(14,5); }
+                    else if (periodName.includes(PERIODS.P5)) { start = timeToMin(14,5); end = timeToMin(14,25); }
+                    else if (periodName.includes(PERIODS.P6)) { start = timeToMin(14,25); end = timeToMin(15,30); }
+                }
+                return { start, end };
             };
             
             // Build New DOM
@@ -2047,7 +2046,7 @@ function timetable() {
             const startTime = timeToMin(8,30);
             const endTime = timeToMin(15,30);
             const totalHeight = (endTime - startTime) * pxPerMin;
-             
+
             // Wrapper Table
             const newTable = document.createElement("table");
             newTable.className = "timetable";
@@ -2061,7 +2060,7 @@ function timetable() {
             scrollWrapper.style.overflowY = "hidden";
             scrollWrapper.style.width = "100%";
             scrollWrapper.style.height = "auto"; 
-             
+
             const updateTableWidth = () => {
                 if (window.innerWidth < 1600) {
                     newTable.style.minWidth = "1300px";
@@ -2069,7 +2068,7 @@ function timetable() {
                     newTable.style.minWidth = "auto";
                 }
             };
-             
+            
             updateTableWidth();
             window.addEventListener("resize", updateTableWidth);
             
@@ -2385,7 +2384,7 @@ function timetable() {
                                 }
                             }
                         }
-                     
+                    
                     // If this is the last period of Tue/Wed/Thu and it's a Sport class,
                     // create an L-shape: Right-Half Top (Extension) + Full-Width Bottom (Base).
                     let lShapeBg = null;
@@ -2558,13 +2557,13 @@ function timetable() {
                             }
                         }
                     } catch (e) {
-                         console.error('Sport L-shape render failed', e);
+                        console.error('Sport L-shape render failed', e);
                     }
 
                     td.appendChild(pDiv);
-                 }
-                 tr.appendChild(td);
-             });
+                }
+                tr.appendChild(td);
+            });
             
             tbody.appendChild(tr);
             newTable.appendChild(tbody);
@@ -2665,7 +2664,7 @@ function timetable() {
                     subjectDiv.appendChild(wrapper);
                 }
             });
-             
+            
             let currentDayNum = 0;
             fetch("https://services.stmichaels.vic.edu.au/dwi.cfm?otype=json")
                 .then(r => r.json())
