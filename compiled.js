@@ -1848,10 +1848,225 @@ function timetable() {
     document.querySelector("h1[data-timetable-title]").style.display = "inline-block"
     document.querySelector("h1[data-timetable-title]").insertAdjacentHTML("afterend", `
         <a href="/settings/notifications" class="button show-for-landscape" style="margin-top: 10px; margin-left: 10px; float: right; display: inline-block">Customise Timetable</a>
-        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Customise Timetable</a>
-        <a class="button show-for-landscape" style="margin-top: 10px; float: right; display: inline-block">Print</a>
-        <a class="button show-for-portrait" style="margin-top: 10px; display: inline-block">Print</a>
+        <a href="/settings/notifications" class="button show-for-portrait" style="margin-top: 10px; margin-left: 10px; display: inline-block">Customise Timetable</a>
+        <a class="button show-for-landscape schol-print-timetable" style="margin-top: 10px; margin-left: 10px; float: right; display: inline-block">Print</a>
+        <a class="button show-for-landscape schol-export-timetable" style="margin-top: 10px; margin-left: 10px; float: right; display: inline-block">Export to Calendar</a>
     `)
+
+    const TIMETABLE_EXPORT_MODAL_FADE_MS = 180;
+
+    const closeTimetableExportModal = (immediate = false) => {
+        const overlay = document.querySelector(".reveal-modal-bg[data-schol-export-modal]");
+        const modal = document.querySelector(".reveal-modal[data-schol-export-modal]");
+
+        if (!overlay && !modal) return;
+
+        if (immediate) {
+            overlay?.remove();
+            modal?.remove();
+            return;
+        }
+
+        if (overlay) {
+            overlay.style.opacity = "0";
+        }
+        if (modal) {
+            modal.dataset.closing = "1";
+            modal.style.opacity = "0";
+            modal.style.transform = "translateY(8px)";
+        }
+
+        setTimeout(() => {
+            overlay?.remove();
+            modal?.remove();
+        }, TIMETABLE_EXPORT_MODAL_FADE_MS);
+    };
+
+    const openTimetableExportModal = exportUrl => {
+        closeTimetableExportModal(true);
+
+        const overlay = document.createElement("div");
+        overlay.className = "reveal-modal-bg";
+        overlay.dataset.scholExportModal = "1";
+        overlay.style.display = "block";
+        overlay.style.opacity = "0";
+        overlay.style.transition = `opacity ${TIMETABLE_EXPORT_MODAL_FADE_MS}ms ease`;
+
+        const modal = document.createElement("div");
+        modal.className = "reveal-modal small open";
+        modal.dataset.scholExportModal = "1";
+        modal.setAttribute("data-reveal", "");
+        modal.setAttribute("aria-hidden", "false");
+        modal.setAttribute("role", "dialog");
+        modal.id = `reveal-modal-${crypto.randomUUID()}`;
+        modal.tabIndex = 0;
+        modal.style.display = "block";
+        modal.style.top = "100px";
+        modal.style.opacity = "0";
+        modal.style.visibility = "visible";
+        modal.style.transform = "translateY(8px)";
+        modal.style.transition = `opacity ${TIMETABLE_EXPORT_MODAL_FADE_MS}ms ease, transform ${TIMETABLE_EXPORT_MODAL_FADE_MS}ms ease`;
+
+        const description = document.createElement("p");
+        description.textContent = "Use the following address to subscribe your favourite calendar application to a live feed.";
+
+        const textarea = document.createElement("textarea");
+        textarea.readOnly = true;
+        textarea.rows = 6;
+        textarea.value = exportUrl;
+
+        const actionWrap = document.createElement("div");
+        actionWrap.className = "component-action";
+        const actionSection = document.createElement("section");
+        const copyButton = document.createElement("button");
+        copyButton.textContent = "Copy to Clipboard";
+        actionSection.appendChild(copyButton);
+        actionWrap.appendChild(actionSection);
+
+        const closeButton = document.createElement("a");
+        closeButton.className = "close-reveal-modal";
+        closeButton.setAttribute("aria-label", "Close");
+        closeButton.textContent = "×";
+
+        const closeModal = () => {
+            if (modal.dataset.closing === "1") return;
+            closeTimetableExportModal();
+        };
+        overlay.addEventListener("click", closeModal);
+        closeButton.addEventListener("click", closeModal);
+
+        copyButton.addEventListener("click", async () => {
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(exportUrl);
+                } else {
+                    textarea.focus();
+                    textarea.select();
+                    document.execCommand("copy");
+                }
+                copyButton.textContent = "Copied";
+                setTimeout(() => {
+                    copyButton.textContent = "Copy to Clipboard";
+                }, 1500);
+            } catch (error) {
+                console.error("Failed to copy timetable export URL", error);
+                textarea.focus();
+                textarea.select();
+            }
+        });
+
+        modal.append(description, textarea, actionWrap, closeButton);
+        document.body.append(overlay, modal);
+        requestAnimationFrame(() => {
+            overlay.style.opacity = "1";
+            modal.style.opacity = "1";
+            modal.style.transform = "translateY(0)";
+            textarea.focus();
+            textarea.select();
+        });
+    };
+
+    const fetchTimetableExportUrl = async () => {
+        const response = await fetch("/calendar/week", {
+            credentials: "include"
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to load calendar page (${response.status})`);
+        }
+
+        const html = await response.text();
+        const tokenMatch = html.match(/token:\s*'([^']+)'/);
+        if (!tokenMatch) {
+            throw new Error("Calendar export token not found");
+        }
+
+        return `${window.location.origin}/calendar/export.php?export=timetable&event_type=&token=${tokenMatch[1]}`;
+    };
+
+    document.querySelectorAll(".schol-export-timetable").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            try {
+                const exportUrl = await fetchTimetableExportUrl();
+                openTimetableExportModal(exportUrl);
+            } catch (error) {
+                console.error("Failed to open timetable export modal", error);
+                alert("Unable to load the timetable export link right now.");
+            }
+        });
+    });
+
+    // Capture original table before enhanced timetable may replace it
+    const _printSourceTable = document.querySelector("table.timetable");
+
+    document.querySelectorAll(".schol-print-timetable").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const title = document.querySelector("h1[data-timetable-title]")?.innerText || "Timetable";
+            const tbl = _printSourceTable;
+            if (!tbl) return;
+
+            const subjCell = (subj) => {
+                if (!subj || !subj.textContent.trim()) return '<td></td>';
+                const bg = subj.style.backgroundColor || '';
+                const fg = subj.style.color || '#000';
+                const lines = subj.innerText.trim().split('\n').map(l => l.trim()).filter(Boolean);
+                const content = lines.map((l, i) => `<div class="${i === 0 ? 'subj-name' : 'subj-detail'}">${l}</div>`).join('');
+                return `<td style="background:${bg};color:${fg}">${content}</td>`;
+            };
+
+            const dayHeaders = Array.from(tbl.querySelectorAll("thead th")).slice(1).map(th => th.innerText.trim());
+            const periodRows = Array.from(tbl.querySelectorAll("tbody tr")).filter(r => r.querySelector("th"));
+
+            const emptyDayCells = dayHeaders.map(() => '<td></td>').join('');
+            let recessInserted = false;
+            const bodyRows = periodRows.map(row => {
+                const thLines = (row.querySelector("th")?.innerText || '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+                const rawName = thLines[0] || '';
+                const periodTime = thLines.slice(1).join(' ');
+
+                if (/after\s*school/i.test(rawName)) return '';
+                const displayName = /lunch/i.test(rawName) ? 'Lunch' : rawName;
+
+                const cells = Array.from(row.querySelectorAll("td")).map(td => subjCell(td.querySelector(".timetable-subject"))).join('');
+                const timeHtml = periodTime ? `<div class="period-time">${periodTime}</div>` : '';
+                const periodColClass = `period-col${displayName === 'Lunch' ? ' lunch-col' : ''}`;
+                const rowHtml = `<tr><th class="${periodColClass}"><div class="period-name">${displayName}</div>${timeHtml}</th>${cells}</tr>`;
+
+                if (!recessInserted && /period\s*3/i.test(rawName)) {
+                    recessInserted = true;
+                    return `<tr><th class="period-col recess-col"><div class="period-name">Recess</div><div class="period-time">10:40am – 11:05am</div></th>${emptyDayCells}</tr>${rowHtml}`;
+                }
+                return rowHtml;
+            }).filter(Boolean).join('');
+
+            const headerRow = `<tr><th></th>${dayHeaders.map(d => `<th>${d}</th>`).join('')}</tr>`;
+
+            const win = window.open('', '_blank');
+            win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+                <style>
+                @page { size: A4 landscape; margin: 10mm; }
+                * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                body { margin: 0; padding: 6px; background: #fff; font-family: Arial, sans-serif; color: #000; }
+                h1 { font-size: 12pt; margin: 0 0 6px 0; font-weight: bold; }
+                table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                th { background: #eee; font-size: 8pt; font-weight: bold; text-align: center; border: 1px solid #bbb; padding: 4px 3px; }
+                td { border: 1px solid #ddd; padding: 4px; vertical-align: top; }
+                .period-col { width: 68px; font-size: 7pt; }
+                .recess-col { background: #f5f5f5 !important; color: #888; }
+                .lunch-col { background: #f5f5f5 !important; color: #888; }
+                .period-name { font-weight: bold; }
+                .period-time { font-size: 6.5pt; opacity: 0.65; margin-top: 2px; }
+                .subj-name { font-size: 7.5pt; font-weight: bold; margin-bottom: 1px; }
+                .subj-detail { font-size: 7pt; opacity: 0.85; }
+                .subj-time { font-size: 6.5pt; opacity: 0.65; margin-top: 2px; }
+                </style>
+                </head><body>
+                <h1>${title}</h1>
+                <table><thead>${headerRow}</thead><tbody>${bodyRows}</tbody></table>
+                </body></html>`);
+            win.document.close();
+            setTimeout(() => { win.print(); win.close(); }, 400);
+        });
+    });
 
     // Add custom styles for the enhanced timetable
     if (!document.getElementById("schol-timetable-styles")) {
