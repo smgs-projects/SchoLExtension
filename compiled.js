@@ -278,11 +278,7 @@ async function load() {
             // Set a localStorage item to continue skipping server loading for 30 minutes, this means timetable cols will load immediately for the user while the server is down
             localStorage.setItem("skipServerLoading", Date.now() + 1800000);
 
-            // Alert the user that the server is down and that some functionality may not work as intended
-            // This will only show once, if the user refreshes the page, it will not show again - this is to prevent spamming the user with toasts
-            document.body.insertAdjacentHTML("beforeend", `<div id="scholext-fail-toaster" class="toast alert" data-toast></div>`)
-            const failToaster = $('#scholext-fail-toaster');
-            failToaster.toastActivate({text: 'Could not connect to SchoL Extension server. Custom timetable colours may not work correctly', css: 'alert'});
+            console.log("Could not connect to SchoL Extension server. Custom timetable colours may not work correctly")
         }
     }
     else if (localStorage.getItem("extConfig") !== null) { // We already have a config locally and versions match
