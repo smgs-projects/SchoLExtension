@@ -2356,6 +2356,7 @@ function timetable() {
             // Horizontal scroll support for screens
             const scrollWrapper = document.createElement("div");
             scrollWrapper.className = "timetable-enhanced-wrapper";
+            scrollWrapper.style.position = "relative";
             scrollWrapper.style.overflowX = "auto";
             scrollWrapper.style.overflowY = "hidden";
             scrollWrapper.style.width = "100%";
