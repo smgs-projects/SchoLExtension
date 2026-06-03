@@ -1323,64 +1323,146 @@ function confettiGrades() {
         confettiGrades.src = (FILE_URL + "/confetti/confetti.js");
         
         confettiGrades.onload = async () => {
+            const CONFETTI_STORAGE_KEY = "scholConfettiGrades";
+            const CONFETTI_STORAGE_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            let confettiSeen = {};
+
+            try {
+                confettiSeen = JSON.parse(localStorage.getItem(CONFETTI_STORAGE_KEY) || "{}") || {};
+            } catch (e) {
+                confettiSeen = {};
+            }
+
+            Object.keys(confettiSeen).forEach(key => {
+                if (!confettiSeen[key] || now - confettiSeen[key] > CONFETTI_STORAGE_TTL_MS) {
+                    delete confettiSeen[key];
+                }
+            });
+
+            try {
+                localStorage.setItem(CONFETTI_STORAGE_KEY, JSON.stringify(confettiSeen));
+            } catch (e) {}
+
+            const assessmentMatch = window.location.pathname.match(/^\/learning\/assessments\/(\d+)\/\d+\/?$/);
+            const assessmentId = assessmentMatch ? assessmentMatch[1] : null;
+            const confettiStorageKey = assessmentId ? `assessment:${assessmentId}` : null;
+
             let attempts = 0;
             let gradeDiv = document.querySelectorAll(".grade");
-            // wait until there are at least 2 grade elements on the page
-            while (gradeDiv.length <= 2 && attempts < 20) {
-                await new Promise(resolve => setTimeout(resolve, 250));
+            // wait until there is at least 1 grade element on the page
+            while (gradeDiv.length < 1 && attempts < 8) {
+                await new Promise(resolve => setTimeout(resolve, 150));
                 gradeDiv = document.querySelectorAll(".grade");
                 attempts++;
             }
             gradeDiv = document.querySelectorAll(".grade");
             let confettiRunning = false;
+            let autoTriggered = false;
 
-            gradeDiv.forEach(gradeDiv => {
-                let gradeText = gradeDiv.textContent.trim();
-                let gradeValue = null;
+            const triggerConfetti = (gradeDiv, override = {}) => {
+                if (confettiRunning) return;
+                confettiRunning = true;
+
+                const gradeRect = gradeDiv.getBoundingClientRect();
+                const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
+                const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
+                window.confetti({
+                    particleCount: window.innerWidth >= 950 ? 100 : 75,
+                    spread: window.innerWidth >= 950 ? 90 : 160,
+                    decay: 0.86,
+                    scalar: 1.25,
+                    gravity: 1.02,
+                    ticks: 90,
+                    startVelocity: window.innerWidth >= 950 ? 40 : 35,
+                    origin: { x: gradeOriginX, y: gradeOriginY },
+                    angle: window.innerWidth >= 950 ? 130 : 90,
+                    disableForReducedMotion: true,
+                    ...override
+                }).finally(() => {
+                    confettiRunning = false;
+                }).catch(error => {
+                    console.error("Confetti grade error:", error);
+                    confettiRunning = false;
+                });
+            };
+
+            const firstGradeDiv = gradeDiv[0];
+            if (!firstGradeDiv) return;
+
+            const gradeText = firstGradeDiv.textContent.trim();
+            let gradeValue = null;
 
                 // if grade is a percentage
-                if (gradeText.includes("%")) {
-                    gradeValue = parseFloat(gradeText.replace('%', ''));
-                }
+            if (gradeText.includes("%")) {
+                gradeValue = parseFloat(gradeText.replace('%', ''));
+            }
 
                 // if grade is a fraction
-                else if (gradeText.includes(" / ")) {
-                    let [numerator, denominator] = gradeText.split(" / ").map(Number);
-                    gradeValue = denominator ? (numerator / denominator) * 100 : 0;
-                }
+            else if (gradeText.includes(" / ")) {
+                let [numerator, denominator] = gradeText.split(" / ").map(Number);
+                gradeValue = denominator ? (numerator / denominator) * 100 : 0;
+            }
 
                 // if grade is a letter
-                else if (gradeText.includes("A+")) {
-                    gradeValue = 95;
-                }
+            else if (gradeText.includes("A+")) {
+                gradeValue = 95;
+            }
 
                 // When hovering over grade
-                gradeDiv.addEventListener('mouseenter', () => {
-                    if (gradeValue >= minConfettiGrade && !confettiRunning) {
-                        confettiRunning = true;
+            const markSeen = () => {
+                if (!confettiStorageKey) return;
+                confettiSeen[confettiStorageKey] = Date.now();
+                try {
+                    localStorage.setItem(CONFETTI_STORAGE_KEY, JSON.stringify(confettiSeen));
+                } catch (e) {}
+            };
 
-                        // Find center of gradeDiv
-                        const gradeRect = gradeDiv.getBoundingClientRect();
-                        const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
-                        const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
-                        window.confetti({
-                            particleCount: window.innerWidth >= 950 ? 100 : 75,
-                            spread: window.innerWidth >= 950 ? 90 : 160,
-                            decay: 0.86,
-                            scalar: 1.25,
-                            gravity: 1.02,
-                            ticks: 90,
-                            startVelocity: window.innerWidth >= 950 ? 40 : 35,
-                            origin: { x: gradeOriginX, y: gradeOriginY },
-                            angle: window.innerWidth >= 950 ? 130 : 90
-                        }).finally(() => {
-                            confettiRunning = false;
-                        }).catch(error => {
-                            console.error("Confetti grade error:", error);
-                            confettiRunning = false;
-                        });
-                    }
+            const shouldTriggerFirstOpen = !!confettiStorageKey && gradeValue >= minConfettiGrade && !confettiSeen[confettiStorageKey];
+
+            if (shouldTriggerFirstOpen && !autoTriggered) {
+                autoTriggered = true;
+                confettiRunning = true;
+                const gradeRect = firstGradeDiv.getBoundingClientRect();
+                const gradeOriginX = (gradeRect.left + gradeRect.width / 2) / window.innerWidth;
+                const gradeOriginY = (gradeRect.top + gradeRect.height / 2) / window.innerHeight;
+                const burstCount = 6;
+                const particlesPerBurst = 70;
+                const burstPromises = [];
+
+                for (let i = 0; i < burstCount; i++) {
+                    burstPromises.push(window.confetti({
+                        particleCount: particlesPerBurst,
+                        spread: 360,
+                        startVelocity: 12 + Math.random() * 50,
+                        ticks: 250,
+                        scalar: 1.4,
+                        decay: 0.92,
+                        disableForReducedMotion: true,
+                        origin: { x: gradeOriginX, y: gradeOriginY }
+                    }));
+                }
+
+                Promise.allSettled(burstPromises).finally(() => {
+                    confettiRunning = false;
                 });
+                markSeen();
+            }
+
+            firstGradeDiv.addEventListener('click', () => {
+                if (shouldTriggerFirstOpen) {
+                    triggerConfetti(firstGradeDiv);
+                    markSeen();
+                }
+            });
+
+            firstGradeDiv.addEventListener('mouseenter', () => {
+                if (gradeValue >= minConfettiGrade && !confettiRunning) {
+                    triggerConfetti(firstGradeDiv);
+                    if (!confettiSeen[confettiStorageKey]) {
+                        markSeen();
+                    }
+                }
             });
         };
         confettiGrades.onerror = () => {
