@@ -2167,6 +2167,13 @@ function timetable() {
                 background: #ccc;
                 border-radius: 4px;
             }
+            .timetable-enhanced-wrapper .timetable td .timetable-subject-active::before {
+                border-top: 0 !important;
+                border: 0 transparent !important;
+            }
+            .timetable-subject-active {
+                border: 0 transparent !important;
+            }
         `;
         document.head.appendChild(style);
     }
