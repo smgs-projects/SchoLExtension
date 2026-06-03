@@ -2485,6 +2485,10 @@ function timetable() {
                     if (!tmpTextCheck.textContent.trim()) continue;
                     
                     const isLunch = periodName.includes(PERIODS.LUNCH);
+                    const durationMin = times.end - times.start;
+                    const isShortPeriod = durationMin < 30;
+                    const periodHeightPx = durationMin * pxPerMin;
+                    const isVeryShortPeriod = periodHeightPx <= 48;
                     
                     const pDiv = document.createElement("div");
                     pDiv.className = "timetable-period-absolute";
@@ -2514,8 +2518,7 @@ function timetable() {
                         }
                         
                         const isBackToBack = nextTimes && nextTimes.start === times.end && !nextEntry[0].includes(PERIODS.LUNCH);
-                        const durationMin = times.end - times.start;
-                        const isShort = durationMin < 30;
+                        const isShort = isShortPeriod;
                         
                         // Only add start time if it wasn't shared with previous period's end and isn't 8:30
                         if (!hasSharedStartTime && times.start !== startTime) {
@@ -2530,8 +2533,9 @@ function timetable() {
                             startTimeLabel.style.top = "0";
                             startTimeLabel.style.left = "0";
                             startTimeLabel.style.right = "0";
-                            startTimeLabel.style.fontSize = "9px";
-                            startTimeLabel.style.padding = "1px 2px";
+                            startTimeLabel.style.fontSize = isVeryShortPeriod ? "7px" : (isShort ? "8px" : "9px");
+                            startTimeLabel.style.padding = isShort ? "0 2px" : "1px 2px";
+                            startTimeLabel.style.lineHeight = isVeryShortPeriod ? "1" : (isShort ? "1.1" : "normal");
                             startTimeLabel.style.backgroundColor = "rgba(0,0,0,0.3)";
                             startTimeLabel.style.color = "#fff";
                             startTimeLabel.style.textAlign = "center";
@@ -2610,14 +2614,16 @@ function timetable() {
                         }
                         s.style.marginBottom = "0";
                         s.style.marginTop = "0";
-                        s.style.paddingTop = "22px"; // Add padding to avoid time label at top
-                        s.style.paddingBottom = "16px"; // Add padding to avoid time label at bottom
+                        const compactTopPadding = isShortPeriod ? (isVeryShortPeriod ? 7 : Math.max(9, Math.min(12, Math.floor(periodHeightPx * 0.25)))) : 22;
+                        const compactBottomPadding = isShortPeriod ? (isVeryShortPeriod ? 2 : Math.max(3, Math.min(6, Math.floor(periodHeightPx * 0.12)))) : 16;
+                        s.style.paddingTop = `${compactTopPadding}px`;
+                        s.style.paddingBottom = `${compactBottomPadding}px`;
                         s.style.boxSizing = "border-box";
                         s.style.borderRadius = "2px";
                         s.style.overflow = "hidden";
                         
                         // Fix inner div layout if needed
-                        const innerDiv = s.querySelector("div");
+                        const innerDiv = Array.from(s.children).find(child => child.tagName === "DIV" && !(child.classList && child.classList.contains("schol-sport-spacer")));
                         if (innerDiv) {
                             innerDiv.style.borderRadius = "5px";
                             innerDiv.style.height = "100%";
@@ -2654,6 +2660,7 @@ function timetable() {
                                         }
                                         // Apply to all children including the innerDiv and its children
                                         s.querySelectorAll("div, div *, span, p").forEach(child => {
+                                            if (child.classList && child.classList.contains("schol-sport-spacer")) return;
                                             // Propagate background to descendants so the contrast checker
                                             // evaluates text against the themed background instead of transparent/white.
                                             child.style.setProperty('background-color', theme.color, 'important');
@@ -2743,32 +2750,45 @@ function timetable() {
                             const ext_Y_start = times.start < start45 ? times.start : start45;
                             const ext_Y_end = times.start < start45 ? start45 : times.start;
                             
-                            // A short delay ensures previously added subjects are in the DOM (though they should be already)
-                            setTimeout(() => {
-                                td.querySelectorAll('.timetable-period-absolute').forEach(prevDiv => {
-                                    if (prevDiv === pDiv) return;
-                                    const pStart = parseInt(prevDiv.getAttribute('data-start'));
-                                    const pEnd = parseInt(prevDiv.getAttribute('data-end'));
+                            td.querySelectorAll('.timetable-period-absolute').forEach(prevDiv => {
+                                if (prevDiv === pDiv) return;
+                                const pStart = parseInt(prevDiv.getAttribute('data-start'));
+                                const pEnd = parseInt(prevDiv.getAttribute('data-end'));
+                                
+                                const overlapS = Math.max(pStart, ext_Y_start);
+                                const overlapE = Math.min(pEnd, ext_Y_end);
+                                
+                                if (overlapS < overlapE) {
+                                    const overlapH = (overlapE - overlapS) * pxPerMin;
+                                    const marginTop = (overlapS - pStart) * pxPerMin;
                                     
-                                    const overlapS = Math.max(pStart, ext_Y_start);
-                                    const overlapE = Math.min(pEnd, ext_Y_end);
-                                    
-                                    if (overlapS < overlapE) {
-                                        const overlapH = (overlapE - overlapS) * pxPerMin;
-                                        const marginTop = (overlapS - pStart) * pxPerMin;
-                                        const spacerHTML = `<div style="float: right; width: 0; height: ${marginTop}px; pointer-events: none;"></div><div style="float: right; clear: right; width: 30%; height: ${overlapH + 5}px; pointer-events: none;"></div>`;
-                                        
-                                        const subjDiv = prevDiv.querySelector('.timetable-subject');
-                                        if (subjDiv) {
-                                            subjDiv.style.display = 'block';
-                                            subjDiv.insertAdjacentHTML('afterbegin', spacerHTML);
-                                        }
-                                        
-                                        // Hide right-half background of overridden subjects so it doesn't leak out 
-                                        // (though setting Sport bg z-index=2 already covers it visually)
+                                    const subjDiv = prevDiv.querySelector('.timetable-subject');
+                                    if (subjDiv) {
+                                        const offsetSpacer = document.createElement('div');
+                                        offsetSpacer.className = 'schol-sport-spacer';
+                                        offsetSpacer.style.float = 'right';
+                                        offsetSpacer.style.width = '0';
+                                        offsetSpacer.style.height = `${marginTop}px`;
+                                        offsetSpacer.style.pointerEvents = 'none';
+
+                                        const collisionSpacer = document.createElement('div');
+                                        collisionSpacer.className = 'schol-sport-spacer';
+                                        collisionSpacer.style.float = 'right';
+                                        collisionSpacer.style.clear = 'right';
+                                        collisionSpacer.style.width = '30%';
+                                        collisionSpacer.style.height = `${overlapH + 5}px`;
+                                        collisionSpacer.style.pointerEvents = 'none';
+
+                                        subjDiv.dataset.sportCollisionLayout = 'true';
+                                        subjDiv.style.display = 'block';
+                                        subjDiv.prepend(collisionSpacer);
+                                        subjDiv.prepend(offsetSpacer);
                                     }
-                                });
-                            }, 0);
+                                    
+                                    // Hide right-half background of overridden subjects so it doesn't leak out 
+                                    // (though setting Sport bg z-index=2 already covers it visually)
+                                }
+                            });
 
                             if (times.start < start45) {
                                 // CASE A: Period starts EARLY (e.g. 12:10).
@@ -2821,13 +2841,18 @@ function timetable() {
                                 
                                 // 3. Text Wrapping
                                 // Inject a float:left spacer into the content to push text to right for the top section
-                                const spacerH = topH;
-                                const spacer = `<div style="float: left; width: 70%; height: ${spacerH}px; pointer-events: none;"></div>`;
-                                // Insert into the .timetable-subject div
                                 const subjectDiv = pDiv.querySelector('.timetable-subject');
                                 if (subjectDiv) {
+                                    const spacer = document.createElement('div');
+                                    spacer.className = 'schol-sport-spacer';
+                                    spacer.style.float = 'left';
+                                    spacer.style.width = '70%';
+                                    spacer.style.height = `${topH}px`;
+                                    spacer.style.pointerEvents = 'none';
+
+                                    subjectDiv.dataset.sportCollisionLayout = 'true';
                                     subjectDiv.style.display = 'block'; 
-                                    subjectDiv.insertAdjacentHTML('afterbegin', spacer);
+                                    subjectDiv.prepend(spacer);
                                 }
                                 
                             } else {
@@ -2885,10 +2910,13 @@ function timetable() {
 
             // Smart text fitting logic
             newTable.querySelectorAll(".timetable-subject").forEach(subjectDiv => {
+                const hasSportCollisionLayout = subjectDiv.dataset.sportCollisionLayout === 'true';
+                const getContentNodes = () => Array.from(subjectDiv.children).filter(child => !(child.classList && child.classList.contains("schol-sport-spacer")));
+                const getContentRoot = () => getContentNodes().find(child => child.tagName === "DIV") || getContentNodes()[0] || null;
                 // Reset styles to optimize space
-                subjectDiv.style.display = "flex";
-                subjectDiv.style.flexDirection = "column";
-                subjectDiv.style.justifyContent = "center";
+                subjectDiv.style.display = hasSportCollisionLayout ? "flow-root" : "flex";
+                subjectDiv.style.flexDirection = hasSportCollisionLayout ? "" : "column";
+                subjectDiv.style.justifyContent = hasSportCollisionLayout ? "" : "center";
                 // Preserve top/bottom padding reserved for time labels; only set horizontal padding
                 subjectDiv.style.paddingLeft = "2px";
                 subjectDiv.style.paddingRight = "2px";
@@ -2899,9 +2927,21 @@ function timetable() {
                 subjectDiv.style.whiteSpace = "normal"; // Allow full words to wrap
                 subjectDiv.style.wordBreak = "normal"; // Prevent mid-word breaks
                 subjectDiv.style.overflowWrap = "normal"; // Prevent mid-word breaks
+
+                if (hasSportCollisionLayout) {
+                    subjectDiv.querySelectorAll(".schol-sport-spacer").forEach(spacer => spacer.remove());
+                    subjectDiv.style.paddingRight = "10%";
+                }
+
+                const contentRoot = getContentRoot();
+                if (contentRoot && hasSportCollisionLayout) {
+                    contentRoot.style.display = "block";
+                    contentRoot.style.width = "100%";
+                }
                 
                 // Remove default margins from children
                 Array.from(subjectDiv.children).forEach(c => {
+                    if (c.classList && c.classList.contains("schol-sport-spacer")) return;
                     c.style.margin = "0";
                     c.style.lineHeight = "1.1"; // Slightly tighter line height
                     c.style.whiteSpace = "normal";
@@ -2912,7 +2952,41 @@ function timetable() {
                     link.style.fontWeight = "bold";
                     link.style.display = "block"; 
                     link.style.whiteSpace = "normal";
+                    link.style.overflowWrap = "normal";
+                    link.style.wordBreak = "keep-all";
+                    link.style.color = "inherit";
+                    if (hasSportCollisionLayout) {
+                        link.style.letterSpacing = "-0.2px";
+                    }
                 }
+
+                const hasOverflow = () => {
+                    if (!hasSportCollisionLayout) {
+                        return subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth;
+                    }
+
+                    const measurableNodes = getContentNodes();
+                    if (!measurableNodes.length) return false;
+
+                    const contentBottom = measurableNodes.reduce((maxBottom, node) => {
+                        const nodeBottom = node.offsetTop + node.offsetHeight;
+                        return Math.max(maxBottom, nodeBottom);
+                    }, 0);
+
+                    return contentBottom > subjectDiv.clientHeight;
+                };
+                const visibleContentNodes = () => Array.from(subjectDiv.children).filter(child => {
+                    if (child.classList && child.classList.contains("schol-sport-spacer")) return false;
+                    return child.textContent.replace(/\s+/g, '').length > 0;
+                });
+
+                const dropSecondaryContent = () => {
+                    const visibleNodes = visibleContentNodes();
+                    const minKeep = hasSportCollisionLayout ? 2 : 1;
+                    if (visibleNodes.length <= minKeep) return false;
+                    visibleNodes.slice(minKeep).forEach(node => node.remove());
+                    return true;
+                };
 
                 // Iteratively shrink font size to fit
                 let fontSize = 12;
@@ -2924,15 +2998,17 @@ function timetable() {
 
                 subjectDiv.style.fontSize = `${fontSize}px`;
                 
-                // We allow valid font sizes down to 8px for extreme cases
+                // We allow valid font sizes down to 8px (9px for sport collision) for extreme cases
                 // Check both height and width overflow
-                while ((subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) && fontSize > 8) {
+                const longestWordLength = Math.max(...(link?.textContent || subjectDiv.textContent || "").split(/\s+/).map(w => w.length), 0);
+                const minFontSize = hasSportCollisionLayout ? (longestWordLength > 12 ? 12 : 15) : 8;
+                while (hasOverflow() && fontSize > minFontSize) {
                     fontSize -= 0.5;
                     subjectDiv.style.fontSize = `${fontSize}px`;
                 }
 
                 // If still overflowing or very small box, remove redundant info
-                if ((subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) || subjectDiv.clientHeight < 50) {
+                if (hasOverflow() || subjectDiv.clientHeight < 50) {
                     subjectDiv.innerHTML = subjectDiv.innerHTML
                     .replace(/\s*\([^)<>]*\)/g, '') // Remove (subject code)
                     .replace(/\s*\[[^\]<>]*\]/g, '') // Remove [subject code]
@@ -2940,24 +3016,35 @@ function timetable() {
                     .replace(/^\s*[\r\n]/gm, '');
                     
                     // Re-check size after removal
-                    while ((subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) && fontSize > 7) {
+                    while (hasOverflow() && fontSize > Math.max(minFontSize - 1, 7)) {
+                        fontSize -= 0.5;
+                        subjectDiv.style.fontSize = `${fontSize}px`;
+                    }
+                }
+
+                if (hasOverflow()) {
+                    dropSecondaryContent();
+                    while (hasOverflow() && fontSize > Math.max(minFontSize - 2, 6)) {
                         fontSize -= 0.5;
                         subjectDiv.style.fontSize = `${fontSize}px`;
                     }
                 }
                 
                 // If still overflowing, apply scale transform as a last resort
-                if (subjectDiv.scrollHeight > subjectDiv.clientHeight || subjectDiv.scrollWidth > subjectDiv.clientWidth) {
+                if (hasOverflow()) {
                     const vScale = subjectDiv.clientHeight / subjectDiv.scrollHeight;
                     const hScale = subjectDiv.clientWidth / subjectDiv.scrollWidth;
                     const scale = Math.min(vScale, hScale) * 0.95;
                     const wrapper = document.createElement('div');
-                    wrapper.style.transform = `scale(${Math.max(scale, 0.6)})`;
+                    wrapper.style.transform = `scale(${Math.max(scale, 0.5)})`;
                     wrapper.style.transformOrigin = 'center center';
                     wrapper.style.width = '100%';
+                    wrapper.style.maxHeight = '100%';
                     wrapper.style.display = 'flex';
                     wrapper.style.flexDirection = 'column';
                     wrapper.style.alignItems = 'center';
+                    wrapper.style.justifyContent = 'center';
+                    wrapper.style.overflow = 'hidden';
                     
                     while (subjectDiv.firstChild) {
                         wrapper.appendChild(subjectDiv.firstChild);
@@ -2985,12 +3072,13 @@ function timetable() {
                     if (!line) {
                         line = document.createElement("div");
                         line.id = "timetable-timeline";
-                        line.style.cssText = "position: absolute; left: 60px; right: 0; border-top: 2px solid #ff4d4d; z-index: 100; pointer-events: none; transition: top 1s linear;";
-                        timeCol.appendChild(line);
-                        line.style.width = "200vw"; // Hack to span across
+                        line.style.cssText = "position: absolute; border-top: 2px solid #ff4d4d; z-index: 100; pointer-events: none; transition: top 1s linear;";
+                        scrollWrapper.appendChild(line);
                     }
                     line.style.display = "block";
-                    line.style.top = (mins - startTime) * pxPerMin + "px";
+                    line.style.top = `${(newTable.tHead?.offsetHeight || 0) + ((mins - startTime) * pxPerMin)}px`;
+                    line.style.left = `${60 - scrollWrapper.scrollLeft}px`;
+                    line.style.width = `${Math.max(newTable.offsetWidth - 60, 0)}px`;
                 }
 
                 // Highlight active subject
@@ -3028,6 +3116,7 @@ function timetable() {
             };
 
             updateTimeLine();
+            scrollWrapper.addEventListener("scroll", updateTimeLine, { passive: true });
             setInterval(updateTimeLine, 10000);
 
             // Observe and revert any Schoolbox auto-contrast overrides on colour
