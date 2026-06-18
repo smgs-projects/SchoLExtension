@@ -1784,7 +1784,7 @@ async function mainPage() {
     }
  
     // ptv stuff
-    (document.querySelector(".awardsComponent") || document.querySelector("#component68"))?.insertAdjacentHTML("afterend", `
+    (document.querySelector(".Schoolbox_Weather_Component_Dashboard_Controller") || document.querySelector("#component200332"))?.insertAdjacentHTML("afterend", `
     <style>
         .PTVIcon .line-pill .route-lock-up {
             display: inline-block;
