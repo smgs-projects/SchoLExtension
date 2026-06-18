@@ -1829,7 +1829,7 @@ async function mainPage() {
         }
         .PTVIcon.tram .icon {
             background-image: url("${FILE_URL}/ptv/tram.png");
-            background-image: url("${FILE_URL}/ptv//tram.svg");
+            background-image: url("${FILE_URL}/ptv/tram.svg");
         }
 
         .PTVIcon.train .route-lock-up {
