@@ -2174,6 +2174,11 @@ function timetable() {
             .timetable-subject-active {
                 border: 0 transparent !important;
             }
+            @keyframes scholActivePulse {
+                0% { box-shadow: inset 0 0 0 3px rgba(0, 114, 206, 0.35); outline-color: rgba(0, 114, 206, 0.45); }
+                50% { box-shadow: inset 0 0 14px 3px rgba(0, 114, 206, 0.9); outline-color: rgba(0, 114, 206, 1); }
+                100% { box-shadow: inset 0 0 0 3px rgba(0, 114, 206, 0.35); outline-color: rgba(0, 114, 206, 0.45); }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -3088,6 +3093,7 @@ function timetable() {
                     if (subjectDiv) {
                         subjectDiv.style.outline = "none";
                         subjectDiv.style.boxShadow = "none";
+                        subjectDiv.style.animation = "";
                         subjectDiv.style.zIndex = "";
                     }
                 });
@@ -3104,9 +3110,9 @@ function timetable() {
                                 // Add a nice outline
                                 const subjectDiv = p.querySelector(".timetable-subject");
                                 if (subjectDiv) {
-                                    subjectDiv.style.outline = "4px solid var(--accent-foreground, #0072ce)";
-                                    subjectDiv.style.outlineOffset = "-4px";
-                                    subjectDiv.style.boxShadow = "0 0 15px rgba(0, 114, 206, 0.6)";
+                                    subjectDiv.style.outline = "6px solid var(--accent-foreground, #0072ce)";
+                                    subjectDiv.style.outlineOffset = "-6px";
+                                    subjectDiv.style.animation = "scholActivePulse 2.5s ease-in-out infinite";
                                     subjectDiv.style.zIndex = "10";
                                 }
                             }
