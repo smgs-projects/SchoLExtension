@@ -60,9 +60,6 @@ h1 {
 .title-section h1 {
     color: var(--text1) !important;
 }
-element.style {
-    font-size: 0.75rem;
-}
 @media only screen and (min-width: 64.0625em) {
     #container {
         padding: 0.0rem;
@@ -626,6 +623,12 @@ body {
 ul.results { 
     background-color: var(--layer2) !important;
 }
+.results-container {
+    color: var(--text1) !important;
+}
+.results__status {
+    background: var(--layer3) !important;
+}
 .tabs dd>a,
 .tabs .tab-title>a,
 table tr th,
@@ -641,7 +644,7 @@ button[class*="group-action"]::before {
     color: var(--white) !important;
 }
 div[class*="group-actions"] {
-    background-color: (--black) !important;
+    background-color: var(--black) !important;
 }
 dd[class*="active"]>a,
 .tabs .tab-title.active>a {
@@ -849,6 +852,11 @@ li.actions-small-1.sticky.read .list-item > div.small-12.card.wrap-down {
 span.label.unsubmitted {
     color: var(--text2) !important;
     background-color: var(--layer4) !important;
+}
+
+label.block {
+    background-color: var(--layer4) !important;
+    color: var(--text1) !important;
 }
 
 dl.tabs[id^='0'] { /* whoever made an id with a number in it is bad */
@@ -1092,7 +1100,7 @@ li.separator {
     background-color: var(--layer3) !important;
 }
 /* notification prompt */
-#pwaPrompt, .pwa-side-menu {
+#pwaPrompt, #pwa-side-panel, .pwa-side-menu {
     background-color: var(--layer2) !important;
 }
 
@@ -1100,6 +1108,10 @@ ul.filters input[type=checkbox]:checked+label {
     background-color: var(--accentalt) !important;
     color: var(--white) !important;
 }
+
+/* Quiz Styles */
+
+
 
 /* checkbox */
 /* selected colours*/
