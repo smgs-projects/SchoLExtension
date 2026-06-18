@@ -2771,6 +2771,7 @@ function timetable() {
                                     if (subjDiv) {
                                         const offsetSpacer = document.createElement('div');
                                         offsetSpacer.className = 'schol-sport-spacer';
+                                        offsetSpacer.dataset.scholKeep = '1';
                                         offsetSpacer.style.float = 'right';
                                         offsetSpacer.style.width = '0';
                                         offsetSpacer.style.height = `${marginTop}px`;
@@ -2778,6 +2779,7 @@ function timetable() {
 
                                         const collisionSpacer = document.createElement('div');
                                         collisionSpacer.className = 'schol-sport-spacer';
+                                        collisionSpacer.dataset.scholKeep = '1';
                                         collisionSpacer.style.float = 'right';
                                         collisionSpacer.style.clear = 'right';
                                         collisionSpacer.style.width = '30%';
@@ -2785,6 +2787,9 @@ function timetable() {
                                         collisionSpacer.style.pointerEvents = 'none';
 
                                         subjDiv.dataset.sportCollisionLayout = 'true';
+                                        // Mark this as an overlapped neighbour (not the sport block itself)
+                                        // so its text is left-aligned to avoid hitting the sport extension.
+                                        subjDiv.dataset.sportNeighbourCollision = 'true';
                                         subjDiv.style.display = 'block';
                                         subjDiv.prepend(collisionSpacer);
                                         subjDiv.prepend(offsetSpacer);
@@ -2850,6 +2855,7 @@ function timetable() {
                                 if (subjectDiv) {
                                     const spacer = document.createElement('div');
                                     spacer.className = 'schol-sport-spacer';
+                                    spacer.dataset.scholKeep = '1';
                                     spacer.style.float = 'left';
                                     spacer.style.width = '70%';
                                     spacer.style.height = `${topH}px`;
@@ -2916,6 +2922,7 @@ function timetable() {
             // Smart text fitting logic
             newTable.querySelectorAll(".timetable-subject").forEach(subjectDiv => {
                 const hasSportCollisionLayout = subjectDiv.dataset.sportCollisionLayout === 'true';
+                const isSportNeighbourCollision = subjectDiv.dataset.sportNeighbourCollision === 'true';
                 const getContentNodes = () => Array.from(subjectDiv.children).filter(child => !(child.classList && child.classList.contains("schol-sport-spacer")));
                 const getContentRoot = () => getContentNodes().find(child => child.tagName === "DIV") || getContentNodes()[0] || null;
                 // Reset styles to optimize space
@@ -2923,10 +2930,12 @@ function timetable() {
                 subjectDiv.style.flexDirection = hasSportCollisionLayout ? "" : "column";
                 subjectDiv.style.justifyContent = hasSportCollisionLayout ? "" : "center";
                 // Preserve top/bottom padding reserved for time labels; only set horizontal padding
-                subjectDiv.style.paddingLeft = "2px";
+                // Give left-aligned neighbours a touch more left padding so text isn't flush against the edge
+                subjectDiv.style.paddingLeft = isSportNeighbourCollision ? "6px" : "2px";
                 subjectDiv.style.paddingRight = "2px";
                 subjectDiv.style.boxSizing = "border-box";
-                subjectDiv.style.textAlign = "center";
+                // Left-align overlapped neighbours so text stays clear of the sport extension on the right
+                subjectDiv.style.textAlign = isSportNeighbourCollision ? "left" : "center";
                 subjectDiv.style.overflow = "hidden";
                 subjectDiv.style.height = "100%";
                 subjectDiv.style.whiteSpace = "normal"; // Allow full words to wrap
@@ -2934,8 +2943,11 @@ function timetable() {
                 subjectDiv.style.overflowWrap = "normal"; // Prevent mid-word breaks
 
                 if (hasSportCollisionLayout) {
-                    subjectDiv.querySelectorAll(".schol-sport-spacer").forEach(spacer => spacer.remove());
-                    subjectDiv.style.paddingRight = "10%";
+                    subjectDiv.querySelectorAll(".schol-sport-spacer").forEach(spacer => {
+                        if (spacer.dataset.scholKeep === '1') return;
+                        spacer.remove();
+                    });
+                    subjectDiv.style.paddingRight = "3%";
                 }
 
                 const contentRoot = getContentRoot();
@@ -3006,7 +3018,10 @@ function timetable() {
                 // We allow valid font sizes down to 8px (9px for sport collision) for extreme cases
                 // Check both height and width overflow
                 const longestWordLength = Math.max(...(link?.textContent || subjectDiv.textContent || "").split(/\s+/).map(w => w.length), 0);
-                const minFontSize = hasSportCollisionLayout ? (longestWordLength > 12 ? 12 : 15) : 8;
+                const minFontSize = hasSportCollisionLayout ? (longestWordLength > 12 ? 14 : 16) : 8;
+                if (hasSportCollisionLayout && hasOverflow()) {
+                    dropSecondaryContent();
+                }
                 while (hasOverflow() && fontSize > minFontSize) {
                     fontSize -= 0.5;
                     subjectDiv.style.fontSize = `${fontSize}px`;
@@ -3036,7 +3051,7 @@ function timetable() {
                 }
                 
                 // If still overflowing, apply scale transform as a last resort
-                if (hasOverflow()) {
+                if (hasOverflow() && !hasSportCollisionLayout) {
                     const vScale = subjectDiv.clientHeight / subjectDiv.scrollHeight;
                     const hScale = subjectDiv.clientWidth / subjectDiv.scrollWidth;
                     const scale = Math.min(vScale, hScale) * 0.95;
