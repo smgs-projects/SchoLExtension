@@ -1631,13 +1631,12 @@ function assessments() {
                     color:#555;
                     margin:10px 0;
                 }
-                .markable table {
-                    page-break-inside:avoid;
-                }
                 td, td * {
                     color:#222 !important;
                 }
             </style>
+            <!-- Injected at runtime to scale the rubric so it fits on as few pages as possible -->
+            <style id="fit-style"></style>
             </head>
         <body>
             <div class="assessment-details">
@@ -1649,16 +1648,82 @@ function assessments() {
             </div>
             ${markableEl.outerHTML}
             <script>
-                window.addEventListener('load', function(){
-                    setTimeout(function(){ 
-                        try { window.print(); } catch(e) {}
-                    }, 50);
-                });
-                window.onafterprint = function(){
-                    setTimeout(function(){
-                        try { window.close(); } catch(e) {}
-                    }, 100);
-                };
+                (function(){
+                    // Page geometry (matches @page size/margin above)
+                    var isLandscape = ${orientation === 'landscape'};
+                    var MM = 3.7795; // px per mm at 96dpi
+                    var marginMM = 15;
+                    var pageWmm = isLandscape ? 297 : 210;
+                    var pageHmm = isLandscape ? 210 : 297;
+                    var pageWidthPx = (pageWmm - marginMM * 2) * MM;
+                    var pageHeightPx = (pageHmm - marginMM * 2) * MM;
+
+                    // Constrain the on-screen body to the printable page width so measured
+                    // text wrapping (and therefore height) matches what will actually print.
+                    document.body.style.width = pageWidthPx + 'px';
+                    document.body.style.boxSizing = 'border-box';
+
+                    var fitStyle = document.getElementById('fit-style');
+                    var table = document.querySelector('.markable table') || document.querySelector('table');
+
+                    function contentHeight(){
+                        return document.body.scrollHeight;
+                    }
+
+                    // Try to shrink font-size / padding so the whole rubric fits within maxPages pages.
+                    // Returns true if it fit.
+                    function tryFit(maxPages){
+                        var params = [
+                            // fontPx, padV, padH, lineHeight
+                            { f: 13, pv: 6, ph: 8, lh: 1.35 },
+                            { f: 12, pv: 5, ph: 7, lh: 1.3 },
+                            { f: 11, pv: 4, ph: 6, lh: 1.25 },
+                            { f: 10, pv: 3, ph: 5, lh: 1.2 },
+                            { f: 9,  pv: 3, ph: 4, lh: 1.18 },
+                            { f: 8,  pv: 2, ph: 4, lh: 1.15 },
+                            { f: 7,  pv: 2, ph: 3, lh: 1.12 },
+                            { f: 6.5,pv: 1.5, ph: 3, lh: 1.1 },
+                            { f: 6,  pv: 1.5, ph: 2, lh: 1.08 }
+                        ];
+                        for (var i = 0; i < params.length; i++){
+                            var p = params[i];
+                            fitStyle.textContent =
+                                'table{font-size:' + p.f + 'px;line-height:' + p.lh + ';}' +
+                                'th,td{padding:' + p.pv + 'px ' + p.ph + 'px;}' +
+                                'h1{font-size:1.3em;margin:0 0 .3em;}' +
+                                '.assessment-details ul{margin-bottom:8px;}' +
+                                '.assessment-details ul li{margin-bottom:2px;}';
+                            // Force reflow
+                            void document.body.offsetHeight;
+                            if (contentHeight() <= pageHeightPx * maxPages + 2){
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    // Prefer 1 page; if the smallest readable size still overflows, allow 2.
+                    var allowRowBreaks = false;
+                    if (!tryFit(1)){
+                        if (!tryFit(2)){
+                            // Even 2 pages doesn't fit at min size: keep smallest and allow rows to break
+                            allowRowBreaks = true;
+                        }
+                    }
+
+                    // When content must span multiple pages, allow rows to break instead of
+                    // pushing whole (tall) rows to the next page and wasting paper.
+                    if (allowRowBreaks || contentHeight() > pageHeightPx + 2){
+                        fitStyle.textContent += 'tr,td,th{page-break-inside:auto;}';
+                    }
+
+                    window.addEventListener('afterprint', function(){
+                        setTimeout(function(){ try { window.close(); } catch(e) {} }, 100);
+                    });
+
+                    // Give layout a tick to settle, then print
+                    setTimeout(function(){ try { window.print(); } catch(e) {} }, 80);
+                })();
             </script>
         </body>
         </html>
