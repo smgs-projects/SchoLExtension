@@ -2095,25 +2095,42 @@ function timetable() {
             const periodRows = Array.from(tbl.querySelectorAll("tbody tr")).filter(r => r.querySelector("th"));
 
             const emptyDayCells = dayHeaders.map(() => '<td></td>').join('');
+            const recessRow = `<tr><th class="period-col recess-col"><div class="period-name">Recess</div><div class="period-time">10:40am – 11:05am</div></th>${emptyDayCells}</tr>`;
+            const lunchRow = `<tr><th class="period-col lunch-col"><div class="period-name">Lunch</div><div class="period-time">1:15pm – 2:05pm</div></th>${emptyDayCells}</tr>`;
             let recessInserted = false;
+            let lunchInserted = false;
             const bodyRows = periodRows.map(row => {
-                const thLines = (row.querySelector("th")?.innerText || '').trim().split('\n').map(l => l.trim()).filter(Boolean);
+                const th = row.querySelector("th");
+                // Use textContent (not innerText) so rows hidden by compact timetable (display:none) still parse
+                const thLines = (th?.textContent || '').split('\n').map(l => l.trim()).filter(Boolean);
                 const rawName = thLines[0] || '';
                 const periodTime = thLines.slice(1).join(' ');
 
                 if (/after\s*school/i.test(rawName)) return '';
-                const displayName = /lunch/i.test(rawName) ? 'Lunch' : rawName;
+
+                // Skip any real lunch row from the source; we insert our own break row after Period 4
+                if (/lunch/i.test(rawName)) {
+                    if (lunchInserted) return '';
+                    lunchInserted = true;
+                    return lunchRow;
+                }
 
                 const cells = Array.from(row.querySelectorAll("td")).map(td => subjCell(td.querySelector(".timetable-subject"))).join('');
                 const timeHtml = periodTime ? `<div class="period-time">${periodTime}</div>` : '';
-                const periodColClass = `period-col${displayName === 'Lunch' ? ' lunch-col' : ''}`;
-                const rowHtml = `<tr><th class="${periodColClass}"><div class="period-name">${displayName}</div>${timeHtml}</th>${cells}</tr>`;
+                const rowHtml = `<tr><th class="period-col"><div class="period-name">${rawName}</div>${timeHtml}</th>${cells}</tr>`;
 
+                let prefix = '';
+                // Insert Recess before Period 3
                 if (!recessInserted && /period\s*3/i.test(rawName)) {
                     recessInserted = true;
-                    return `<tr><th class="period-col recess-col"><div class="period-name">Recess</div><div class="period-time">10:40am – 11:05am</div></th>${emptyDayCells}</tr>${rowHtml}`;
+                    prefix += recessRow;
                 }
-                return rowHtml;
+                // Insert Lunch break before Period 5 (falls between P4 and P5)
+                if (!lunchInserted && /period\s*5/i.test(rawName)) {
+                    lunchInserted = true;
+                    prefix += lunchRow;
+                }
+                return prefix + rowHtml;
             }).filter(Boolean).join('');
 
             const headerRow = `<tr><th></th>${dayHeaders.map(d => `<th>${d}</th>`).join('')}</tr>`;
